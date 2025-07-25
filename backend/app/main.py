@@ -5,6 +5,7 @@ Main FastAPI application entry point
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.infrastructure.settings import settings
 
 # Create FastAPI application
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files (frontend)
+app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
 
 
 @app.get("/")

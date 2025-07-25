@@ -12,9 +12,9 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file="../.env",
         env_file_encoding="utf-8",
-        case_sensitive=True
+        case_sensitive=False
     )
     
     # Security
@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     database_url: str = Field(..., description="PostgreSQL database URL")
     
     # Google Gemini AI
-    google_application_credentials: str = Field(..., description="Path to GCP credentials JSON")
-    google_cloud_project: str = Field(..., description="GCP project ID") 
+    google_application_credentials: str = Field(default="", description="Path to GCP credentials JSON")
+    google_cloud_project: str = Field(default="", description="GCP project ID") 
     google_cloud_region: str = Field(default="europe-west1", description="GCP region")
     gemini_model_name: str = Field(default="gemini-2.0-flash-001", description="Gemini model name")
     

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard - FIA v3.0</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom styles -->
+    <link href="../src/styles/main.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                FIA v3.0 Trainer
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <span id="trainer-name">Trainer</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profile-modal">
+                            <i class="bi bi-person me-2"></i>Profile
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="logout-btn">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#dashboard" data-bs-toggle="tab">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#create-training" data-bs-toggle="tab">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Create Training
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#create-session" data-bs-toggle="tab">
+                                <i class="bi bi-calendar-plus me-2"></i>
+                                Create Session
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#analytics" data-bs-toggle="tab">
+                                <i class="bi bi-graph-up me-2"></i>
+                                Analytics
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="tab-content" id="trainer-tabs">
+                    
+                    <!-- Dashboard Tab -->
+                    <div class="tab-pane fade show active" id="dashboard">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Dashboard</h1>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-book display-6 me-3"></i>
+                                            <div>
+                                                <h5 class="card-title">Trainings</h5>
+                                                <h3 class="mb-0" id="trainings-count">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-calendar-event display-6 me-3"></i>
+                                            <div>
+                                                <h5 class="card-title">Active Sessions</h5>
+                                                <h3 class="mb-0" id="sessions-count">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-people display-6 me-3"></i>
+                                            <div>
+                                                <h5 class="card-title">Learners</h5>
+                                                <h3 class="mb-0" id="learners-count">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-clock-history display-6 me-3"></i>
+                                            <div>
+                                                <h5 class="card-title">Avg. Time</h5>
+                                                <h3 class="mb-0" id="avg-time">0m</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Recent Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recent-activity">
+                                    <p class="text-muted">No recent activity</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create Training Tab -->
+                    <div class="tab-pane fade" id="create-training">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Create Training</h1>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <form id="training-form" enctype="multipart/form-data">
+                                            <div class="mb-3">
+                                                <label for="training-name" class="form-label">Training Name</label>
+                                                <input type="text" class="form-control" id="training-name" name="name" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="training-description" class="form-label">Description</label>
+                                                <textarea class="form-control" id="training-description" name="description" rows="4"></textarea>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="training-file" class="form-label">Upload Training Material</label>
+                                                <input type="file" class="form-control" id="training-file" name="file" accept=".pdf,.ppt,.pptx" required>
+                                                <div class="form-text">Supported formats: PDF, PPT, PPTX</div>
+                                            </div>
+
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bi bi-upload me-2"></i>
+                                                    Create Training
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create Session Tab -->
+                    <div class="tab-pane fade" id="create-session">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Create Session</h1>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <form id="session-form">
+                                            <div class="mb-3">
+                                                <label for="session-training" class="form-label">Select Training</label>
+                                                <select class="form-select" id="session-training" name="training_id" required>
+                                                    <option value="">Choose a training...</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="session-name" class="form-label">Session Name</label>
+                                                <input type="text" class="form-control" id="session-name" name="name" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label for="session-description" class="form-label">Description</label>
+                                                <textarea class="form-control" id="session-description" name="description" rows="3"></textarea>
+                                            </div>
+
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-calendar-plus me-2"></i>
+                                                    Generate Session Link
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <!-- Generated Session Link -->
+                                        <div id="session-link-container" class="mt-4 d-none">
+                                            <div class="alert alert-success">
+                                                <h6 class="alert-heading">Session Created Successfully!</h6>
+                                                <p class="mb-2">Share this link with your learners:</p>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="session-link" readonly>
+                                                    <button class="btn btn-outline-secondary" type="button" id="copy-link-btn">
+                                                        <i class="bi bi-clipboard"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Tab -->
+                    <div class="tab-pane fade" id="analytics">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Analytics</h1>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Learner Progress Overview</h5>
+                                        <div id="analytics-content">
+                                            <p class="text-muted">Analytics will be displayed here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profile-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person me-2"></i>
+                        Profile
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="profile-form">
+                        <div class="mb-3">
+                            <label for="profile-first-name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="profile-first-name" name="first_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-last-name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="profile-last-name" name="last_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="profile-email" name="email" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom scripts -->
+    <script src="../src/utils/api.js"></script>
+    <script src="../src/utils/auth.js"></script>
+    <script src="../src/components/trainer-dashboard.js"></script>
+</body>
+</html>
