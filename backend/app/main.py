@@ -6,7 +6,18 @@ Main FastAPI application entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 from app.infrastructure.settings import settings
+from app.infrastructure.database import init_database
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan - startup and shutdown events"""
+    # Startup
+    await init_database()
+    yield
+    # Shutdown (if needed)
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -16,6 +27,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -39,12 +51,29 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    """Detailed health check"""
-    return {
-        "status": "healthy",
-        "service": "fia-v3-backend",
-        "version": "0.1.0"
-    }
+    """Detailed health check with database connection"""
+    from app.infrastructure.database import engine
+    from sqlalchemy import text
+    
+    try:
+        # Test database connection
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        
+        return {
+            "status": "healthy",
+            "service": "fia-v3-backend",
+            "version": "0.1.0",
+            "database": "connected"
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "service": "fia-v3-backend",
+            "version": "0.1.0",
+            "database": "disconnected",
+            "error": str(e)
+        }
 
 
 if __name__ == "__main__":

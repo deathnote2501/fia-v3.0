@@ -192,41 +192,40 @@ frontend/
 ## 📋 **Phase 1: Setup & Infrastructure (Jour 1)**
 
 ### Étapes Backend
-- Créer repository GitHub avec .gitignore
-- Initialiser Poetry dans backend/
-- Créer structure dossiers architecture hexagonale
-- Configurer variables d'environnement
-- Setup Railway de base
+- Créer repository GitHub avec .gitignore-
+- Initialiser Poetry dans backend/-
+- Créer structure dossiers architecture hexagonale-
+- Configurer variables d'environnement-
+- Setup Railway de base-
 
 ### Étapes Frontend
-- Créer structure frontend/ avec dossiers
-- Setup page index.html basique avec Bootstrap
-- Créer fichier CSS/JS de base
+- Créer structure frontend/ avec dossiers-
+- Setup page index.html basique avec Bootstrap-
+- Créer fichier CSS/JS de base-
 
 ### Tests Phase 1 (Manuel Interface)
-- Accéder à index.html → page s'affiche
-- Bootstrap CSS/JS chargés → styles appliqués
-- Variables d'environnement → affichage status dans page test
+- Accéder à index.html → page s'affiche-
+- Bootstrap CSS/JS chargés → styles appliqués-
+- Variables d'environnement → affichage status dans page test-
 
 ---
 
 ## 🗄️ **Phase 2: Base de Données & Modèles (Jour 1-2)**
 
 ### Étapes Backend
-- Configurer connexion PostgreSQL
-- Créer modèles SQLAlchemy
-- Définir schemas Pydantic
-- Créer migration Alembic initiale
-- Implémenter repositories
+- Configurer connexion PostgreSQL-
+- Créer modèles SQLAlchemy-
+- Définir schemas Pydantic-
+- Créer migration Alembic initiale-
+- Implémenter repositories-
 
 ### Étapes Frontend
-- Créer pages register.html et login.html
-- Formulaires Bootstrap basiques
-- Scripts JS pour validation frontend
+- Créer pages register.html et login.html-
+- Formulaires Bootstrap basiques-
+- Scripts JS pour validation frontend-
 
 ### Tests Phase 2 (Manuel Interface)
-- Pages register/login → formulaires s'affichent
-- Validation JS → messages d'erreur frontend
+- Pages register/login → formulaires s'affichent-
 - Migration BDD → vérifier tables créées
 - Test connexion → page status BDD
 
@@ -238,6 +237,7 @@ frontend/
 - Configurer FastAPI-Users
 - Endpoints authentification (/register, /login)
 - Middleware authentification
+- Validation JS → messages d'erreur frontend
 - Endpoints upload training
 
 ### Étapes Frontend
