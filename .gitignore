@@ -118,8 +118,10 @@ temp/
 
 # Gemini API keys and secrets
 *.key
+*.json
 secrets/
 .secrets/
+animemate-ddb62-*.json
 
 # Upload directories
 uploads/

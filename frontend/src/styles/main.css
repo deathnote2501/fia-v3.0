@@ -1,0 +1,33 @@
+/* FIA v3.0 - Main Styles */
+/* Bootstrap-based styling with minimal custom additions */
+
+:root {
+    --fia-primary: #0d6efd;
+    --fia-secondary: #6c757d;
+    --fia-success: #198754;
+    --fia-info: #0dcaf0;
+    --fia-warning: #ffc107;
+    --fia-danger: #dc3545;
+}
+
+/* Custom utilities that complement Bootstrap */
+.text-fia-primary {
+    color: var(--fia-primary) !important;
+}
+
+.bg-fia-primary {
+    background-color: var(--fia-primary) !important;
+}
+
+/* Minimal custom styles - using Bootstrap patterns */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Loading animation using Bootstrap spinner */
+.loading-spinner {
+    width: 1rem;
+    height: 1rem;
+}
