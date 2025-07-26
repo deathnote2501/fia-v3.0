@@ -256,9 +256,10 @@ const originalRequest = apiClient.request;
 apiClient.request = async function(endpoint, options = {}) {
     // Add auth headers if user is authenticated
     if (authManager.isAuthenticated()) {
+        // Preserve existing headers and add auth header
         options.headers = {
-            ...options.headers,
-            ...authManager.getAuthHeader()
+            ...authManager.getAuthHeader(),
+            ...options.headers  // User headers override auth headers if needed
         };
     }
 

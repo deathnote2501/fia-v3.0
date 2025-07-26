@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     environment: str = Field(default="development", description="Environment (development/production)")
     debug: bool = Field(default=False, description="Debug mode")
     port: int = Field(default=8000, description="Server port")
+    frontend_url: str = Field(default="http://localhost:8000", description="Frontend base URL")
     
     # CORS
     cors_origins: str = Field(

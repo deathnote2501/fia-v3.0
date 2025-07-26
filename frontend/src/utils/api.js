@@ -34,7 +34,33 @@ class APIClient {
             const response = await fetch(url, config);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                
+                // Try to get detailed error message from response
+                try {
+                    const errorData = await response.json();
+                    console.error('API Error Details:', errorData);
+                    
+                    if (errorData.detail) {
+                        // Handle Pydantic validation errors (detail is an array)
+                        if (Array.isArray(errorData.detail)) {
+                            const errors = errorData.detail.map(err => {
+                                const field = err.loc ? err.loc.join('.') : 'unknown';
+                                return `${field}: ${err.msg}`;
+                            }).join(', ');
+                            errorMessage = `Validation error: ${errors}`;
+                        } else {
+                            errorMessage = errorData.detail;
+                        }
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch (jsonError) {
+                    // If response is not JSON, use status text
+                    errorMessage = `${response.status} ${response.statusText}`;
+                }
+                
+                throw new Error(errorMessage);
             }
             
             return await response.json();

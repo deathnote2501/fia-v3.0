@@ -240,32 +240,51 @@
                     <div class="tab-pane fade" id="create-session">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                             <h1 class="h2">Create Session</h1>
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadSessions()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
                         </div>
 
                         <div class="row">
-                            <div class="col-lg-8">
+                            <!-- Create Session Form -->
+                            <div class="col-lg-6">
                                 <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            New Session
+                                        </h5>
+                                    </div>
                                     <div class="card-body">
                                         <form id="session-form">
                                             <div class="mb-3">
                                                 <label for="session-training" class="form-label">Select Training</label>
-                                                <select class="form-select" id="session-training" name="training_id" required>
-                                                    <option value="">Choose a training...</option>
-                                                </select>
+                                                <div class="input-group">
+                                                    <select class="form-select" id="session-training" name="training_id" required>
+                                                        <option value="">Choose a training...</option>
+                                                    </select>
+                                                    <button class="btn btn-outline-secondary" type="button" onclick="loadTrainings()" title="Refresh trainings list">
+                                                        <i class="bi bi-arrow-clockwise"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="form-text">Select the training material for this session</div>
                                             </div>
 
                                             <div class="mb-3">
                                                 <label for="session-name" class="form-label">Session Name</label>
-                                                <input type="text" class="form-control" id="session-name" name="name" required>
+                                                <input type="text" class="form-control" id="session-name" name="name" required 
+                                                       placeholder="e.g., Morning Session - Team A">
                                             </div>
 
                                             <div class="mb-3">
                                                 <label for="session-description" class="form-label">Description</label>
-                                                <textarea class="form-control" id="session-description" name="description" rows="3"></textarea>
+                                                <textarea class="form-control" id="session-description" name="description" rows="3" 
+                                                          placeholder="Optional description for this session"></textarea>
                                             </div>
 
                                             <div class="d-grid">
-                                                <button type="submit" class="btn btn-success">
+                                                <button type="submit" class="btn btn-success" id="create-session-btn">
                                                     <i class="bi bi-calendar-plus me-2"></i>
                                                     Generate Session Link
                                                 </button>
@@ -275,15 +294,83 @@
                                         <!-- Generated Session Link -->
                                         <div id="session-link-container" class="mt-4 d-none">
                                             <div class="alert alert-success">
-                                                <h6 class="alert-heading">Session Created Successfully!</h6>
+                                                <h6 class="alert-heading">
+                                                    <i class="bi bi-check-circle me-2"></i>
+                                                    Session Created Successfully!
+                                                </h6>
                                                 <p class="mb-2">Share this link with your learners:</p>
                                                 <div class="input-group">
                                                     <input type="text" class="form-control" id="session-link" readonly>
-                                                    <button class="btn btn-outline-secondary" type="button" id="copy-link-btn">
+                                                    <button class="btn btn-outline-secondary" type="button" id="copy-link-btn" 
+                                                            title="Copy link to clipboard">
                                                         <i class="bi bi-clipboard"></i>
                                                     </button>
                                                 </div>
+                                                <small class="text-muted mt-2 d-block">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Learners will use this link to access the training session
+                                                </small>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sessions List -->
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-list-ul me-2"></i>
+                                            My Sessions
+                                        </h5>
+                                        <span class="badge bg-primary" id="sessions-total-count">0</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="sessions-list">
+                                            <div class="text-center text-muted py-4">
+                                                <i class="bi bi-calendar-x display-6"></i>
+                                                <p class="mt-2 mb-0">No sessions created yet</p>
+                                                <small>Create your first session using the form</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Sessions Table -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-table me-2"></i>
+                                            Sessions Details
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="sessions-table">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Session Name</th>
+                                                        <th>Training</th>
+                                                        <th>Created</th>
+                                                        <th>Learners</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="sessions-table-body">
+                                                    <tr>
+                                                        <td colspan="6" class="text-center text-muted py-4">
+                                                            <i class="bi bi-hourglass-split"></i>
+                                                            Loading sessions...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
@@ -358,5 +445,6 @@
     <script src="../src/utils/auth.js"></script>
     <script src="../src/utils/validation.js"></script>
     <script src="../src/components/trainer-dashboard.js"></script>
+    <script src="../src/components/session-manager-simple.js"></script>
 </body>
 </html>

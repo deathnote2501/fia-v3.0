@@ -15,7 +15,7 @@ class TrainerDashboard {
         this.loadUserData();
         this.setupLogout();
         this.setupTrainingForm();
-        this.setupSessionForm();
+        // this.setupSessionForm(); // Disabled - handled by session-manager.js
         this.setupProfileModal();
         this.setupFileUpload();
         this.loadDashboardData();
