@@ -131,7 +131,7 @@ class EngagementAnalysisService:
             
         except Exception as e:
             logger.error(f"Failed to analyze session engagement: {str(e)}")
-            raise Exception(f"Engagement analysis error: {str(e)}")
+            raise Exception("Engagement analysis service temporarily unavailable")
     
     async def analyze_slide_engagement(
         self, 
@@ -174,7 +174,7 @@ class EngagementAnalysisService:
             
         except Exception as e:
             logger.error(f"Failed to analyze slide engagement: {str(e)}")
-            raise Exception(f"Slide engagement analysis error: {str(e)}")
+            raise Exception("Slide engagement analysis service temporarily unavailable")
     
     async def detect_learning_difficulties(
         self, 
@@ -218,7 +218,7 @@ class EngagementAnalysisService:
             
         except Exception as e:
             logger.error(f"Failed to detect learning difficulties: {str(e)}")
-            raise Exception(f"Difficulty detection error: {str(e)}")
+            raise Exception("Difficulty detection service temporarily unavailable")
     
     async def generate_progress_insights(
         self, 
@@ -262,7 +262,7 @@ class EngagementAnalysisService:
             
         except Exception as e:
             logger.error(f"Failed to generate progress insights: {str(e)}")
-            raise Exception(f"Progress insight generation error: {str(e)}")
+            raise Exception("Progress insight generation service temporarily unavailable")
     
     def calculate_comprehension_indicators(
         self, 
@@ -343,4 +343,4 @@ class EngagementAnalysisService:
             
         except Exception as e:
             logger.error(f"Failed to calculate comprehension indicators: {str(e)}")
-            raise Exception(f"Comprehension indicator calculation error: {str(e)}")
+            raise Exception("Comprehension indicator calculation service temporarily unavailable")

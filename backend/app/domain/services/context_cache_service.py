@@ -33,25 +33,24 @@ class ContextCacheService:
         self.model_name = settings.gemini_model_name
         self.default_ttl_hours = settings.gemini_context_cache_ttl_hours
         
-    def _initialize_gemini_client(self) -> genai.Client:
-        """Initialize Gemini client with Vertex AI configuration"""
+    def _initialize_gemini_client(self):
+        """Initialize Gemini client with API key configuration"""
         try:
-            if not settings.google_cloud_project:
-                raise ContextCacheError("Google Cloud Project not configured")
+            if not settings.gemini_api_key:
+                raise ContextCacheError("Gemini API key not configured")
             
-            client = genai.Client(
-                vertexai=True,
-                project=settings.google_cloud_project,
-                location=settings.google_cloud_region,
-                http_options=HttpOptions(api_version="v1")
-            )
+            # Configure Gemini with API key
+            genai.configure(api_key=settings.gemini_api_key)
             
-            logger.info(f"Context Cache client initialized for project: {settings.google_cloud_project}")
-            return client
+            # Create model instance
+            model = genai.GenerativeModel(settings.gemini_model_name)
+            
+            logger.info(f"✅ Gemini model initialized: {settings.gemini_model_name}")
+            return model
             
         except Exception as e:
-            logger.error(f"Failed to initialize Context Cache client: {e}")
-            raise ContextCacheError(f"Failed to initialize Context Cache client: {e}")
+            logger.error(f"❌ Failed to initialize Gemini model: {e}")
+            raise ContextCacheError(f"Failed to initialize Gemini model: {e}")
     
     def _generate_cache_key(self, file_path: str, mime_type: str) -> str:
         """

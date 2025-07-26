@@ -119,11 +119,11 @@ async def list_training_sessions(
     """
     
     try:
-        # Récupérer toutes les formations du formateur
+        # Get all trainings for the trainer
         training_repo = TrainingRepository(db)
         trainings = await training_repo.get_by_trainer_id(current_trainer.id)
         
-        # Récupérer toutes les sessions pour ces formations
+        # Get all sessions for these trainings
         session_repo = TrainingSessionRepository(db)
         all_sessions = []
         
@@ -163,7 +163,7 @@ async def delete_training_session(
                 detail="Training session not found"
             )
         
-        # Vérifier que la formation appartient au formateur
+        # Verify that the training belongs to the trainer
         training_repo = TrainingRepository(db)
         training = await training_repo.get_by_id(training_session.training_id)
         
@@ -227,7 +227,7 @@ async def validate_session_token(
                 detail="Session is no longer active"
             )
         
-        # Récupérer les informations de la formation
+        # Get training information
         training_repo = TrainingRepository(db)
         training = await training_repo.get_by_id(training_session.training_id)
         
@@ -286,7 +286,7 @@ async def save_learner_profile(
                 detail="Session is no longer active"
             )
         
-        # Vérifier si l'apprenant existe déjà pour cette session
+        # Check if learner already exists for this session
         learner_repo = LearnerSessionRepository(db)
         existing_learner = await learner_repo.get_by_training_session_and_email(
             training_session.id, 
@@ -299,7 +299,7 @@ async def save_learner_profile(
                 detail="A profile already exists for this email in this training session"
             )
         
-        # Créer la session apprenant
+        # Create learner session
         learner_session = LearnerSession(
             training_session_id=training_session.id,
             email=profile_data.email,
@@ -314,18 +314,18 @@ async def save_learner_profile(
         # Sauvegarder en base
         created_learner_session = await learner_repo.create(learner_session)
         
-        # Générer automatiquement le plan personnalisé
+        # Automatically generate personalized plan
         try:
             logger.info(f"Starting automatic plan generation for learner {created_learner_session.id}")
             
-            # Récupérer la formation pour avoir le contenu
+            # Get training to access content
             training_repo = TrainingRepository(db)
             training = await training_repo.get_by_id(training_session.training_id)
             
             if training:
                 logger.info(f"Training found: {training.name} (ID: {training.id})")
                 
-                # Initialiser le service de génération de plan
+                # Initialize plan generation service
                 plan_service = PlanGenerationService()
                 
                 learner_profile = {
@@ -340,7 +340,7 @@ async def save_learner_profile(
                 
                 logger.debug(f"Learner profile: {learner_profile}")
                 
-                # Générer le plan
+                # Generate the plan
                 logger.info("Calling plan generation service...")
                 generated_plan = await plan_service.generate_personalized_plan(
                     learner_session_id=created_learner_session.id,
@@ -351,7 +351,7 @@ async def save_learner_profile(
                 logger.info(f"Plan generated successfully: {generated_plan.success}")
                 logger.debug(f"Generation metadata: {generated_plan.generation_metadata}")
                 
-                # Mettre à jour la session avec le plan généré
+                # Update session with generated plan
                 logger.info("Saving plan to database...")
                 created_learner_session.personalized_plan = generated_plan.plan_data
                 updated_session = await learner_repo.update(created_learner_session)
@@ -363,7 +363,7 @@ async def save_learner_profile(
                 logger.warning(f"Training not found for session {training_session.training_id}")
                 
         except Exception as plan_error:
-            # Log l'erreur mais ne pas faire échouer la création du profil
+            # Log error but don't fail profile creation
             logger.error(f"Plan generation failed: {str(plan_error)}", exc_info=True)
         
         return created_learner_session

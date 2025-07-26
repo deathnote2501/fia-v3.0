@@ -76,7 +76,7 @@ class ConversationService:
             
         except Exception as e:
             logger.error(f"Failed to process chat request: {str(e)}")
-            raise Exception(f"Conversation service error: {str(e)}")
+            raise Exception("Conversation service temporarily unavailable")
     
     async def generate_contextual_hint(
         self, 
@@ -105,7 +105,7 @@ class ConversationService:
             
         except Exception as e:
             logger.error(f"Failed to generate hint: {str(e)}")
-            raise Exception(f"Hint generation error: {str(e)}")
+            raise Exception("Hint generation service temporarily unavailable")
     
     async def explain_concept(
         self, 
@@ -134,7 +134,7 @@ class ConversationService:
             
         except Exception as e:
             logger.error(f"Failed to explain concept: {str(e)}")
-            raise Exception(f"Concept explanation error: {str(e)}")
+            raise Exception("Concept explanation service temporarily unavailable")
     
     async def get_conversation_metrics(
         self, 
@@ -186,4 +186,4 @@ class ConversationService:
             
         except Exception as e:
             logger.error(f"Failed to calculate conversation metrics: {str(e)}")
-            raise Exception(f"Metrics calculation error: {str(e)}")
+            raise Exception("Metrics calculation service temporarily unavailable")

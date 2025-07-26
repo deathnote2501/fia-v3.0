@@ -210,7 +210,7 @@ class PlanGenerationService:
             logger.error(f"❌ Vertex AI plan generation failed: {str(e)}")
             import traceback
             traceback.print_exc()
-            raise Exception(f"Failed to generate plan with Vertex AI: {str(e)}")
+            raise Exception("Plan generation service temporarily unavailable")
     
     def _build_structured_generation_prompt(self, learner_profile: Dict[str, Any]) -> str:
         """Build a structured prompt for Vertex AI with JSON schema"""

@@ -3,6 +3,7 @@ FIA v3.0 - AI-powered e-learning platform
 Main FastAPI application entry point
 """
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,18 @@ from app.infrastructure.auth import fastapi_users, auth_backend
 from app.domain.schemas.user import UserRead, UserCreate, UserUpdate
 from app.adapters.inbound.training_controller import router as training_router
 from app.adapters.inbound.session_controller import router as session_router
+from app.adapters.inbound.rate_limit_controller import router as rate_limit_router
+from app.adapters.inbound.security_test_controller import router as security_test_router
+
+# Import working controllers only (skip broken ones for now)
+logger = logging.getLogger(__name__)
+
+try:
+    from app.adapters.inbound.plan_generation_controller import router as plan_generation_router
+    PLAN_GENERATION_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Plan generation controller not available: {e}")
+    PLAN_GENERATION_AVAILABLE = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -70,6 +83,16 @@ app.include_router(training_router)
 
 # Include session router
 app.include_router(session_router)
+
+# Include rate limit router
+app.include_router(rate_limit_router)
+
+# Include security test router  
+app.include_router(security_test_router)
+
+# Include plan generation router if available
+if PLAN_GENERATION_AVAILABLE:
+    app.include_router(plan_generation_router)
 
 
 @app.get("/")

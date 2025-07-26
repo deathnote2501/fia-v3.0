@@ -41,15 +41,26 @@ async def get_database_session() -> AsyncSession:
             await session.close()
 
 
+async def get_async_session() -> AsyncSession:
+    """
+    Alternative dependency name for async session
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+
 async def init_database():
     """
     Initialize database - create all tables
     """
     async with engine.begin() as conn:
-        # Import all models to register them with Base.metadata
-        from app.domain.entities import (
-            Trainer, Training, TrainingSession, LearnerSession, 
-            Slide, ChatMessage, ApiLog
+        # Import all infrastructure models to register them with Base.metadata
+        from app.infrastructure.models import (
+            TrainerModel, TrainingModel, TrainingSessionModel, 
+            LearnerSessionModel, SlideModel, ChatMessageModel
         )
         
         # Create all tables

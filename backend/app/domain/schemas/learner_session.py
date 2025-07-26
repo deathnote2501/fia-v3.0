@@ -48,4 +48,4 @@ class LearnerSessionWithPlan(LearnerSessionResponse):
 class LearnerProgressUpdate(BaseModel):
     """Schema for updating learner progress"""
     current_slide_number: Optional[int] = Field(None, ge=1)
-    time_spent_increment: Optional[int] = Field(None, ge=0)  # temps à ajouter en secondes
+    time_spent_increment: Optional[int] = Field(None, ge=0)  # time to add in seconds

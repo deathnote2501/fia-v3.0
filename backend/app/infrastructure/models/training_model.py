@@ -30,4 +30,4 @@ class TrainingModel(Base):
 
     # Relationships
     trainer = relationship("TrainerModel", back_populates="trainings")
-    sessions = relationship("TrainingSessionModel", back_populates="training")
+    training_sessions = relationship("TrainingSessionModel", back_populates="training")

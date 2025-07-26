@@ -75,7 +75,7 @@ class PlanGenerationService:
             
         except Exception as e:
             logger.error(f"Error generating personalized plan: {str(e)}")
-            raise PlanGenerationError(f"Failed to generate plan: {str(e)}")
+            raise PlanGenerationError("Plan generation service temporarily unavailable")
     
     def _build_learner_profile(self, learner_session: LearnerSession) -> Dict[str, Any]:
         """Build learner profile for AI prompt - Pure domain logic"""
@@ -222,7 +222,7 @@ class PlanGenerationService:
             
         except Exception as e:
             logger.error(f"Error generating slide content: {str(e)}")
-            raise PlanGenerationError(f"Failed to generate slide content: {str(e)}")
+            raise PlanGenerationError("Slide content generation service temporarily unavailable")
     
     def get_stage_names(self) -> list[str]:
         """Get the standard 5 stage names - Business rule"""
