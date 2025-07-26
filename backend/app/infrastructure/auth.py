@@ -7,7 +7,7 @@ import uuid
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import BearerTransport, JWTStrategy, AuthenticationBackend
 from app.infrastructure.settings import settings
-from app.domain.entities.trainer import Trainer
+from app.infrastructure.models.trainer_model import TrainerModel
 from app.infrastructure.user_manager import get_user_manager
 
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
@@ -23,7 +23,7 @@ auth_backend = AuthenticationBackend(
     get_strategy=get_jwt_strategy,
 )
 
-fastapi_users = FastAPIUsers[Trainer, uuid.UUID](
+fastapi_users = FastAPIUsers[TrainerModel, uuid.UUID](
     get_user_manager,
     [auth_backend],
 )

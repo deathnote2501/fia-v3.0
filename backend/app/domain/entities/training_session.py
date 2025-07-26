@@ -20,7 +20,7 @@ class TrainingSession:
         training_session_id: Optional[UUID] = None,
         is_active: bool = True,
         created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None
+        expires_at: Optional[datetime] = None
     ):
         self.id = training_session_id or uuid4()
         self.training_id = training_id
@@ -29,7 +29,7 @@ class TrainingSession:
         self.session_token = session_token
         self.is_active = is_active
         self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
+        self.expires_at = expires_at
         
         # Validate business rules
         self._validate()

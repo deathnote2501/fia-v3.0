@@ -60,7 +60,9 @@ async def init_database():
         # Import all infrastructure models to register them with Base.metadata
         from app.infrastructure.models import (
             TrainerModel, TrainingModel, TrainingSessionModel, 
-            LearnerSessionModel, SlideModel, ChatMessageModel
+            LearnerSessionModel, SlideModel, ChatMessageModel,
+            LearnerTrainingPlanModel, TrainingModuleModel,
+            TrainingSubmoduleModel, TrainingSlideModel
         )
         
         # Create all tables

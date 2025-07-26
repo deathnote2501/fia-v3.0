@@ -24,7 +24,7 @@ class TrainingSessionModel(Base):
     session_token = Column(String, unique=True, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    expires_at = Column(DateTime(timezone=True))
 
     # Relationships
     training = relationship("TrainingModel", back_populates="training_sessions")

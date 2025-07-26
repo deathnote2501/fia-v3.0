@@ -53,8 +53,11 @@ async def create_training(
         file_storage = FileStorageService()
         training_repo = TrainingRepository(db)
         
-        # Create training entity first (for ID generation)
-        training = Training(
+        # Store file first to get path and size
+        file_content = io.BytesIO(await file.read())
+        
+        # Create temporary training entity to generate ID for file storage
+        temp_training = Training(
             trainer_id=current_trainer.id,
             name=name.strip(),
             description=description.strip() if description else None,
@@ -63,34 +66,26 @@ async def create_training(
             mime_type=mime_type
         )
         
-        # Start database transaction
-        db.add(training)
-        await db.flush()  # Get the training ID without committing
-        
         try:
-            # Store file using the generated training ID
-            file_content = io.BytesIO(await file.read())
+            # Store file using the training ID
             file_path, file_size = await file_storage.store_training_file(
                 trainer_id=current_trainer.id,
-                training_id=training.id,
+                training_id=temp_training.id,
                 file_content=file_content,
                 original_filename=file.filename,
                 mime_type=mime_type
             )
             
             # Update training with file information
-            training.file_path = file_path
-            training.file_size = file_size
+            temp_training.file_path = file_path
+            temp_training.file_size = file_size
             
-            # Commit transaction
-            await db.commit()
-            await db.refresh(training)
+            # Create training through repository (proper way)
+            created_training = await training_repo.create(temp_training)
             
-            return training
+            return created_training
             
         except Exception as storage_error:
-            # Rollback database transaction
-            await db.rollback()
             
             # Try to clean up any partially stored file
             try:

@@ -314,7 +314,9 @@ async def save_learner_profile(
         # Sauvegarder en base
         created_learner_session = await learner_repo.create(learner_session)
         
-        # Automatically generate personalized plan
+        # Temporarily disable automatic plan generation due to mapping issues
+        # TODO: Re-enable when plan generation service is fixed
+        """
         try:
             logger.info(f"Starting automatic plan generation for learner {created_learner_session.id}")
             
@@ -365,6 +367,7 @@ async def save_learner_profile(
         except Exception as plan_error:
             # Log error but don't fail profile creation
             logger.error(f"Plan generation failed: {str(plan_error)}", exc_info=True)
+        """
         
         return created_learner_session
         

@@ -29,7 +29,7 @@ class TrainingSessionRepository(TrainingSessionRepositoryPort):
             training_session_id=model.id,
             is_active=model.is_active,
             created_at=model.created_at,
-            updated_at=model.updated_at
+            expires_at=model.expires_at
         )
     
     def _entity_to_model(self, entity: TrainingSession) -> TrainingSessionModel:
@@ -42,7 +42,7 @@ class TrainingSessionRepository(TrainingSessionRepositoryPort):
             session_token=entity.session_token,
             is_active=entity.is_active,
             created_at=entity.created_at,
-            updated_at=entity.updated_at
+            expires_at=entity.expires_at
         )
     
     async def create(self, training_session: TrainingSession) -> TrainingSession:

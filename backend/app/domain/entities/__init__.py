@@ -9,9 +9,10 @@ from .slide import Slide
 from .chat_message import ChatMessage
 from .api_log import ApiLog
 from .learner_training_plan import LearnerTrainingPlan
-from .training_module import TrainingModule
-from .training_submodule import TrainingSubmodule
-from .training_slide import TrainingSlide
+# Temporarily commented out entities that still inherit from Base
+# from .training_module import TrainingModule
+# from .training_submodule import TrainingSubmodule
+# from .training_slide import TrainingSlide
 
 __all__ = [
     "Trainer",
@@ -22,7 +23,7 @@ __all__ = [
     "ChatMessage",
     "ApiLog",
     "LearnerTrainingPlan",
-    "TrainingModule",
-    "TrainingSubmodule",
-    "TrainingSlide"
+    # "TrainingModule",
+    # "TrainingSubmodule",
+    # "TrainingSlide"
 ]
