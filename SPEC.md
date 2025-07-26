@@ -280,7 +280,7 @@ frontend/
 
 ### Étapes Backend
 - Page trainer.html avec onglets Bootstrap-
-- Endpoint création formation
+- Endpoint création formation-
 - Endpoint création session training
 - Endpoint accès session par token
 - Endpoint sauvegarde profil apprenant
