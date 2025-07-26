@@ -37,3 +37,4 @@ class LearnerSession(Base):
     training_session = relationship("TrainingSession", back_populates="learner_sessions")
     slides = relationship("Slide", back_populates="learner_session")
     chat_messages = relationship("ChatMessage", back_populates="learner_session")
+    training_plan = relationship("LearnerTrainingPlan", back_populates="learner_session", uselist=False)

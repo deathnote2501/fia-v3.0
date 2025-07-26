@@ -25,10 +25,11 @@ class Settings(BaseSettings):
     database_url: str = Field(..., description="PostgreSQL database URL")
     
     # Google Gemini AI
+    gemini_api_key: str = Field(default="", description="Google Gemini API key")
     google_application_credentials: str = Field(default="", description="Path to GCP credentials JSON")
     google_cloud_project: str = Field(default="", description="GCP project ID") 
     google_cloud_region: str = Field(default="europe-west1", description="GCP region")
-    gemini_model_name: str = Field(default="gemini-2.0-flash-001", description="Gemini model name")
+    gemini_model_name: str = Field(default="gemini-1.5-flash", description="Gemini model name")
     
     # Application
     environment: str = Field(default="development", description="Environment (development/production)")

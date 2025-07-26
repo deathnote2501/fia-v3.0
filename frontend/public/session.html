@@ -383,6 +383,11 @@
                         </div>
                     </div>
                 `;
+                
+                // Rediriger vers la page de formation après 5 secondes
+                setTimeout(() => {
+                    window.location.href = `/frontend/public/training.html?token=${this.token}`;
+                }, 5000);
             }
         }
 

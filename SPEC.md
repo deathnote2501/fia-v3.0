@@ -12,7 +12,7 @@
 - Quand une session est créée par le formateur, un lien de session est généré et est envoyé à l'apprenant par email
 - L'apprenant clique sur le lien est arrive sur une page ou on lui pose des questions pour créer son profil que l'on enregister en BD (email, niveau, style d'apprentissage, poste occupé, secteur d'activité, pays de résidence et langue (par defaut la langue du navigateur))
 
-- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 Document Understanding pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
+- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 via Vertex AI (important!) Document Understanding pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
     - 1. Mise en contexte : enjeux, objectifs, etc.
     - 2. Acquisition des Fondamentaux : Concepts de base
     - 3. Construction Progressive : Approfondissement par étapes
@@ -33,23 +33,8 @@ Etape
         ├── Slide 1
         └── Slide 2
 
-- Une logique de validation du slide, sous-module, module et etape sera mis en place :
-    - Slide : avez-vous compris : oui / non > si c'est oui on passe au slide suivant et si c'est non on ajoute du contenu au slide en cours (concept, exemple, etc.)
-    - Sous-module : petit quiz de fin de sous-module : en fonction du resultat, l'ia propose d'ajouter des nouveaux slides la où l'apprenant s'est trompé et l'apprenant peut choisir d'ajouter ces nouveaux slides ou de passer au sous-module suivant
-    - Module : quiz complet sur tout le module : en fonction du resultat l'ia propose d'ajouter un nouveau sous-module complémentaire et transversale la où l'apprenant s'est trompé l'apprenant peut choisir d'ajouter ce sous-module en plus pour continuer la formation dans le module actuel ou de passer au module suivant
-    - Etape : quiz global : en fonction du resultat, l'ia propose d'ajouter un nouveau module complémentaire et transversale la où l'apprenant s'est trompé l'apprenant peut choisir d'ajouter ce module en plus pour ameliorer les points sur lesquels il s'est trompé dans le quiz global ou de passer à l'étape suivante
-
-- Une fois le plan de formation créé, les 2 premieres slides sont creees en se basant sur le plan
-- L'apprenant est alors redirigé sur la premiere slide
-- L'apprenant visualise alors le premier slide (le 2e etant deja genere pour eviter les latences quand on passe d'un slide à l'autre)
-- Quand l'utilisateur avance sur le slide suivant, on genere le slide n + 1
-- L'interface desktop de l'apprenant est la suivante : au centre le contenu du slide (75% de la largeur) et à droite un chat pour poser des questions au formateur IA gemini (25% de la largeur)
-- Il peut avancer et reculer dans les slides (tous les slides générés etant enregistré dans la base de données)
-- Il peut poser des quesions au formateur ia via le chat qui repond à la question en se basant sur le contenu du slide et le profil de l'apprenant
-- Pour chaque session on doit pouvoir enregistrer le nombre de slide vue par l'apprenant, le temps passé et les messages envoyés au formateur ia gemini
-
 ## La vue côté administrateur
-- Les logs affichent tous les appels et les réponses à l'api gemini de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
+- Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
 
 ---------------------------------------------------------------------------------------------------------------
 
@@ -68,7 +53,7 @@ Etape
 - **Architecture** : Architecture hexagonale avec séparation des couches
 - **Serveur** : FastAPI server
 - **Authentification & Sessions** : FastAPI-Users pour la gestion des sessions formateurs et apprenants + JWT
-- **IA** : Google Gemini Flash 2.0 avec Context Caching et Structured Output
+- **IA** : Google Gemini Flash 2.0 avec Context Caching et Structured Output via Vertex AI (important!)
 - **Frontend** : HTML5/CSS3/JavaScript ES6 vanilla
 - **UI** : Bootstrap + Bootstrap Icons uniquement
 - **Infrastructure** : Railway (déploiement) + GitHub (versioning)

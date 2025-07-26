@@ -34,7 +34,7 @@ class LearnerSessionResponse(BaseModel):
     current_slide_number: int
     total_time_spent: int  # en secondes
     started_at: datetime
-    last_activity_at: datetime
+    last_activity_at: Optional[datetime]
 
     class Config:
         from_attributes = True

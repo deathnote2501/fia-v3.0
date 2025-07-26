@@ -27,6 +27,8 @@ from app.domain.schemas.learner_session import (
 from app.adapters.repositories.training_session_repository import TrainingSessionRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_repository import TrainingRepository
+from app.domain.services.plan_generation_service_vertex import PlanGenerationService
+# from app.domain.services.plan_parser_service import PlanParserService
 
 
 router = APIRouter(tags=["sessions"])
@@ -304,6 +306,61 @@ async def save_learner_profile(
         
         # Sauvegarder en base
         created_learner_session = await learner_repo.create(learner_session)
+        
+        # Générer automatiquement le plan personnalisé
+        try:
+            print(f"🔄 Starting automatic plan generation for learner {created_learner_session.id}")
+            
+            # Récupérer la formation pour avoir le contenu
+            training_repo = TrainingRepository(db)
+            training = await training_repo.get_by_id(training_session.training_id)
+            
+            if training:
+                print(f"📚 Training found: {training.name} (ID: {training.id})")
+                
+                # Initialiser le service de génération de plan
+                plan_service = PlanGenerationService()
+                
+                learner_profile = {
+                    "experience_level": created_learner_session.experience_level,
+                    "learning_style": created_learner_session.learning_style,
+                    "job_position": created_learner_session.job_position,
+                    "activity_sector": created_learner_session.activity_sector,
+                    "country": created_learner_session.country,
+                    "language": created_learner_session.language
+                }
+                
+                print(f"👤 Learner profile: {learner_profile}")
+                
+                # Générer le plan
+                print("🤖 Calling plan generation service...")
+                generated_plan = await plan_service.generate_personalized_plan(
+                    learner_session_id=created_learner_session.id,
+                    training_id=training.id,
+                    learner_profile=learner_profile
+                )
+                
+                print(f"✅ Plan generated successfully: {generated_plan.success}")
+                print(f"⏱️ Generation time: {generated_plan.generation_time_seconds}s")
+                print(f"🎯 Tokens used: {generated_plan.tokens_used}")
+                
+                # Mettre à jour la session avec le plan généré
+                print("💾 Saving plan to database...")
+                created_learner_session.personalized_plan = generated_plan.plan_content
+                updated_session = await learner_repo.update(created_learner_session)
+                
+                print(f"✅ Plan saved to database. Session updated: {updated_session.id}")
+                print(f"📋 Plan content preview: {str(generated_plan.plan_content)[:200]}...")
+                
+            else:
+                print(f"❌ Training not found for session {training_session.training_id}")
+                
+        except Exception as plan_error:
+            # Log l'erreur mais ne pas faire échouer la création du profil
+            print(f"❌ Plan generation failed: {str(plan_error)}")
+            import traceback
+            print(f"📍 Full traceback:")
+            traceback.print_exc()
         
         return created_learner_session
         

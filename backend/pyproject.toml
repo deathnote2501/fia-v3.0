@@ -25,6 +25,8 @@ dependencies = [
     "structlog>=23.2.0",
     "httpx>=0.25.0",
     "aiofiles>=23.0.0",
+    "google-genai (>=1.27.0,<2.0.0)",
+    "google-cloud-aiplatform (>=1.105.0,<2.0.0)",
 ]
 
 [project.optional-dependencies]

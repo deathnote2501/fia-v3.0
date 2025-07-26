@@ -8,6 +8,10 @@ from .learner_session import LearnerSession
 from .slide import Slide
 from .chat_message import ChatMessage
 from .api_log import ApiLog
+from .learner_training_plan import LearnerTrainingPlan
+from .training_module import TrainingModule
+from .training_submodule import TrainingSubmodule
+from .training_slide import TrainingSlide
 
 __all__ = [
     "Trainer",
@@ -16,5 +20,9 @@ __all__ = [
     "LearnerSession",
     "Slide",
     "ChatMessage",
-    "ApiLog"
+    "ApiLog",
+    "LearnerTrainingPlan",
+    "TrainingModule",
+    "TrainingSubmodule",
+    "TrainingSlide"
 ]
