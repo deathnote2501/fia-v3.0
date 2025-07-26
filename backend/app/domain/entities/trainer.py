@@ -1,28 +1,23 @@
 """
 FIA v3.0 - Trainer Entity
-SQLAlchemy model for trainers table
+SQLAlchemy model for trainers table with FastAPI-Users integration
 """
 
-from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-import uuid
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 
 from app.infrastructure.database import Base
 
 
-class Trainer(Base):
+class Trainer(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "trainers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column(String, nullable=False)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    is_active = Column(Boolean, default=True)
 
     # Relationships
     trainings = relationship("Training", back_populates="trainer")

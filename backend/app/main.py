@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
+from app.infrastructure.auth import fastapi_users, auth_backend
+from app.domain.schemas.user import UserRead, UserCreate, UserUpdate
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +43,25 @@ app.add_middleware(
 
 # Mount static files (frontend)
 app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
+
+# Include FastAPI-Users routers
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
 
 
 @app.get("/")

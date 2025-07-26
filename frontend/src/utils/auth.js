@@ -102,17 +102,31 @@ class AuthManager {
      */
     async login(email, password) {
         try {
-            const response = await apiClient.post('/api/auth/login', {
-                email,
-                password
+            const formData = new FormData();
+            formData.append('username', email);
+            formData.append('password', password);
+
+            const response = await fetch(`${apiClient.baseURL}/auth/jwt/login`, {
+                method: 'POST',
+                body: formData
             });
 
-            if (response.access_token) {
-                this.setToken(response.access_token);
-                if (response.user) {
-                    this.setUser(response.user);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.access_token) {
+                this.setToken(result.access_token);
+                
+                // Get user profile after login
+                const userProfile = await this.getUserProfile();
+                if (userProfile) {
+                    this.setUser(userProfile);
                 }
-                return { success: true, user: response.user };
+                
+                return { success: true, user: userProfile };
             }
 
             return { success: false, message: 'Invalid credentials' };
@@ -132,22 +146,26 @@ class AuthManager {
      */
     async register(userData) {
         try {
-            const response = await apiClient.post('/api/auth/register', userData);
+            const response = await apiClient.post('/auth/register', userData);
 
-            if (response.access_token) {
-                this.setToken(response.access_token);
-                if (response.user) {
-                    this.setUser(response.user);
-                }
-                return { success: true, user: response.user };
+            if (response.id) {
+                // Registration successful, now login
+                const loginResult = await this.login(userData.email, userData.password);
+                return loginResult;
             }
 
             return { success: false, message: 'Registration failed' };
         } catch (error) {
             console.error('Registration error:', error);
+            let message = 'Registration failed. Please try again.';
+            
+            if (error.message.includes('400')) {
+                message = 'Email already exists or invalid data.';
+            }
+            
             return { 
                 success: false, 
-                message: error.message || 'Registration failed. Please try again.' 
+                message: message
             };
         }
     }
@@ -185,19 +203,38 @@ class AuthManager {
     }
 
     /**
+     * Get user profile
+     * @returns {Promise}
+     */
+    async getUserProfile() {
+        try {
+            const response = await apiClient.get('/users/me');
+            return response;
+        } catch (error) {
+            console.error('Get profile error:', error);
+            return null;
+        }
+    }
+
+    /**
      * Update user profile
      * @param {object} profileData 
      * @returns {Promise}
      */
     async updateProfile(profileData) {
         try {
-            const response = await apiClient.post('/api/auth/profile', profileData, {
-                headers: this.getAuthHeader()
+            const response = await apiClient.request('/users/me', {
+                method: 'PATCH',
+                body: JSON.stringify(profileData),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...this.getAuthHeader()
+                }
             });
 
-            if (response.user) {
-                this.setUser(response.user);
-                return { success: true, user: response.user };
+            if (response.id) {
+                this.setUser(response);
+                return { success: true, user: response };
             }
 
             return { success: false, message: 'Profile update failed' };

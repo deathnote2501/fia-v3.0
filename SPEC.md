@@ -226,25 +226,20 @@ frontend/
 
 ### Tests Phase 2 (Manuel Interface)
 - Pages register/login → formulaires s'affichent-
-- Migration BDD → vérifier tables créées
-- Test connexion → page status BDD
+- Migration BDD → vérifier tables créées-
+- Test connexion → page status BDD-
 
 ---
 
 ## 🔌 **Phase 3: Auth & Endpoints Core (Jour 2-3)**
 
 ### Étapes Backend
-- Configurer FastAPI-Users
-- Endpoints authentification (/register, /login)
-- Middleware authentification
-- Validation JS → messages d'erreur frontend
-- Endpoints upload training
+- Lecture de la documentation de FastAPI-Users et ise en place d'un plan de developpement (https://fastapi-users.github.io/fastapi-users/latest/)-
+- Configurer FastAPI-Users-
+- Endpoints authentification (/register, /login)-
 
 ### Étapes Frontend
-- Intégrer appels API dans register/login
-- Page trainer.html avec onglets Bootstrap
-- Formulaire upload PDF/PPT
-- Messages success/error
+- Intégrer appels API dans register/login-
 
 ### Tests Phase 3 (Manuel Interface)
 - **register.html** → créer compte formateur
@@ -258,6 +253,8 @@ frontend/
 ## 🎯 **Phase 4: Sessions & Interface Apprenant (Jour 3-4)**
 
 ### Étapes Backend
+- Page trainer.html avec onglets Bootstrap
+- Endpoint création formation
 - Endpoint création session training
 - Endpoint accès session par token
 - Endpoint sauvegarde profil apprenant
