@@ -322,6 +322,7 @@ async def save_learner_profile(
                 plan_service = PlanGenerationService()
                 
                 learner_profile = {
+                    "email": created_learner_session.email,
                     "experience_level": created_learner_session.experience_level,
                     "learning_style": created_learner_session.learning_style,
                     "job_position": created_learner_session.job_position,
@@ -341,16 +342,15 @@ async def save_learner_profile(
                 )
                 
                 print(f"✅ Plan generated successfully: {generated_plan.success}")
-                print(f"⏱️ Generation time: {generated_plan.generation_time_seconds}s")
-                print(f"🎯 Tokens used: {generated_plan.tokens_used}")
+                print(f"⏱️ Generation metadata: {generated_plan.generation_metadata}")
                 
                 # Mettre à jour la session avec le plan généré
                 print("💾 Saving plan to database...")
-                created_learner_session.personalized_plan = generated_plan.plan_content
+                created_learner_session.personalized_plan = generated_plan.plan_data
                 updated_session = await learner_repo.update(created_learner_session)
                 
                 print(f"✅ Plan saved to database. Session updated: {updated_session.id}")
-                print(f"📋 Plan content preview: {str(generated_plan.plan_content)[:200]}...")
+                print(f"📋 Plan content preview: {str(generated_plan.plan_data)[:200]}...")
                 
             else:
                 print(f"❌ Training not found for session {training_session.training_id}")

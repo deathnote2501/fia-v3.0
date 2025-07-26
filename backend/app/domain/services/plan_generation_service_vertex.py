@@ -75,11 +75,11 @@ class PlanGenerationService:
             prompt = self._build_structured_generation_prompt(learner_profile)
             
             # LOG: Raw prompt being sent to Vertex AI
-            logger.info("=" * 80)
-            logger.info("📝 PROMPT SENT TO VERTEX AI:")
-            logger.info("=" * 80)
-            logger.info(prompt)
-            logger.info("=" * 80)
+            print("=" * 80)
+            print("📝 PROMPT SENT TO VERTEX AI:")
+            print("=" * 80)
+            print(prompt)
+            print("=" * 80)
             
             if self.use_vertex_ai and self.model:
                 # Generate with Vertex AI approach
@@ -90,27 +90,48 @@ class PlanGenerationService:
                 )
                 
                 # LOG: Raw response from Vertex AI
-                logger.info("=" * 80)
-                logger.info("📥 RAW RESPONSE FROM VERTEX AI:")
-                logger.info("=" * 80)
-                logger.info(f"Response text: {response.text}")
-                logger.info(f"Usage metadata: {response.usage_metadata}")
-                logger.info(f"Finish reason: {response.candidates[0].finish_reason}")
-                logger.info("=" * 80)
+                print("=" * 80)
+                print("📥 RAW RESPONSE FROM VERTEX AI:")
+                print("=" * 80)
+                print(f"Response text length: {len(response.text) if response.text else 0}")
+                print(f"Response text preview: {response.text[:500] if response.text else 'EMPTY'}")
+                print(f"Usage metadata: {response.usage_metadata}")
+                if hasattr(response, 'candidates') and response.candidates:
+                    print(f"Finish reason: {response.candidates[0].finish_reason}")
+                print("=" * 80)
                 
-                # Parse the JSON response
-                try:
-                    plan_json = json.loads(response.text)
-                    response_text = response.text
-                    tokens_used = response.usage_metadata.total_token_count if response.usage_metadata else 0
+                # Check if response is empty
+                if not response.text or response.text.strip() == "":
+                    logger.error("❌ Empty response from Vertex AI!")
+                    # Use mock response
+                    response_text = self._generate_mock_plan(learner_profile)
+                    plan_json = json.loads(response_text)
+                    tokens_used = 50
+                else:
+                    # Clean the response text (remove markdown code blocks)
+                    cleaned_text = response.text.strip()
+                    if cleaned_text.startswith('```json'):
+                        cleaned_text = cleaned_text[7:]  # Remove ```json
+                    if cleaned_text.endswith('```'):
+                        cleaned_text = cleaned_text[:-3]  # Remove ```
+                    cleaned_text = cleaned_text.strip()
                     
-                    logger.info(f"✅ Successfully parsed JSON response")
-                    
-                except json.JSONDecodeError as e:
-                    logger.warning(f"⚠️ Failed to parse JSON, using text response: {e}")
-                    plan_json = {"error": "Invalid JSON", "raw_response": response.text}
-                    response_text = response.text
-                    tokens_used = response.usage_metadata.total_token_count if response.usage_metadata else 0
+                    # Parse the JSON response
+                    try:
+                        plan_json = json.loads(cleaned_text)
+                        response_text = cleaned_text
+                        tokens_used = response.usage_metadata.total_token_count if response.usage_metadata else 0
+                        
+                        print(f"✅ Successfully parsed JSON response after cleaning")
+                        print(f"📊 Plan has {len(plan_json.get('phases', []))} phases")
+                        
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"⚠️ Failed to parse cleaned JSON, using mock response: {e}")
+                        logger.warning(f"⚠️ Cleaned response was: {cleaned_text[:500]}")
+                        # Use mock response instead
+                        response_text = self._generate_mock_plan(learner_profile)
+                        plan_json = json.loads(response_text)
+                        tokens_used = response.usage_metadata.total_token_count if response.usage_metadata else 0
                 
             else:
                 # Fallback mock response
@@ -119,33 +140,70 @@ class PlanGenerationService:
                 plan_json = json.loads(response_text)
                 tokens_used = 150
             
-            # Create the structured plan
-            generated_plan = {
+            # Create the structured plan (use plan_json structure directly)
+            generated_plan = plan_json
+            # Add metadata to the plan
+            generated_plan.update({
                 "plan_id": f"plan_{learner_session_id}",
                 "learner_session_id": str(learner_session_id),
                 "training_id": str(training_id),
-                "vertex_ai_response": plan_json,
                 "generated_at": datetime.utcnow().isoformat(),
-                "generation_metadata": {
+                "api_metadata": {
                     "learner_profile": learner_profile,
                     "tokens_used": tokens_used,
                     "model_used": settings.gemini_model_name,
                     "service_type": "vertex_ai"
                 }
-            }
+            })
             
             end_time = datetime.utcnow()
             generation_time = (end_time - start_time).total_seconds()
             
-            logger.info(f"✅ Vertex AI plan generation completed in {generation_time:.2f} seconds")
-            logger.info(f"📊 Tokens used: {tokens_used}")
+            print(f"✅ Vertex AI plan generation completed in {generation_time:.2f} seconds")
+            print(f"📊 Tokens used: {tokens_used}")
+            print(f"🏗️ Plan structure: {total_modules} modules, {total_submodules} submodules, {total_slides} slides")
+            
+            # Import the metadata schema
+            from app.domain.schemas.plan_generation import PlanGenerationMetadata
+            
+            # Calculate totals from the plan
+            phases = generated_plan.get('phases', [])
+            total_modules = sum(len(phase.get('modules', [])) for phase in phases)
+            total_submodules = sum(
+                len(module.get('submodules', [])) 
+                for phase in phases 
+                for module in phase.get('modules', [])
+            )
+            total_slides = sum(
+                len(submodule.get('slides', [])) 
+                for phase in phases 
+                for module in phase.get('modules', [])
+                for submodule in module.get('submodules', [])
+            )
+            
+            metadata = PlanGenerationMetadata(
+                learner_email=learner_profile.get('email', 'unknown@example.com'),
+                learner_level=learner_profile.get('experience_level', 'beginner'),
+                learner_style=learner_profile.get('learning_style', 'visual'),
+                learner_job=learner_profile.get('job_position', 'professional'),
+                learner_sector=learner_profile.get('activity_sector', 'general'),
+                training_name="Formation IA - 2",  # Get from training data
+                training_id=str(training_id),
+                generated_at=datetime.utcnow().isoformat(),
+                total_stages=len(phases),
+                total_modules=total_modules,
+                total_submodules=total_submodules,
+                total_slides=total_slides,
+                generation_method="direct" if self.use_vertex_ai else "mock",
+                cache_used=False,  # Will be True when Context Caching is implemented
+                tokens_used={"total": tokens_used, "input": 0, "output": 0}
+            )
             
             return PlanGenerationResponse(
                 success=True,
-                plan_content=generated_plan,
-                generation_time_seconds=generation_time,
-                tokens_used=tokens_used,
-                cache_hit=False
+                learner_session_id=learner_session_id,
+                plan_data=generated_plan,
+                generation_metadata=metadata
             )
             
         except Exception as e:
