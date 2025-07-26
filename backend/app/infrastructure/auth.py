@@ -31,3 +31,6 @@ fastapi_users = FastAPIUsers[Trainer, uuid.UUID](
 # Authentication dependencies
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
+
+# Alias for training context
+get_current_trainer = current_active_user

@@ -11,6 +11,7 @@ from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
 from app.infrastructure.auth import fastapi_users, auth_backend
 from app.domain.schemas.user import UserRead, UserCreate, UserUpdate
+from app.adapters.inbound.training_controller import router as training_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,6 +63,9 @@ app.include_router(
     prefix="/users",
     tags=["users"],
 )
+
+# Include training router
+app.include_router(training_router)
 
 
 @app.get("/")

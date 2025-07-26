@@ -3,7 +3,7 @@ FIA v3.0 - Training Entity
 SQLAlchemy model for trainings table
 """
 
-from sqlalchemy import Column, String, Text, DateTime, LargeBinary, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -19,9 +19,11 @@ class Training(Base):
     trainer_id = Column(UUID(as_uuid=True), ForeignKey("trainers.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text)
-    raw_content = Column(LargeBinary)  # PDF/PPT en format brut
-    file_name = Column(String)
-    file_type = Column(String)  # 'pdf', 'ppt', 'pptx'
+    file_path = Column(String)  # Chemin vers le fichier stocké
+    file_name = Column(String)  # Nom original du fichier
+    file_type = Column(String)  # Extension: 'pdf', 'ppt', 'pptx'
+    file_size = Column(Integer)  # Taille en bytes
+    mime_type = Column(String)  # Type MIME: 'application/pdf', etc.
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

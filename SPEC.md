@@ -4,15 +4,42 @@
 - Un formateur peut creer un compte sur /register.html (email, mot de passe, nomet prenom) puis se logguer sur /login.html
 - Il peut accéder à son dashboard via l'url trainer.html
 - Sur trainer.html 
-    - Il a un onglet pour créer des formations : nom, description et charger un supprt pdf ou powerpoint qui sera insere dans la base de données au  format brute
+    - Il a un onglet pour créer des formations : nom, description et charger un supprt pdf ou powerpoint qui sera stocké dans son format natif pdf ou powerpoint dans la base de donnee
     - Il a un onglet pour créer des sessions pour les apprenants qui génère un lien qu'il enverra par email aux apprenants
-    - Il peut mettre à jour son profil via l'onglet "Profile"
+    - Il a un onglet pour la partie "Analytics" (que nous implémenterons plus tard)
 
 ## La vue du côté de l'apprenant
 - Quand une session est créée par le formateur, un lien de session est généré et est envoyé à l'apprenant par email
 - L'apprenant clique sur le lien est arrive sur une page ou on lui pose des questions pour créer son profil que l'on enregister en BD (email, niveau, style d'apprentissage, poste occupé, secteur d'activité, pays de résidence et langue (par defaut la langue du navigateur))
-- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 pour generer un plan de formation personnalisé au profil de l'apprenant basé sur le format brute du support de formation
-- Une fois le plan de formation créé, les 2 premieres slides sont creees
+
+- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 Document Understanding pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
+    - 1. Mise en contexte : enjeux, objectifs, etc.
+    - 2. Acquisition des Fondamentaux : Concepts de base
+    - 3. Construction Progressive : Approfondissement par étapes
+    - 4. Maîtrise : Approfondissement & Pratique autonome
+    - 5. Validation : Évaluation finale
+- Chaque étape est structurée de la manière suivante : un ou plusiurs modules qui contient un ou plusieurs sous-modules qui contient un ou plusieurs slides : on ne genere que la structure du plan "Étapes → Modules → Sous-modules" pas les slides car ils sont génrés en temps reel en fonction du profil de l'apprenant.
+Etape
+├── Module 1
+│   ├── Sous-module 2.1
+│   │   ├── Slide 1
+│   │   ├── Slide 2
+│   │   └── Slide 3
+│   └── Sous-module 2.2
+│       ├── Slide 1
+│       └── Slide 2
+└── Titre 2
+    └── Sous-titre 2.1
+        ├── Slide 1
+        └── Slide 2
+
+- Une logique de validation du slide, sous-module, module et etape sera mis en place :
+    - Slide : avez-vous compris : oui / non > si c'est oui on passe au slide suivant et si c'est non on ajoute du contenu au slide en cours (concept, exemple, etc.)
+    - Sous-module : petit quiz de fin de sous-module : en fonction du resultat, l'ia propose d'ajouter des nouveaux slides la où l'apprenant s'est trompé et l'apprenant peut choisir d'ajouter ces nouveaux slides ou de passer au sous-module suivant
+    - Module : quiz complet sur tout le module : en fonction du resultat l'ia propose d'ajouter un nouveau sous-module complémentaire et transversale la où l'apprenant s'est trompé l'apprenant peut choisir d'ajouter ce sous-module en plus pour continuer la formation dans le module actuel ou de passer au module suivant
+    - Etape : quiz global : en fonction du resultat, l'ia propose d'ajouter un nouveau module complémentaire et transversale la où l'apprenant s'est trompé l'apprenant peut choisir d'ajouter ce module en plus pour ameliorer les points sur lesquels il s'est trompé dans le quiz global ou de passer à l'étape suivante
+
+- Une fois le plan de formation créé, les 2 premieres slides sont creees en se basant sur le plan
 - L'apprenant est alors redirigé sur la premiere slide
 - L'apprenant visualise alors le premier slide (le 2e etant deja genere pour eviter les latences quand on passe d'un slide à l'autre)
 - Quand l'utilisateur avance sur le slide suivant, on genere le slide n + 1
@@ -186,7 +213,6 @@ frontend/
 **Objectif** : Code maintenable, évolutif et performant
 
 
-
 # 🚀 Stratégie de Développement - Étapes avec Interface pour Tests
 
 ## 📋 **Phase 1: Setup & Infrastructure (Jour 1)**
@@ -242,18 +268,18 @@ frontend/
 - Intégrer appels API dans register/login-
 
 ### Tests Phase 3 (Manuel Interface)
-- **register.html** → créer compte formateur
-- **login.html** → connexion formateur
-- **trainer.html** → accès après login
-- **Upload PDF** → via interface, voir fichier en BDD
-- **Déconnexion** → redirection vers login
+- **register.html** → créer compte formateur-
+- **login.html** → connexion formateur-
+- **trainer.html** → accès après login-
+- **Upload PDF** → via interface, voir fichier en BDD-
+- **Déconnexion** → redirection vers login-
 
 ---
 
 ## 🎯 **Phase 4: Sessions & Interface Apprenant (Jour 3-4)**
 
 ### Étapes Backend
-- Page trainer.html avec onglets Bootstrap
+- Page trainer.html avec onglets Bootstrap-
 - Endpoint création formation
 - Endpoint création session training
 - Endpoint accès session par token

@@ -6,7 +6,7 @@ SQLAlchemy model for trainers table with FastAPI-Users integration
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 
 from app.infrastructure.database import Base
 
