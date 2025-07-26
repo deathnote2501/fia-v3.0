@@ -214,11 +214,13 @@ class TrainerDashboard {
             
             if (result.success) {
                 showAlert('Profile updated successfully!', 'success');
-                this.loadUserData(); // Refresh user data
+                
+                // Refresh user data from updated profile
+                await this.refreshUserData();
                 
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('profile-modal'));
-                modal.hide();
+                if (modal) modal.hide();
             } else {
                 showAlert(result.message || 'Profile update failed.', 'error');
             }
@@ -226,6 +228,18 @@ class TrainerDashboard {
         } catch (error) {
             console.error('Profile update error:', error);
             showAlert('Failed to update profile. Please try again.', 'error');
+        }
+    }
+
+    async refreshUserData() {
+        try {
+            const userProfile = await authManager.getUserProfile();
+            if (userProfile) {
+                authManager.setUser(userProfile);
+                this.loadUserData();
+            }
+        } catch (error) {
+            console.error('Failed to refresh user data:', error);
         }
     }
 
