@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import List, Optional
 import io
+import logging
 from pathlib import Path
 
 from app.infrastructure.database import get_database_session
@@ -20,6 +21,8 @@ from app.domain.services.file_storage_service import FileStorageService
 from app.adapters.repositories.training_repository import TrainingRepository
 from app.utils.file_validation import validate_training_file, get_file_type_from_extension, FileValidationError
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/trainings", tags=["trainings"])
 
@@ -96,9 +99,10 @@ async def create_training(
             except:
                 pass  # Ignore cleanup errors
             
+            logger.error(f"File storage error during training creation: {str(storage_error)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"File storage error: {str(storage_error)}"
+                detail="File storage error occurred"
             )
             
     except FileValidationError as e:
@@ -108,9 +112,10 @@ async def create_training(
         )
     except Exception as e:
         await db.rollback()
+        logger.error(f"Training creation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Training creation failed: {str(e)}"
+            detail="Training creation failed"
         )
 
 
@@ -191,9 +196,10 @@ async def delete_training(
         
     except Exception as e:
         await db.rollback()
+        logger.error(f"Training deletion failed for training_id {training_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Delete failed: {str(e)}"
+            detail="Training deletion failed"
         )
 
 

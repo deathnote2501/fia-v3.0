@@ -8,6 +8,13 @@ from .repositories import (
     ApiLogRepositoryPort
 )
 
+from .outbound_ports import (
+    GeminiServicePort,
+    EmailServicePort,
+    FileStorageServicePort,
+    ContextCacheServicePort
+)
+
 __all__ = [
     "TrainerRepositoryPort",
     "TrainingRepositoryPort",
@@ -15,5 +22,9 @@ __all__ = [
     "LearnerSessionRepositoryPort",
     "SlideRepositoryPort",
     "ChatMessageRepositoryPort",
-    "ApiLogRepositoryPort"
+    "ApiLogRepositoryPort",
+    "GeminiServicePort",
+    "EmailServicePort",
+    "FileStorageServicePort",
+    "ContextCacheServicePort"
 ]

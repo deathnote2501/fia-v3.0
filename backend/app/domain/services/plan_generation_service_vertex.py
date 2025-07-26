@@ -75,11 +75,11 @@ class PlanGenerationService:
             prompt = self._build_structured_generation_prompt(learner_profile)
             
             # LOG: Raw prompt being sent to Vertex AI
-            print("=" * 80)
-            print("📝 PROMPT SENT TO VERTEX AI:")
-            print("=" * 80)
-            print(prompt)
-            print("=" * 80)
+            logger.debug("=" * 80)
+            logger.debug("📝 PROMPT SENT TO VERTEX AI:")
+            logger.debug("=" * 80)
+            logger.debug(prompt)
+            logger.debug("=" * 80)
             
             if self.use_vertex_ai and self.model:
                 # Generate with Vertex AI approach
@@ -90,15 +90,15 @@ class PlanGenerationService:
                 )
                 
                 # LOG: Raw response from Vertex AI
-                print("=" * 80)
-                print("📥 RAW RESPONSE FROM VERTEX AI:")
-                print("=" * 80)
-                print(f"Response text length: {len(response.text) if response.text else 0}")
-                print(f"Response text preview: {response.text[:500] if response.text else 'EMPTY'}")
-                print(f"Usage metadata: {response.usage_metadata}")
+                logger.debug("=" * 80)
+                logger.debug("📥 RAW RESPONSE FROM VERTEX AI:")
+                logger.debug("=" * 80)
+                logger.debug(f"Response text length: {len(response.text) if response.text else 0}")
+                logger.debug(f"Response text preview: {response.text[:500] if response.text else 'EMPTY'}")
+                logger.debug(f"Usage metadata: {response.usage_metadata}")
                 if hasattr(response, 'candidates') and response.candidates:
-                    print(f"Finish reason: {response.candidates[0].finish_reason}")
-                print("=" * 80)
+                    logger.debug(f"Finish reason: {response.candidates[0].finish_reason}")
+                logger.debug("=" * 80)
                 
                 # Check if response is empty
                 if not response.text or response.text.strip() == "":
@@ -122,8 +122,8 @@ class PlanGenerationService:
                         response_text = cleaned_text
                         tokens_used = response.usage_metadata.total_token_count if response.usage_metadata else 0
                         
-                        print(f"✅ Successfully parsed JSON response after cleaning")
-                        print(f"📊 Plan has {len(plan_json.get('phases', []))} phases")
+                        logger.debug(f"✅ Successfully parsed JSON response after cleaning")
+                        logger.debug(f"📊 Plan has {len(plan_json.get('phases', []))} phases")
                         
                     except json.JSONDecodeError as e:
                         logger.warning(f"⚠️ Failed to parse cleaned JSON, using mock response: {e}")
@@ -159,9 +159,9 @@ class PlanGenerationService:
             end_time = datetime.utcnow()
             generation_time = (end_time - start_time).total_seconds()
             
-            print(f"✅ Vertex AI plan generation completed in {generation_time:.2f} seconds")
-            print(f"📊 Tokens used: {tokens_used}")
-            print(f"🏗️ Plan structure: {total_modules} modules, {total_submodules} submodules, {total_slides} slides")
+            logger.info(f"✅ Vertex AI plan generation completed in {generation_time:.2f} seconds")
+            logger.info(f"📊 Tokens used: {tokens_used}")
+            logger.info(f"🏗️ Plan structure: {total_modules} modules, {total_submodules} submodules, {total_slides} slides")
             
             # Import the metadata schema
             from app.domain.schemas.plan_generation import PlanGenerationMetadata

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import List
 import secrets
+import logging
 
 from app.infrastructure.database import get_database_session
 from app.infrastructure.auth import get_current_trainer
@@ -30,13 +31,15 @@ from app.adapters.repositories.training_repository import TrainingRepository
 from app.domain.services.plan_generation_service_vertex import PlanGenerationService
 # from app.domain.services.plan_parser_service import PlanParserService
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["sessions"])
 
 
 
 # ============================================================================
-# ROUTES FORMATEUR (avec authentification JWT)
+# TRAINER ROUTES (with JWT authentication)
 # ============================================================================
 
 @router.post("/api/training-sessions", response_model=TrainingSessionWithLink, status_code=status.HTTP_201_CREATED)
@@ -52,7 +55,7 @@ async def create_training_session(
     """
     
     try:
-        # Vérifier que la formation existe et appartient au formateur
+        # Verify that training exists and belongs to trainer
         training_repo = TrainingRepository(db)
         training = await training_repo.get_by_id(session_data.training_id)
         
@@ -68,10 +71,10 @@ async def create_training_session(
                 detail="Access denied: You can only create sessions for your own trainings"
             )
         
-        # Générer token de session unique
+        # Generate unique session token
         session_token = secrets.token_urlsafe(32)
         
-        # Créer la session de formation
+        # Create training session
         training_session = TrainingSession(
             training_id=session_data.training_id,
             name=session_data.name.strip(),
@@ -83,10 +86,10 @@ async def create_training_session(
         session_repo = TrainingSessionRepository(db)
         created_session = await session_repo.create(training_session)
         
-        # Générer le lien de session
+        # Generate session link
         session_link = f"{settings.frontend_url}/session.html?token={session_token}"
         
-        # Construire la réponse avec le lien
+        # Build response with link
         response_data = TrainingSessionResponse.model_validate(created_session)
         return TrainingSessionWithLink(
             **response_data.model_dump(),
@@ -97,9 +100,10 @@ async def create_training_session(
         raise
     except Exception as e:
         await db.rollback()
+        logger.error(f"Session creation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Session creation failed: {str(e)}"
+            detail="Session creation failed"
         )
 
 
@@ -130,9 +134,10 @@ async def list_training_sessions(
         return all_sessions
         
     except Exception as e:
+        logger.error(f"Failed to retrieve training sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve sessions: {str(e)}"
+            detail="Failed to retrieve sessions"
         )
 
 
@@ -183,14 +188,15 @@ async def delete_training_session(
         raise
     except Exception as e:
         await db.rollback()
+        logger.error(f"Training session deletion failed for session_id {session_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Delete failed: {str(e)}"
+            detail="Session deletion failed"
         )
 
 
 # ============================================================================
-# ROUTES APPRENANT (publiques, validation par token)
+# LEARNER ROUTES (public, token validation)
 # ============================================================================
 
 @router.get("/api/session/{token}")
@@ -243,9 +249,10 @@ async def validate_session_token(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Token validation failed for token {session_token}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Token validation failed: {str(e)}"
+            detail="Token validation failed"
         )
 
 
@@ -309,14 +316,14 @@ async def save_learner_profile(
         
         # Générer automatiquement le plan personnalisé
         try:
-            print(f"🔄 Starting automatic plan generation for learner {created_learner_session.id}")
+            logger.info(f"Starting automatic plan generation for learner {created_learner_session.id}")
             
             # Récupérer la formation pour avoir le contenu
             training_repo = TrainingRepository(db)
             training = await training_repo.get_by_id(training_session.training_id)
             
             if training:
-                print(f"📚 Training found: {training.name} (ID: {training.id})")
+                logger.info(f"Training found: {training.name} (ID: {training.id})")
                 
                 # Initialiser le service de génération de plan
                 plan_service = PlanGenerationService()
@@ -331,36 +338,33 @@ async def save_learner_profile(
                     "language": created_learner_session.language
                 }
                 
-                print(f"👤 Learner profile: {learner_profile}")
+                logger.debug(f"Learner profile: {learner_profile}")
                 
                 # Générer le plan
-                print("🤖 Calling plan generation service...")
+                logger.info("Calling plan generation service...")
                 generated_plan = await plan_service.generate_personalized_plan(
                     learner_session_id=created_learner_session.id,
                     training_id=training.id,
                     learner_profile=learner_profile
                 )
                 
-                print(f"✅ Plan generated successfully: {generated_plan.success}")
-                print(f"⏱️ Generation metadata: {generated_plan.generation_metadata}")
+                logger.info(f"Plan generated successfully: {generated_plan.success}")
+                logger.debug(f"Generation metadata: {generated_plan.generation_metadata}")
                 
                 # Mettre à jour la session avec le plan généré
-                print("💾 Saving plan to database...")
+                logger.info("Saving plan to database...")
                 created_learner_session.personalized_plan = generated_plan.plan_data
                 updated_session = await learner_repo.update(created_learner_session)
                 
-                print(f"✅ Plan saved to database. Session updated: {updated_session.id}")
-                print(f"📋 Plan content preview: {str(generated_plan.plan_data)[:200]}...")
+                logger.info(f"Plan saved to database. Session updated: {updated_session.id}")
+                logger.debug(f"Plan content preview: {str(generated_plan.plan_data)[:200]}...")
                 
             else:
-                print(f"❌ Training not found for session {training_session.training_id}")
+                logger.warning(f"Training not found for session {training_session.training_id}")
                 
         except Exception as plan_error:
             # Log l'erreur mais ne pas faire échouer la création du profil
-            print(f"❌ Plan generation failed: {str(plan_error)}")
-            import traceback
-            print(f"📍 Full traceback:")
-            traceback.print_exc()
+            logger.error(f"Plan generation failed: {str(plan_error)}", exc_info=True)
         
         return created_learner_session
         
@@ -368,7 +372,8 @@ async def save_learner_profile(
         raise
     except Exception as e:
         await db.rollback()
+        logger.error(f"Learner profile creation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Profile creation failed: {str(e)}"
+            detail="Profile creation failed"
         )

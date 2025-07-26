@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     google_application_credentials: str = Field(default="", description="Path to GCP credentials JSON")
     google_cloud_project: str = Field(default="", description="GCP project ID") 
     google_cloud_region: str = Field(default="europe-west1", description="GCP region")
-    gemini_model_name: str = Field(default="gemini-1.5-flash", description="Gemini model name")
+    gemini_model_name: str = Field(default="gemini-2.0-flash-exp", description="Gemini 2.0 Flash model name")
     
     # Application
     environment: str = Field(default="development", description="Environment (development/production)")

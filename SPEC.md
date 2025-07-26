@@ -47,6 +47,7 @@ Etape
 - **Responsabilité unique** : Un module = une responsabilité
 - **Architecture modulaire** : Organiser le code FastAPI en modules distincts (routes, modèles, services, configuration)
 - **Architecture hexagonale** : Séparation claire entre logique métier, adapters et infrastructure
+- **ArClaude 4 hooks** : Mise en place et activation des hooks claude 4 avant de demarrer le code
 
 ### Stack Technologique Obligatoire
 - **Backend** : FastAPI + PostgreSQL + SQLAlchemy + Alembic + Poetry
@@ -156,7 +157,7 @@ frontend/
 - Pas de Redis nécessaire (uniquement Context Cache Gemini)
 
 ## 🤖 Intégration IA
-### Gemini Flash 2.0
+### Gemini Flash 2.0 via Vertex AI (important!)
 - **OBLIGATION** : Utiliser Context Caching avec TTL 6-24 heures
 - **OBLIGATION** : Utiliser Structured Output JSON
 - **OBLIGATION** : Appels API séparés (conversation vs analyse d'engagement)

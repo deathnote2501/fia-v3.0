@@ -30,7 +30,7 @@ class LearnerSession(Base):
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     last_activity_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Contrainte unique : un apprenant par session
+    # Unique constraint: one learner per session
     __table_args__ = (UniqueConstraint('training_session_id', 'email', name='_training_session_email_uc'),)
 
     # Relationships
