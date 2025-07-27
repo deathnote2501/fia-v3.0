@@ -4,8 +4,7 @@ Service for parsing generated JSON plans and saving them to database entities
 """
 
 import logging
-from typing import Dict, Any, List
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Dict, Any, List, Protocol
 from uuid import UUID
 
 from app.domain.entities.learner_training_plan import LearnerTrainingPlan
@@ -16,6 +15,12 @@ from app.domain.entities.learner_session import LearnerSession
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+class DatabaseSession(Protocol):
+    """Interface for database session (pure domain)"""
+    async def add(self, instance: Any) -> None: ...
+    async def commit(self) -> None: ...
 
 
 class PlanParserError(Exception):
@@ -32,7 +37,7 @@ class PlanParserService:
     
     async def parse_and_save_plan(
         self,
-        session: AsyncSession,
+        session: DatabaseSession,
         learner_session_id: UUID,
         plan_data: Dict[str, Any],
         generation_metadata: Dict[str, Any]

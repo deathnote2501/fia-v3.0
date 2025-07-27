@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from uuid import UUID
 from typing import Optional
-from fastapi import UploadFile
 
 
 class TrainingBase(BaseModel):
