@@ -52,6 +52,13 @@ async def get_async_session() -> AsyncSession:
             await session.close()
 
 
+def get_db_session():
+    """
+    Context manager to get database session for services
+    """
+    return AsyncSessionLocal()
+
+
 async def init_database():
     """
     Initialize database - create all tables

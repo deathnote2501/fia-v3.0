@@ -33,6 +33,10 @@ Etape
         ├── Slide 1
         └── Slide 2
 
+- L'apprenant clique alors sur le bouton demarrer pour commencer sa formation (cela genere le premier slide et l'affiche à l'apprenant).
+- L'apprenant peut aller sur la slide suivante (cela génère la slide) ou revenir en arrière sur les slides deja generée. On ne regénère pas une slide existante dans la BD.
+- L'apprenant peut poser des quesions au formateur ia via le chat qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
+
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
 
@@ -48,7 +52,6 @@ Etape
   - Génération des slides individuelles
   - Chat avec formateur IA intégré
   - Boutons d'interaction : simplifier, approfondir, exercices, exemples, "le plus important"
-  - Interface split : 75% slides / 25% chat
   - Monitoring et Administration
 - Live API (pas encore implémenté)
 
