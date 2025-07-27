@@ -58,8 +58,10 @@ class TrainingListResponse(BaseModel):
     id: UUID
     name: str
     description: Optional[str]
+    file_path: Optional[str]
     file_name: Optional[str]
     file_type: Optional[str]
+    file_size: Optional[int]
     created_at: datetime
 
     class Config:
