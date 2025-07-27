@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.domain.entities import (
     Trainer, Training, TrainingSession, LearnerSession,
-    Slide, ChatMessage, ApiLog
+    Slide, ChatMessage, ApiLog, LearnerTrainingPlan
 )
 
 
@@ -184,4 +184,39 @@ class ApiLogRepositoryPort(ABC):
     
     @abstractmethod
     async def delete(self, log_id: UUID) -> bool:
+        pass
+
+
+class LearnerTrainingPlanRepositoryPort(ABC):
+    
+    @abstractmethod
+    async def create(self, plan: LearnerTrainingPlan) -> LearnerTrainingPlan:
+        pass
+    
+    @abstractmethod
+    async def get_by_id(self, plan_id: UUID) -> Optional[LearnerTrainingPlan]:
+        pass
+    
+    @abstractmethod
+    async def get_by_learner_session_id(self, learner_session_id: UUID) -> List[LearnerTrainingPlan]:
+        pass
+    
+    @abstractmethod
+    async def get_latest_by_learner_session_id(self, learner_session_id: UUID) -> Optional[LearnerTrainingPlan]:
+        pass
+    
+    @abstractmethod
+    async def update(self, plan: LearnerTrainingPlan) -> LearnerTrainingPlan:
+        pass
+    
+    @abstractmethod
+    async def delete(self, plan_id: UUID) -> bool:
+        pass
+    
+    @abstractmethod
+    async def get_plans_by_generation_method(self, method: str, limit: int = 100) -> List[LearnerTrainingPlan]:
+        pass
+    
+    @abstractmethod
+    async def get_plans_with_performance_metrics(self, min_tokens: int = None, max_generation_time: int = None) -> List[LearnerTrainingPlan]:
         pass
