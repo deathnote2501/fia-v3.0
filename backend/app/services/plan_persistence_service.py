@@ -47,6 +47,9 @@ class PlanPersistenceService:
             for stage in stages:
                 await self._persist_stage_modules(plan_id, stage)
             
+            # IMPORTANT: Committer la transaction
+            await self.session.commit()
+            
             logger.info(f"✅ Plan structure persisted successfully for plan {plan_id}")
             return True
             
@@ -58,7 +61,7 @@ class PlanPersistenceService:
     async def _persist_stage_modules(self, plan_id: UUID, stage: Dict[str, Any]) -> None:
         """Persiste les modules d'une étape"""
         stage_number = stage.get("stage_number")
-        stage_name = stage.get("stage_name")
+        stage_name = stage.get("title", stage.get("stage_name"))
         modules = stage.get("modules", [])
         
         logger.debug(f"📝 Persisting stage {stage_number}: {stage_name} ({len(modules)} modules)")
@@ -102,12 +105,17 @@ class PlanPersistenceService:
         """Persiste les slides d'un sous-module"""
         slide_count = submodule.get("slide_count", 0)
         submodule_name = submodule.get("submodule_name", "")
+        slide_titles = submodule.get("slide_titles", [])
         
         logger.debug(f"📝 Creating {slide_count} slides for submodule {submodule_id}")
         
-        # Créer les slides avec des titres génériques (le contenu sera généré à la demande)
+        # Créer les slides avec les titres générés par l'IA ou des titres génériques
         for slide_index in range(slide_count):
-            slide_title = f"{submodule_name} - Slide {slide_index + 1}"
+            # Utiliser le titre généré par l'IA si disponible, sinon titre générique
+            if slide_index < len(slide_titles):
+                slide_title = slide_titles[slide_index]
+            else:
+                slide_title = f"{submodule_name} - Slide {slide_index + 1}"
             
             slide_model = TrainingSlideModel(
                 submodule_id=submodule_id,

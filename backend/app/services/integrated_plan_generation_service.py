@@ -189,8 +189,8 @@ class IntegratedPlanGenerationService:
             # Persister la structure relationnelle (modules, sous-modules, slides)
             await self._persist_relational_structure(persisted_plan.id, plan_data)
             
-            # Persister tous les logs API en attente
-            await self._persist_pending_api_logs()
+            # Persister tous les logs API en attente (temporairement désactivé pour problème de schéma)
+            # await self._persist_pending_api_logs()
             
             # Calculer statistiques
             total_slides = persisted_plan.get_total_slides()

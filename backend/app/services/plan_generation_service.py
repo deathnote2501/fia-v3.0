@@ -442,7 +442,11 @@ class PlanGenerationService:
                             response_data = {
                                 "response_length": len(response.text),
                                 "response_preview": response.text[:100] + "..." if len(response.text) > 100 else response.text,
-                                "usage_metadata": getattr(response, 'usage_metadata', None)
+                                "usage_metadata": {
+                                    "prompt_token_count": getattr(response.usage_metadata, 'prompt_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0,
+                                    "candidates_token_count": getattr(response.usage_metadata, 'candidates_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0,
+                                    "total_token_count": getattr(response.usage_metadata, 'total_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0
+                                }
                             }
                             
                             self._log_gemini_api_call(
@@ -659,7 +663,13 @@ EXEMPLE DE STRUCTURE ATTENDUE:
             "submodules": [
               {{
                 "submodule_name": "Présentation des enjeux",
-                "slide_count": 4
+                "slide_count": 4,
+                "slide_titles": [
+                  "Contexte et importance du sujet",
+                  "Défis actuels du secteur", 
+                  "Objectifs de la formation",
+                  "Plan d'apprentissage personnalisé"
+                ]
               }}
             ]
           }}
@@ -675,6 +685,8 @@ CONTRAINTES STRICTES:
 - Chaque stage contient 1-3 modules
 - Chaque module contient 1-4 sous-modules
 - Chaque sous-module a un slide_count entre 2 et 8
+- Chaque sous-module DOIT inclure "slide_titles": tableau avec le titre exact de chaque slide
+- Le nombre de titres dans slide_titles DOIT égaler slide_count
 - Adapte le contenu au profil {level}/{style}/{sector}
 - Utilise des exemples concrets du secteur {sector}
 - Privilégie le style d'apprentissage {style}
@@ -906,7 +918,11 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                                     )
                                 },
                                 "validation_status": "passed",
-                                "usage_metadata": getattr(response, 'usage_metadata', None)
+                                "usage_metadata": {
+                                    "prompt_token_count": getattr(response.usage_metadata, 'prompt_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0,
+                                    "candidates_token_count": getattr(response.usage_metadata, 'candidates_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0,
+                                    "total_token_count": getattr(response.usage_metadata, 'total_token_count', 0) if hasattr(response, 'usage_metadata') and response.usage_metadata else 0
+                                }
                             }
                             
                             self._log_gemini_api_call(
