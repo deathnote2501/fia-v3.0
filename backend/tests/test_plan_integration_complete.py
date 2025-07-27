@@ -18,7 +18,7 @@ def test_complete_service_chain_imports():
         from app.domain.services.context_cache_service import ContextCacheService
         
         # Plan Generation (personalization)
-        from app.domain.services.plan_generation_service import PlanGenerationService
+        from app.services.plan_generation_service import PlanGenerationService
         
         # Plan Parser (JSON → DB entities)
         from app.domain.services.plan_parser_service import PlanParserService
@@ -345,7 +345,7 @@ def test_integration_ready_status():
     
     # Check Plan Generation Service
     try:
-        from app.domain.services.plan_generation_service import PlanGenerationService
+        from app.services.plan_generation_service import PlanGenerationService
         components_status["plan_generation_service"] = True
     except ImportError:
         pass

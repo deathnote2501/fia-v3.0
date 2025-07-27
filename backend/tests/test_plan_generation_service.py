@@ -10,7 +10,7 @@ import json
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
 
-from app.domain.services.plan_generation_service import PlanGenerationService, PlanGenerationError
+from app.services.plan_generation_service import PlanGenerationService, PlanGenerationError
 from app.domain.entities.learner_session import LearnerSession
 from app.domain.entities.training import Training
 
@@ -21,13 +21,13 @@ class TestPlanGenerationService:
     @pytest.fixture
     def plan_service(self):
         """Create a mock plan generation service for testing"""
-        with patch('app.domain.services.plan_generation_service.settings') as mock_settings:
+        with patch('app.services.plan_generation_service.settings') as mock_settings:
             mock_settings.google_cloud_project = "test-project"
             mock_settings.google_cloud_region = "us-central1"
             mock_settings.gemini_model_name = "gemini-1.5-flash-002"
             
-            with patch('app.domain.services.plan_generation_service.genai.Client'):
-                with patch('app.domain.services.context_cache_service.genai.Client'):
+            with patch('app.services.plan_generation_service.vertexai'):
+                with patch('app.domain.services.context_cache_service.genai'):
                     service = PlanGenerationService()
                     service.client = Mock()
                     service.cache_service = Mock()
@@ -68,35 +68,27 @@ class TestPlanGenerationService:
             yield temp_file.name
         os.unlink(temp_file.name)
     
-    def test_build_learner_profile_context(self, plan_service, mock_learner_session):
-        """Test learner profile context building"""
-        context = plan_service._build_learner_profile_context(mock_learner_session)
+    def test_build_learner_profile(self, plan_service, mock_learner_session):
+        """Test learner profile building"""
+        profile = plan_service._build_learner_profile(mock_learner_session)
         
-        assert "learner@test.com" in context
-        assert "Intermédiaire" in context
-        assert "Visuel" in context
-        assert "Développeur Web" in context
-        assert "Technologies" in context
-        assert "France" in context
-        assert "PROFIL DE L'APPRENANT" in context
-        assert "ADAPTATIONS REQUISES" in context
+        assert profile["email"] == "learner@test.com"
+        assert profile["experience_level"] == "intermediate"
+        assert profile["learning_style"] == "visual"
+        assert profile["job_position"] == "Développeur Web"
+        assert profile["activity_sector"] == "Technologies"
+        assert profile["country"] == "France"
     
-    def test_build_optimized_prompt(self, plan_service):
-        """Test optimized prompt building"""
-        profile_context = "TEST PROFILE CONTEXT"
-        prompt = plan_service._build_optimized_prompt(profile_context)
+    def test_get_stage_names(self, plan_service):
+        """Test stage names retrieval"""
+        stage_names = plan_service.get_stage_names()
         
-        assert "TEST PROFILE CONTEXT" in prompt
-        assert "5 ÉTAPES FIXES" in prompt
-        assert "Découverte et Introduction" in prompt
-        assert "Apprentissage Fondamental" in prompt
-        assert "Application Pratique" in prompt
-        assert "Approfondissement" in prompt
-        assert "Maîtrise et Évaluation" in prompt
-        assert "PERSONNALISATION SELON LE PROFIL" in prompt
-        assert "NIVEAU D'EXPÉRIENCE" in prompt
-        assert "STYLE D'APPRENTISSAGE" in prompt
-        assert "CONTEXTE PROFESSIONNEL" in prompt
+        assert len(stage_names) == 5
+        assert "Mise en contexte" in stage_names
+        assert "Acquisition des fondamentaux" in stage_names
+        assert "Construction progressive" in stage_names
+        assert "Maîtrise" in stage_names
+        assert "Validation" in stage_names
     
     @pytest.mark.asyncio
     async def test_generate_personalized_plan_with_cache(self, plan_service, mock_learner_session, mock_training):
@@ -224,49 +216,25 @@ class TestPlanGenerationService:
         plan_service.cache_service.create_document_cache.assert_called_once()
     
     @pytest.mark.asyncio
-    async def test_generate_personalized_plan_fallback_direct(self, plan_service, mock_learner_session, mock_training, mock_pdf_file):
-        """Test fallback to direct generation when cache fails"""
+    async def test_generate_personalized_plan_cache_error(self, plan_service, mock_learner_session, mock_training, mock_pdf_file):
+        """Test that cache service failure raises proper error message"""
         # Update training with valid file path
         mock_training.file_path = mock_pdf_file
         
         # Mock cache service failure
         plan_service.cache_service.find_cache_by_document = AsyncMock(side_effect=Exception("Cache error"))
         
-        # Mock direct generation
-        mock_response = Mock()
-        mock_response.text = json.dumps({
-            "stages": [
-                {
-                    "stage_number": 1,
-                    "title": "Direct Generation Stage",
-                    "description": "Generated without cache",
-                    "modules": [
-                        {
-                            "title": "Direct Module",
-                            "description": "Direct module description",
-                            "submodules": [
-                                {
-                                    "title": "Direct Submodule",
-                                    "description": "Direct submodule description", 
-                                    "slides": [{"title": "Direct Slide"}]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ] * 5
-        })
+        # Expect PlanGenerationError with learner-friendly message
+        with pytest.raises(PlanGenerationError) as exc_info:
+            await plan_service.generate_personalized_plan(
+                learner_session=mock_learner_session,
+                training=mock_training,
+                use_cache=True
+            )
         
-        plan_service.client.models.generate_content.return_value = mock_response
-        
-        result = await plan_service.generate_personalized_plan(
-            learner_session=mock_learner_session,
-            training=mock_training,
-            use_cache=True  # Still try cache but will fallback
-        )
-        
-        assert result['success'] is True
-        assert result['generation_metadata']['total_stages'] == 5
+        # Verify error message is learner-friendly
+        assert "temporairement indisponible" in str(exc_info.value)
+        assert "réessayer plus tard" in str(exc_info.value)
     
     @pytest.mark.asyncio
     async def test_regenerate_plan_section(self, plan_service, mock_learner_session, mock_training):
@@ -423,13 +391,13 @@ class TestPlanGenerationIntegration:
     
     def test_service_initialization(self):
         """Test that Plan Generation Service can be initialized"""
-        with patch('app.domain.services.plan_generation_service.settings') as mock_settings:
+        with patch('app.services.plan_generation_service.settings') as mock_settings:
             mock_settings.google_cloud_project = "test-project"
             mock_settings.google_cloud_region = "us-central1"
             mock_settings.gemini_model_name = "gemini-1.5-flash-002"
             
-            with patch('app.domain.services.plan_generation_service.genai.Client'):
-                with patch('app.domain.services.context_cache_service.genai.Client'):
+            with patch('app.services.plan_generation_service.vertexai'):
+                with patch('app.domain.services.context_cache_service.genai'):
                     service = PlanGenerationService()
                     
                     assert service is not None

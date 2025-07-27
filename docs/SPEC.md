@@ -36,14 +36,21 @@ Etape
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
 
-## Les grandes fonctionnalités
-- La gestion des comptes formateurs : création, authentification, etc (FastAPI-Users)
-- La création des sessions pour les apprenants
-- La création du plan de formation personnalisé pour un apprenant
-- La génération des slides (pas encore implémenté)
-- Les interactions avec le formateur IA (pas encore implémenté)
-- Les boutons pour simplifier, approfondir, exercices, exemples et "le plus important" (pas encore implémenté)
-- La live API (pas encore implémenté)
+## Les principaux composants
+- Authentification et Gestion des Comptes
+- Gestion des Formations
+- Gestion des Sessions d'Apprentissage
+- Intelligence Artificielle - Génération de Contenu
+- Structure Pédagogique Adaptative
+
+### Pas encore implémenté
+- Interactions Apprenants (pas encore implémenté) :
+  - Génération des slides individuelles
+  - Chat avec formateur IA intégré
+  - Boutons d'interaction : simplifier, approfondir, exercices, exemples, "le plus important"
+  - Interface split : 75% slides / 25% chat
+  - Monitoring et Administration
+- Live API (pas encore implémenté)
 
 ---------------------------------------------------------------------------------------------------------------
 

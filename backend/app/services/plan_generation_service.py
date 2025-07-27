@@ -1,22 +1,55 @@
 """
-FIA v3.0 - Simple Plan Generation Service MVP
-Service simplifié pour génération de plans personnalisés avec Vertex AI
+FIA v3.0 - Plan Generation Service (Unified)
+Service unifié pour génération de plans personnalisés avec Vertex AI
+Intègre Context Caching et architecture ports/adapters
 """
 
 import logging
 import os
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
 import asyncio
 import time
 from datetime import datetime, timezone
 
-import google.generativeai as genai
-
 from app.infrastructure.settings import settings
 
+# Optional ports support for architecture hexagonale
+if TYPE_CHECKING:
+    from app.domain.ports.outbound_ports import GeminiServicePort, ContextCacheServicePort
+    from app.domain.entities.learner_session import LearnerSession
+    from app.domain.entities.training import Training
+
+try:
+    from app.domain.ports.outbound_ports import GeminiServicePort, ContextCacheServicePort
+    from app.domain.entities.learner_session import LearnerSession
+    from app.domain.entities.training import Training
+    PORTS_AVAILABLE = True
+except ImportError:
+    # Interface flexible pour ports optionnels
+    PORTS_AVAILABLE = False
+    GeminiServicePort = None
+    ContextCacheServicePort = None
+    LearnerSession = None
+    Training = None
+
+# Configure logger first
 logger = logging.getLogger(__name__)
+
+# Import Vertex AI with error handling for environment issues
+try:
+    import vertexai
+    from vertexai.generative_models import GenerativeModel, Part
+    VERTEX_AI_AVAILABLE = True
+    logger.info("🤖 VERTEX AI [MODULE] imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ VERTEX AI [MODULE] import failed: {e}")
+    logger.warning("⚠️ VERTEX AI [MODULE] service will not be functional")
+    VERTEX_AI_AVAILABLE = False
+    # Define dummy classes to prevent import errors
+    GenerativeModel = None
+    Part = None
 
 
 class PlanGenerationError(Exception):
@@ -41,62 +74,121 @@ class VertexAIError(PlanGenerationError):
         self.api_response = api_response
 
 
-class SimplePlanGenerationService:
-    """Service simplifié pour génération de plans de formation personnalisés"""
+class PlanGenerationService:
+    """Service unifié pour génération de plans de formation personnalisés avec Vertex AI et Context Caching"""
     
-    def __init__(self):
-        """Initialiser le service de génération de plans avec configuration Vertex AI"""
+    # Message d'erreur standardisé pour tous les apprenants
+    LEARNER_ERROR_MESSAGE = "Le service de génération de contenu est temporairement indisponible. Veuillez réessayer plus tard ou contacter votre formateur."
+    
+    def __init__(
+        self,
+        gemini_service: Optional["GeminiServicePort"] = None,
+        cache_service: Optional["ContextCacheServicePort"] = None
+    ):
+        """
+        Initialiser le service de génération de plans avec configuration Vertex AI
+        
+        Args:
+            gemini_service: Service Gemini optionnel (pour architecture ports/adapters)
+            cache_service: Service de cache optionnel (pour optimisation des coûts)
+        """
         self.client = None
         self.model_name = settings.gemini_model_name
         self.max_retries = 3
         self.retry_delay = 2.0  # secondes
-        self.fallback_enabled = True
+        
+        # Support optionnel pour architecture ports/adapters
+        self.gemini_service = gemini_service
+        self.cache_service = cache_service
         
         # Configuration logging structuré pour Gemini
         self.structured_logger = logging.getLogger(f"{__name__}.gemini_api")
         self.api_call_counter = 0
         
         # Configuration Vertex AI avec credentials
+        self.client = None
         self._configure_vertex_ai()
         
-        logger.info(f"SimplePlanGenerationService initialized with model: {self.model_name}")
-        logger.info(f"Error handling: max_retries={self.max_retries}, fallback_enabled={self.fallback_enabled}")
-        logger.info(f"Structured logging configured for Gemini API calls")
+        logger.info(f"🤖 VERTEX AI [SERVICE] initialized with model: {self.model_name}")
+        logger.info(f"🤖 VERTEX AI [CACHE] {'enabled' if self.cache_service else 'disabled'}")
+        logger.info(f"🤖 VERTEX AI [PORTS] {'enabled' if PORTS_AVAILABLE else 'disabled'}")
+        logger.info(f"🤖 VERTEX AI [CONFIG] max_retries={self.max_retries}, vertex_ai_only_mode")
+        logger.info("🤖 VERTEX AI [LOGGING] structured logging configured for Gemini API calls")
     
     def _configure_vertex_ai(self):
         """Configurer Vertex AI avec les credentials appropriés"""
         try:
-            # Configurer les credentials GCP si fournis
-            if settings.google_application_credentials:
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
-                logger.info(f"Using GCP credentials from: {settings.google_application_credentials}")
+            # Vérifier que Vertex AI est disponible
+            if not VERTEX_AI_AVAILABLE or vertexai is None:
+                logger.warning("⚠️ VERTEX AI [CONFIG] Vertex AI module not available")
+                self.client = None
+                return
             
-            # Configurer le client Vertex AI
-            if settings.gemini_api_key:
-                genai.configure(api_key=settings.gemini_api_key)
+            # Configurer les credentials GCP
+            if settings.google_credentials_json:
+                # Utiliser les credentials JSON directement depuis les variables d'environnement
+                import tempfile
+                import json
                 
-                # Configurer pour Vertex AI
-                self.client = genai
+                # Créer un fichier temporaire avec les credentials
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+                    credentials_data = json.loads(settings.google_credentials_json)
+                    json.dump(credentials_data, temp_file, indent=2)
+                    temp_credentials_path = temp_file.name
                 
-                logger.info(f"✅ Vertex AI configured successfully")
-                logger.info(f"📍 Project: {settings.google_cloud_project}")
-                logger.info(f"🌍 Region: {settings.google_cloud_region}")
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_credentials_path
+                logger.info(f"🔑 VERTEX AI [CREDENTIALS] using GCP credentials from environment variables")
+                
+            elif settings.google_application_credentials:
+                # Fallback: utiliser le fichier de credentials si spécifié
+                project_root = Path(__file__).parent.parent.parent.parent
+                credentials_path = project_root / settings.google_application_credentials
+                
+                if credentials_path.exists():
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
+                    logger.info(f"🔑 VERTEX AI [CREDENTIALS] using GCP credentials from file: {credentials_path}")
+                else:
+                    logger.error(f"❌ VERTEX AI [CREDENTIALS] file not found: {credentials_path}")
+                    raise PlanGenerationError(
+                        f"Credentials file not found: {credentials_path}",
+                        "missing_credentials_file",
+                        None
+                    )
+            else:
+                logger.warning("⚠️ VERTEX AI [CREDENTIALS] No credentials configured")
+                raise PlanGenerationError(
+                    "No Google Cloud credentials configured. Please set GOOGLE_CREDENTIALS_JSON or GOOGLE_APPLICATION_CREDENTIALS",
+                    "missing_credentials",
+                    None
+                )
+            
+            # Initialiser Vertex AI
+            if settings.google_cloud_project and settings.google_cloud_region:
+                vertexai.init(
+                    project=settings.google_cloud_project,
+                    location=settings.google_cloud_region
+                )
+                
+                # Créer le modèle
+                self.client = GenerativeModel(model_name=self.model_name)
+                
+                self._log_vertex_ai_operation("config", "success", "configured successfully")
+                logger.info(f"📍 VERTEX AI [PROJECT] {settings.google_cloud_project}")
+                logger.info(f"🌍 VERTEX AI [REGION] {settings.google_cloud_region}")
                 logger.info(f"🤖 Model: {self.model_name}")
                 
             else:
-                logger.warning("⚠️ No Gemini API key found - service will use mock responses")
+                logger.error("❌ VERTEX AI [CONFIG] Missing GCP project/region configuration")
+                raise PlanGenerationError(
+                    "Missing Google Cloud configuration - service unavailable",
+                    "missing_gcp_configuration",
+                    None
+                )
                 
         except Exception as e:
-            logger.error(f"❌ Failed to configure Vertex AI: {e}")
-            if self.fallback_enabled:
-                logger.warning("⚠️ Falling back to mock mode")
-                self.client = None
-            else:
-                raise PlanGenerationError(
-                    "Failed to configure Vertex AI and fallback is disabled",
-                    "configuration_error",
-                    e
-                )
+            self._log_vertex_ai_operation("config", "error", f"Failed to configure: {e}", level="error")
+            self._log_vertex_ai_operation("config", "warning", "Service will not be functional without Vertex AI", level="warning")
+            self.client = None
     
     def _log_gemini_api_call(
         self,
@@ -129,50 +221,58 @@ class SimplePlanGenerationService:
         if start_time and end_time:
             duration_ms = int((end_time - start_time) * 1000)
         
-        # Structure du log Gemini API selon SPEC.md
+        # Structure standardisée du log Gemini API selon SPEC.md
         log_entry = {
-            # Identification
+            # Identification standardisée
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "call_id": f"gemini_call_{self.api_call_counter}",
             "operation_type": operation_type,
             "attempt_number": attempt_number,
             "success": success,
+            "service_type": "vertex_ai_gemini",
             
-            # Configuration API
+            # Configuration API standardisée  
             "api_config": {
                 "service": "gemini_flash_2.0",
                 "model_name": self.model_name,
                 "provider": "vertex_ai",
                 "project": settings.google_cloud_project,
-                "region": settings.google_cloud_region
+                "region": settings.google_cloud_region,
+                "version": "1.5"
             },
             
-            # Métadonnées de requête (sans contenu sensible)
+            # Métadonnées de requête (sécurisées - sans contenu sensible)
             "request_metadata": {
-                **request_data,
-                # Masquer le contenu des prompts pour le logging
+                **{k: v for k, v in request_data.items() if k not in ["prompt", "content", "file_data"]},
+                # Métadonnées calculées de sécurité
                 "prompt_length": len(str(request_data.get("prompt", ""))) if "prompt" in request_data else 0,
                 "has_file_upload": "file_path" in request_data or "uploaded_file" in request_data,
-                "request_size_estimate": len(json.dumps(request_data, default=str))
+                "request_size_estimate": len(json.dumps(request_data, default=str)),
+                "has_sensitive_data": any(key in request_data for key in ["prompt", "content", "file_data"])
             },
             
-            # Métadonnées de réponse
-            "response_metadata": response_data or {},
+            # Métadonnées de réponse standardisées
+            "response_metadata": {
+                **(response_data or {}),
+                "response_type": "structured_json" if response_data else "unknown"
+            },
             
-            # Performance
+            # Performance et fiabilité
             "performance": {
                 "duration_ms": duration_ms,
                 "retry_count": attempt_number - 1,
-                "max_retries": self.max_retries
+                "max_retries": self.max_retries,
+                "success_rate": 1.0 if success else 0.0
             },
             
-            # Erreurs
+            # Gestion d'erreurs
             "error": error_data,
             
-            # Contexte service
+            # Contexte service standardisé
             "service_context": {
-                "fallback_enabled": self.fallback_enabled,
-                "environment": settings.environment
+                "environment": getattr(settings, 'environment', 'unknown'),
+                "service_version": "3.0",
+                "logging_version": "1.0"
             }
         }
         
@@ -188,14 +288,61 @@ class SimplePlanGenerationService:
                 extra={"gemini_api_call": log_entry}
             )
         
-        # Log simplifié pour debugging
-        status = "✅ SUCCESS" if success else "❌ ERROR"
-        duration_str = f"({duration_ms}ms)" if duration_ms else ""
+        # Log simplifié standardisé pour debugging
+        status_emoji = "✅" if success else "❌"
+        status_text = "SUCCESS" if success else "ERROR" 
+        duration_str = f" {duration_ms}ms" if duration_ms else ""
         
         logger.info(
-            f"🤖 GEMINI API [{status}] {operation_type} "
-            f"(attempt {attempt_number}/{self.max_retries}) {duration_str}"
+            f"🤖 GEMINI API [{status_emoji} {status_text}] {operation_type.upper()} "
+            f"attempt {attempt_number}/{self.max_retries}{duration_str}"
         )
+    
+    def _log_vertex_ai_operation(
+        self,
+        operation: str,
+        status: str,
+        details: str = "",
+        attempt: int = None,
+        duration_ms: int = None,
+        level: str = "info"
+    ) -> None:
+        """
+        Logging centralisé pour toutes les opérations Vertex AI
+        
+        Args:
+            operation: Type d'opération (config, processing, generation, etc.)
+            status: Statut de l'opération (success, error, warning, attempt)
+            details: Détails supplémentaires
+            attempt: Numéro de tentative si applicable
+            duration_ms: Durée en millisecondes si applicable
+            level: Niveau de log (info, warning, error)
+        """
+        # Emojis standardisés par status
+        emoji_map = {
+            "success": "✅",
+            "error": "❌", 
+            "warning": "⚠️",
+            "attempt": "🔄",
+            "processing": "📄",
+            "upload": "📤",
+            "generation": "🚀"
+        }
+        
+        # Format uniforme pour tous les logs Vertex AI
+        emoji = emoji_map.get(status, "🤖")
+        attempt_str = f" (attempt {attempt})" if attempt else ""
+        duration_str = f" ({duration_ms}ms)" if duration_ms else ""
+        
+        log_message = f"{emoji} VERTEX AI [{operation.upper()}] {details}{attempt_str}{duration_str}"
+        
+        # Logger selon le niveau approprié
+        if level == "error":
+            logger.error(log_message)
+        elif level == "warning":
+            logger.warning(log_message)
+        else:
+            logger.info(log_message)
     
     async def _process_document(self, file_path: str) -> str:
         """
@@ -208,7 +355,7 @@ class SimplePlanGenerationService:
             Contenu extrait du document
             
         Raises:
-            DocumentProcessingError: Si le traitement échoue et fallback désactivé
+            DocumentProcessingError: Si le traitement échoue
         """
         for attempt in range(self.max_retries):
             try:
@@ -246,15 +393,15 @@ class SimplePlanGenerationService:
                         file_path
                     )
                 
-                logger.info(f"Processing document: {file_path} (MIME: {mime_type}, Size: {file_size} bytes)")
+                logger.info(f"📄 VERTEX AI [DOCUMENT] processing: {file_path} (MIME: {mime_type}, Size: {file_size} bytes)")
                 
                 if self.client:
                     # Tentative de traitement avec Gemini
                     try:
-                        logger.info(f"📄 Attempt {attempt + 1}/{self.max_retries} - Using Gemini Document API...")
+                        self._log_vertex_ai_operation("document_processing", "attempt", "Using Gemini Document API", attempt=attempt + 1)
                         
-                        # Upload du fichier via File API avec retry
-                        uploaded_file = await self._upload_file_to_gemini_with_retry(file_path, mime_type)
+                        # Process du fichier pour Vertex AI avec retry
+                        file_part = await self._upload_file_to_gemini_with_retry(file_path, mime_type)
                         
                         # Analyse du document avec prompt spécialisé
                         document_analysis_prompt = """
@@ -279,11 +426,11 @@ class SimplePlanGenerationService:
                             "prompt": "document_analysis_prompt"
                         }
                         
-                        # Appel avec timeout
+                        # Appel avec timeout (Vertex AI)
                         response = await asyncio.wait_for(
                             asyncio.to_thread(
                                 self.client.generate_content,
-                                [uploaded_file, document_analysis_prompt]
+                                [file_part, document_analysis_prompt]  # File part + prompt
                             ),
                             timeout=30.0  # 30 secondes timeout
                         )
@@ -308,7 +455,7 @@ class SimplePlanGenerationService:
                                 success=True
                             )
                             
-                            logger.info(f"✅ Document processed successfully via Gemini API (attempt {attempt + 1})")
+                            self._log_vertex_ai_operation("document_processing", "success", "Document processed successfully via Gemini API", attempt=attempt + 1)
                             return response.text.strip()
                         else:
                             # Log échec - réponse vide
@@ -337,8 +484,8 @@ class SimplePlanGenerationService:
                     except Exception as api_error:
                         if attempt < self.max_retries - 1:
                             wait_time = self.retry_delay * (2 ** attempt)  # Backoff exponentiel
-                            logger.warning(f"⚠️ Gemini API error (attempt {attempt + 1}): {api_error}")
-                            logger.info(f"🔄 Retrying in {wait_time} seconds...")
+                            self._log_vertex_ai_operation("document_processing", "warning", f"Gemini API error: {api_error}", attempt=attempt + 1, level="warning")
+                            logger.info(f"🔄 VERTEX AI [RETRY] retrying in {wait_time} seconds...")
                             await asyncio.sleep(wait_time)
                             continue
                         else:
@@ -349,14 +496,10 @@ class SimplePlanGenerationService:
                             )
                 else:
                     # Pas de client configuré
-                    if self.fallback_enabled:
-                        logger.info("📄 Using fallback document processing (no client)...")
-                        return self._fallback_document_content(file_path)
-                    else:
-                        raise DocumentProcessingError(
-                            "No Gemini client configured and fallback disabled",
-                            file_path
-                        )
+                    raise DocumentProcessingError(
+                        "No Gemini client configured",
+                        file_path
+                    )
                 
             except (DocumentProcessingError, VertexAIError):
                 # Re-raise nos exceptions personnalisées
@@ -364,55 +507,50 @@ class SimplePlanGenerationService:
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ Unexpected error (attempt {attempt + 1}): {e}")
-                    logger.info(f"🔄 Retrying in {wait_time} seconds...")
+                    logger.warning(f"⚠️ VERTEX AI [ERROR] unexpected error (attempt {attempt + 1}): {e}")
+                    logger.info(f"🔄 VERTEX AI [RETRY] retrying in {wait_time} seconds...")
                     await asyncio.sleep(wait_time)
                     continue
                 else:
                     # Dernière tentative échouée
-                    if self.fallback_enabled:
-                        logger.warning(f"⚠️ All attempts failed, using fallback: {e}")
-                        return self._fallback_document_content(file_path)
-                    else:
-                        raise DocumentProcessingError(
-                            f"Document processing failed after {self.max_retries} attempts",
-                            file_path,
-                            e
-                        )
+                    raise DocumentProcessingError(
+                        f"Document processing failed after {self.max_retries} attempts",
+                        file_path,
+                        e
+                    )
         
         # Ce point ne devrait jamais être atteint
-        if self.fallback_enabled:
-            return self._fallback_document_content(file_path)
-        else:
-            raise DocumentProcessingError(
-                "Unexpected error: retry loop completed without result",
-                file_path
-            )
+        raise DocumentProcessingError(
+            "Unexpected error: retry loop completed without result",
+            file_path
+        )
     
     async def _upload_file_to_gemini_with_retry(self, file_path: str, mime_type: str):
-        """Upload fichier vers Gemini File API avec retry"""
+        """Upload fichier vers Vertex AI avec retry"""
         for attempt in range(self.max_retries):
             try:
-                # Pour le MVP, utiliser upload simple
-                logger.info(f"📤 Uploading file to Gemini (attempt {attempt + 1}/{self.max_retries})...")
+                # Pour le MVP, utiliser file input direct avec Vertex AI
+                self._log_vertex_ai_operation("file_upload", "processing", "Processing file for Vertex AI", attempt=attempt + 1)
                 
-                # Upload avec timeout
-                uploaded_file = await asyncio.wait_for(
-                    asyncio.to_thread(genai.upload_file, file_path),
-                    timeout=60.0  # 60 secondes pour upload
-                )
+                # Avec Vertex AI, nous utilisons Part.from_uri ou Part.from_data
+                # Pour simplifier, lire le fichier directement
+                with open(file_path, 'rb') as f:
+                    file_data = f.read()
                 
-                if uploaded_file:
-                    logger.info(f"✅ File uploaded successfully to Gemini (attempt {attempt + 1})")
-                    return uploaded_file
+                # Créer un Part avec les données du fichier
+                file_part = Part.from_data(data=file_data, mime_type=mime_type)
+                
+                if file_part:
+                    self._log_vertex_ai_operation("file_upload", "success", "File processed successfully for Vertex AI", attempt=attempt + 1)
+                    return file_part
                 else:
-                    raise VertexAIError("File upload returned empty result")
+                    raise VertexAIError("File processing returned empty result")
                     
             except asyncio.TimeoutError:
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ File upload timeout (attempt {attempt + 1})")
-                    logger.info(f"🔄 Retrying upload in {wait_time} seconds...")
+                    logger.warning(f"⚠️ VERTEX AI [TIMEOUT] file upload timeout (attempt {attempt + 1})")
+                    logger.info(f"🔄 VERTEX AI [RETRY] retrying upload in {wait_time} seconds...")
                     await asyncio.sleep(wait_time)
                     continue
                 else:
@@ -428,21 +566,6 @@ class SimplePlanGenerationService:
                 else:
                     raise VertexAIError(f"File upload failed after {self.max_retries} attempts", None, e)
     
-    def _fallback_document_content(self, file_path: str) -> str:
-        """Contenu de fallback basé sur le nom du fichier"""
-        file_name = Path(file_path).stem
-        return f"""
-        Document de formation: {file_name}
-        
-        Contenu simulé pour le développement:
-        - Formation sur les concepts fondamentaux
-        - Modules théoriques et pratiques
-        - Exercices d'application
-        - Évaluation des acquis
-        
-        Note: Ce contenu est généré automatiquement en mode fallback.
-        La vraie analyse du document nécessite une configuration Vertex AI valide.
-        """
     
     def _build_personalized_prompt(self, learner_profile: Dict[str, Any], document_content: str) -> str:
         """
@@ -529,7 +652,7 @@ EXEMPLE DE STRUCTURE ATTENDUE:
     "stages": [
       {{
         "stage_number": 1,
-        "stage_name": "Mise en contexte",
+        "title": "Mise en contexte",
         "modules": [
           {{
             "module_name": "Introduction au domaine",
@@ -585,7 +708,7 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                                         "maximum": 5,
                                         "description": "Numéro d'étape (1-5)"
                                     },
-                                    "stage_name": {
+                                    "title": {
                                         "type": "string",
                                         "enum": [
                                             "Mise en contexte",
@@ -641,7 +764,7 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                                         "description": "1-3 modules par étape"
                                     }
                                 },
-                                "required": ["stage_number", "stage_name", "modules"],
+                                "required": ["stage_number", "title", "modules"],
                                 "additionalProperties": False
                             },
                             "minItems": 5,
@@ -672,6 +795,15 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
             logger.info(f"Generating plan for profile: {learner_profile.get('experience_level', 'unknown')}")
             logger.info(f"Using training file: {file_path}")
             
+            # Vérifier que Vertex AI est disponible
+            if self.client is None:
+                self._log_vertex_ai_operation("generation", "error", "Vertex AI client not available", level="error")
+                raise PlanGenerationError(
+                    self.LEARNER_ERROR_MESSAGE,
+                    "vertex_ai_unavailable",
+                    None
+                )
+            
             # Vérifier que le fichier existe
             if not Path(file_path).exists():
                 raise FileNotFoundError(f"Training file not found: {file_path}")
@@ -680,42 +812,30 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
             document_content = await self._process_document(file_path)
             logger.info(f"📄 Document processed, content length: {len(document_content)} chars")
             
-            # Plan Generation avec prompt optimisé et gestion d'erreurs robuste
-            return await self._generate_plan_with_fallback(learner_profile, document_content)
+            # Plan Generation avec Vertex AI uniquement
+            return await self._generate_plan_with_vertex_ai(learner_profile, document_content)
                 
         except (DocumentProcessingError, VertexAIError) as e:
             logger.error(f"❌ {e.error_type}: {e}")
-            if self.fallback_enabled:
-                logger.info("🔄 Using fallback plan generation")
-                return self._generate_mock_plan(learner_profile)
-            else:
-                raise PlanGenerationError(
-                    f"Plan generation failed: {e}",
-                    e.error_type,
-                    e
-                )
+            raise PlanGenerationError(
+                f"Plan generation failed: {e}",
+                e.error_type,
+                e
+            )
         except Exception as e:
             logger.error(f"❌ Unexpected error generating plan: {str(e)}")
-            if self.fallback_enabled:
-                logger.info("🔄 Using fallback plan generation")
-                return self._generate_mock_plan(learner_profile)
-            else:
-                raise PlanGenerationError(
-                    f"Unexpected error during plan generation: {e}",
-                    "unexpected_error",
-                    e
-                )
+            raise PlanGenerationError(
+                f"Unexpected error during plan generation: {e}",
+                "unexpected_error",
+                e
+            )
     
-    async def _generate_plan_with_fallback(self, learner_profile: Dict[str, Any], document_content: str) -> Dict[str, Any]:
+    async def _generate_plan_with_vertex_ai(self, learner_profile: Dict[str, Any], document_content: str) -> Dict[str, Any]:
         """
-        Générer le plan avec gestion d'erreurs robuste et fallbacks
+        Générer le plan avec Vertex AI uniquement
         """
         if not self.client:
-            if self.fallback_enabled:
-                logger.info("🤖 Using mock plan generation (no client configured)")
-                return self._generate_mock_plan(learner_profile)
-            else:
-                raise VertexAIError("No Gemini client configured and fallback disabled")
+            raise VertexAIError("Vertex AI client not configured - service unavailable")
         
         # Construire le prompt personnalisé
         personalized_prompt = self._build_personalized_prompt(learner_profile, document_content)
@@ -724,20 +844,9 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
         # Tentatives de génération avec retry
         for attempt in range(self.max_retries):
             try:
-                logger.info(f"🚀 Attempt {attempt + 1}/{self.max_retries} - Calling Gemini for plan generation...")
+                self._log_vertex_ai_operation("plan_generation", "generation", "Calling Gemini for plan generation", attempt=attempt + 1)
                 
                 # Configuration du modèle avec JSON schema strict
-                json_schema = self._get_strict_json_schema()
-                
-                model = self.client.GenerativeModel(
-                    model_name=self.model_name,
-                    generation_config={
-                        "temperature": 0.1,
-                        "response_mime_type": "application/json",
-                        "response_schema": json_schema
-                    }
-                )
-                
                 logger.info("📋 Using strict JSON schema for structured output")
                 
                 # Logging début appel
@@ -758,9 +867,9 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                     "prompt": "personalized_training_plan_prompt"
                 }
                 
-                # Appel avec timeout
+                # Appel avec timeout (Vertex AI)
                 response = await asyncio.wait_for(
-                    asyncio.to_thread(model.generate_content, personalized_prompt),
+                    asyncio.to_thread(self.client.generate_content, personalized_prompt),
                     timeout=45.0  # 45 secondes timeout
                 )
                 
@@ -810,7 +919,7 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                                 success=True
                             )
                             
-                            logger.info(f"✅ Plan generated and validated successfully via Vertex AI (attempt {attempt + 1})")
+                            self._log_vertex_ai_operation("plan_generation", "success", "Plan generated and validated successfully via Vertex AI", attempt=attempt + 1)
                             return generated_plan
                         else:
                             end_time = time.time()
@@ -893,7 +1002,7 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                 # Re-raise VertexAIError
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ Vertex AI error (attempt {attempt + 1})")
+                    self._log_vertex_ai_operation("plan_generation", "warning", "Vertex AI error", attempt=attempt + 1, level="warning")
                     logger.info(f"🔄 Retrying in {wait_time} seconds...")
                     await asyncio.sleep(wait_time)
                     continue
@@ -903,118 +1012,16 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ Unexpected error (attempt {attempt + 1}): {e}")
-                    logger.info(f"🔄 Retrying in {wait_time} seconds...")
+                    logger.warning(f"⚠️ VERTEX AI [ERROR] unexpected error (attempt {attempt + 1}): {e}")
+                    logger.info(f"🔄 VERTEX AI [RETRY] retrying in {wait_time} seconds...")
                     await asyncio.sleep(wait_time)
                     continue
                 else:
                     raise VertexAIError(f"Plan generation failed after {self.max_retries} attempts", None, e)
         
-        # Fallback si toutes les tentatives échouent
-        if self.fallback_enabled:
-            logger.warning("⚠️ All generation attempts failed, using mock plan")
-            return self._generate_mock_plan(learner_profile)
-        else:
-            raise VertexAIError("Plan generation failed and fallback disabled")
+        # Toutes les tentatives ont échoué
+        raise VertexAIError(f"Plan generation failed after {self.max_retries} attempts - service unavailable")
     
-    def _generate_mock_plan(self, learner_profile: Dict[str, Any]) -> Dict[str, Any]:
-        """Générer un plan mock personnalisé pour fallback"""
-        level = learner_profile.get('experience_level', 'débutant')
-        style = learner_profile.get('learning_style', 'visuel')
-        sector = learner_profile.get('activity_sector', 'général')
-        
-        # Adaptation du nombre de slides selon le niveau
-        slide_counts = {
-            'beginner': [5, 6, 5, 4, 3],
-            'intermediate': [4, 4, 4, 3, 2], 
-            'advanced': [3, 3, 3, 2, 2]
-        }
-        slides = slide_counts.get(level, slide_counts['beginner'])
-        
-        mock_plan = {
-            "training_plan": {
-                "stages": [
-                    {
-                        "stage_number": 1,
-                        "stage_name": "Mise en contexte",
-                        "modules": [
-                            {
-                                "module_name": f"Introduction pour {level} en {sector}",
-                                "submodules": [
-                                    {
-                                        "submodule_name": f"Contextualisation {sector} - style {style}",
-                                        "slide_count": slides[0]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "stage_number": 2,
-                        "stage_name": "Acquisition des fondamentaux",
-                        "modules": [
-                            {
-                                "module_name": f"Concepts de base adaptés niveau {level}",
-                                "submodules": [
-                                    {
-                                        "submodule_name": f"Théorie fondamentale - {style}",
-                                        "slide_count": slides[1]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "stage_number": 3,
-                        "stage_name": "Construction progressive", 
-                        "modules": [
-                            {
-                                "module_name": f"Approfondissement progressif {level}",
-                                "submodules": [
-                                    {
-                                        "submodule_name": f"Application pratique {sector}",
-                                        "slide_count": slides[2]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "stage_number": 4,
-                        "stage_name": "Maîtrise",
-                        "modules": [
-                            {
-                                "module_name": f"Pratique autonome niveau {level}",
-                                "submodules": [
-                                    {
-                                        "submodule_name": f"Exercices avancés {sector}",
-                                        "slide_count": slides[3]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        "stage_number": 5,
-                        "stage_name": "Validation",
-                        "modules": [
-                            {
-                                "module_name": "Évaluation finale",
-                                "submodules": [
-                                    {
-                                        "submodule_name": f"Assessment {level}",
-                                        "slide_count": slides[4]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            }
-        }
-        
-        logger.info(f"Generated mock plan for {level}/{style}/{sector}")
-        return mock_plan
     
     def _validate_generated_plan(self, plan: Dict[str, Any]) -> bool:
         """
@@ -1069,18 +1076,18 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
                     logger.error(f"❌ Invalid stage_number: {stage_number}")
                     return False
                 
-                # Vérifier stage_name correct
-                stage_name = stage.get("stage_name")
+                # Vérifier title correct
+                stage_title = stage.get("title")
                 expected_name = required_stage_names[stage_number]
-                if stage_name != expected_name:
-                    logger.error(f"❌ Stage {stage_number} name '{stage_name}' != expected '{expected_name}'")
+                if stage_title != expected_name:
+                    logger.error(f"❌ Stage {stage_number} title '{stage_title}' != expected '{expected_name}'")
                     return False
                 
                 if stage_number in found_stages:
                     logger.error(f"❌ Duplicate stage_number: {stage_number}")
                     return False
                 
-                found_stages[stage_number] = stage_name
+                found_stages[stage_number] = stage_title
                 
                 # Vérifier modules
                 modules = stage.get("modules", [])
@@ -1147,3 +1154,301 @@ Crée maintenant un plan de formation personnalisé en JSON qui respecte exactem
         except Exception as e:
             logger.error(f"❌ Validation error: {e}")
             return False
+    
+    # ==========================================
+    # NOUVELLES FONCTIONNALITÉS INTÉGRÉES
+    # ==========================================
+    
+    async def generate_personalized_plan_with_caching(
+        self,
+        learner_session: Optional["LearnerSession"],
+        training: Optional["Training"],
+        learner_profile: Optional[Dict[str, Any]] = None,
+        file_path: Optional[str] = None,
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Génération de plan avec support optionnel pour Context Caching et architecture ports/adapters
+        
+        Cette méthode unifie l'ancienne API (avec file_path) et la nouvelle (avec entités domain)
+        """
+        try:
+            # Compatibilité avec ancienne API (file_path + learner_profile dict)
+            if learner_profile and file_path:
+                return await self.generate_plan(learner_profile, file_path)
+            
+            # Nouvelle API avec entités domain et caching
+            if not (learner_session and training):
+                raise PlanGenerationError("Either (learner_profile + file_path) or (learner_session + training) required")
+            
+            logger.info(f"Generating personalized plan for learner: {learner_session.email}")
+            logger.info(f"Training: {training.name}, Use cache: {use_cache}")
+            
+            # Construire le profil apprenant depuis l'entité
+            learner_profile_dict = self._build_learner_profile(learner_session)
+            
+            # Déterminer le contenu de formation
+            content_to_use = f"Training: {training.name}"
+            if training.description:
+                content_to_use += f"\nDescription: {training.description}"
+            
+            # Utiliser le cache si disponible et demandé
+            cache_id = None
+            if self.cache_service and use_cache and training.has_file():
+                cache_id = await self._get_or_create_cache(training, content_to_use)
+            
+            # Si un cache est disponible, utiliser la génération avec cache
+            if cache_id and self.cache_service:
+                plan_data = await self._generate_with_cache(
+                    training_file_path=training.file_path,
+                    learner_profile=learner_profile_dict,
+                    cache_id=cache_id
+                )
+            else:
+                # Génération standard sans cache
+                plan_data = await self.generate_plan(learner_profile_dict, training.file_path)
+            
+            # Validation et structuration du plan
+            validated_plan = self._validate_plan_structure_domain(plan_data)
+            
+            logger.info(f"Successfully generated personalized plan with {len(validated_plan.get('stages', []))} stages")
+            return validated_plan
+            
+        except Exception as e:
+            logger.error(f"Error generating personalized plan: {str(e)}")
+            raise PlanGenerationError(self.LEARNER_ERROR_MESSAGE)
+    
+    def _build_learner_profile(self, learner_session: "LearnerSession") -> Dict[str, Any]:
+        """Construire le profil apprenant depuis l'entité domain - Pure domain logic"""
+        if not PORTS_AVAILABLE or not learner_session:
+            # Configuration minimale si entités domain non disponibles
+            return {}
+            
+        return {
+            "email": learner_session.email,
+            "experience_level": learner_session.experience_level,
+            "learning_style": learner_session.learning_style,
+            "job_position": learner_session.job_position,
+            "activity_sector": learner_session.activity_sector,
+            "country": learner_session.country,
+            "language": learner_session.language,
+            "preferences": self._derive_learning_preferences(learner_session)
+        }
+    
+    def _derive_learning_preferences(self, learner_session: "LearnerSession") -> Dict[str, str]:
+        """Dériver les préférences d'apprentissage depuis le profil - Business logic"""
+        if not PORTS_AVAILABLE or not learner_session:
+            return {}
+            
+        preferences = {}
+        
+        # Adaptations selon niveau d'expérience
+        if learner_session.experience_level == "beginner":
+            preferences["complexity"] = "simple_explanations"
+            preferences["pace"] = "slow_progression"
+            preferences["support"] = "detailed_examples"
+        elif learner_session.experience_level == "intermediate":
+            preferences["complexity"] = "moderate_concepts"
+            preferences["pace"] = "standard_progression"
+            preferences["support"] = "practical_examples"
+        else:  # advanced
+            preferences["complexity"] = "advanced_concepts"
+            preferences["pace"] = "fast_progression"
+            preferences["support"] = "challenging_cases"
+        
+        # Adaptations selon style d'apprentissage
+        style_adaptations = {
+            "visual": "diagrams_charts_infographics",
+            "auditory": "discussions_audio_explanations",
+            "kinesthetic": "hands_on_exercises_practice",
+            "reading": "text_documentation_articles"
+        }
+        preferences["preferred_content_type"] = style_adaptations.get(
+            learner_session.learning_style, 
+            "mixed_content"
+        )
+        
+        return preferences
+    
+    async def _get_or_create_cache(self, training: "Training", content: str) -> Optional[str]:
+        """Obtenir ou créer un cache pour le contenu de formation"""
+        if not self.cache_service or not PORTS_AVAILABLE:
+            return None
+            
+        try:
+            # Essayer d'obtenir un cache existant basé sur le fichier de formation
+            cache_key = f"training_{training.id}"
+            existing_cache = await self.cache_service.get_cache(cache_key)
+            
+            if existing_cache:
+                logger.info(f"Using existing cache for training {training.id}")
+                return cache_key
+            
+            # Créer un nouveau cache
+            cache_id = await self.cache_service.create_cache(
+                content=content,
+                ttl_hours=12  # Règle métier : 12 heures TTL par défaut
+            )
+            
+            logger.info(f"Created new cache {cache_id} for training {training.id}")
+            return cache_id
+            
+        except Exception as e:
+            logger.warning(f"Cache service error, proceeding without cache: {str(e)}")
+            return None
+    
+    async def _generate_with_cache(
+        self,
+        training_file_path: str,
+        learner_profile: Dict[str, Any],
+        cache_id: str
+    ) -> Dict[str, Any]:
+        """Générer un plan en utilisant le contenu mis en cache"""
+        if not self.cache_service:
+            raise PlanGenerationError(
+                self.LEARNER_ERROR_MESSAGE,
+                "cache_service_unavailable"
+            )
+        
+        try:
+            # Construire le prompt personnalisé
+            document_content = f"[Contenu mis en cache pour {training_file_path}]"
+            personalized_prompt = self._build_personalized_prompt(learner_profile, document_content)
+            
+            # Utiliser le contenu mis en cache
+            response = await self.cache_service.use_cached_content(
+                cache_id=cache_id,
+                prompt=personalized_prompt,
+                max_output_tokens=8192,
+                temperature=0.1,
+                top_p=0.95
+            )
+            
+            if not response['success']:
+                raise PlanGenerationError("Failed to generate content with cache")
+            
+            # Parser la réponse JSON
+            import json
+            plan_data = json.loads(response['content'])
+            
+            logger.info(f"Generated plan using cache. Tokens used: {response.get('usage_metadata', {})}")
+            return plan_data
+            
+        except Exception as e:
+            logger.error(f"Cache generation failed: {e}")
+            raise PlanGenerationError(
+                self.LEARNER_ERROR_MESSAGE,
+                "cache_generation_failed",
+                e
+            )
+    
+    def _validate_plan_structure_domain(self, plan_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Valider la structure du plan selon les exigences métier domain"""
+        if not isinstance(plan_data, dict):
+            raise PlanGenerationError("Plan data must be a dictionary")
+        
+        if "training_plan" not in plan_data:
+            raise PlanGenerationError("Plan must contain training_plan")
+        
+        training_plan = plan_data["training_plan"]
+        if "stages" not in training_plan:
+            raise PlanGenerationError("Plan must contain stages")
+        
+        stages = training_plan["stages"]
+        if not isinstance(stages, list):
+            raise PlanGenerationError("Stages must be a list")
+        
+        # Règle métier : Doit avoir exactement 5 étapes
+        if len(stages) != 5:
+            raise PlanGenerationError(f"Plan must have exactly 5 stages, got {len(stages)}")
+        
+        # Valider chaque étape
+        required_stage_numbers = {1, 2, 3, 4, 5}
+        found_stage_numbers = set()
+        
+        for stage in stages:
+            if not isinstance(stage, dict):
+                raise PlanGenerationError("Each stage must be a dictionary")
+            
+            if "stage_number" not in stage:
+                raise PlanGenerationError("Each stage must have a stage_number")
+            
+            stage_number = stage["stage_number"]
+            if stage_number not in required_stage_numbers:
+                raise PlanGenerationError(f"Invalid stage number: {stage_number}")
+            
+            found_stage_numbers.add(stage_number)
+            
+            # Valider que l'étape a les champs requis
+            required_fields = ["title", "modules"]
+            for field in required_fields:
+                if field not in stage:
+                    raise PlanGenerationError(f"Stage {stage_number} missing required field: {field}")
+            
+            # Valider modules
+            modules = stage["modules"]
+            if not isinstance(modules, list) or len(modules) == 0:
+                raise PlanGenerationError(f"Stage {stage_number} must have at least one module")
+        
+        # S'assurer que tous les numéros d'étapes sont présents
+        if found_stage_numbers != required_stage_numbers:
+            missing = required_stage_numbers - found_stage_numbers
+            raise PlanGenerationError(f"Missing stage numbers: {missing}")
+        
+        logger.info("Plan structure validation passed (domain)")
+        return plan_data
+    
+    async def generate_slide_content(
+        self,
+        slide_title: str,
+        module_context: str,
+        learner_session: Optional["LearnerSession"] = None,
+        learner_profile: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Générer le contenu pour une slide spécifique"""
+        try:
+            # Construire le profil apprenant
+            if learner_session and PORTS_AVAILABLE:
+                profile = self._build_learner_profile(learner_session)
+            elif learner_profile:
+                profile = learner_profile
+            else:
+                profile = {"experience_level": "intermediate", "learning_style": "visual"}
+            
+            # Si service Gemini disponible, l'utiliser
+            if self.gemini_service and PORTS_AVAILABLE:
+                slide_content = await self.gemini_service.generate_slide_content(
+                    slide_title=slide_title,
+                    module_context=module_context,
+                    learner_profile=profile
+                )
+                logger.info(f"Generated slide content for: {slide_title}")
+                return slide_content
+            
+            # Service indisponible
+            self._log_vertex_ai_operation("slide_generation", "error", "Gemini service not available for slide content generation", level="error")
+            raise PlanGenerationError(self.LEARNER_ERROR_MESSAGE)
+            
+        except Exception as e:
+            logger.error(f"Error generating slide content: {str(e)}")
+            raise PlanGenerationError(self.LEARNER_ERROR_MESSAGE)
+    
+    def get_stage_names(self) -> list[str]:
+        """Obtenir les noms des 5 étapes standard - Règle métier"""
+        return [
+            "Mise en contexte",
+            "Acquisition des fondamentaux", 
+            "Construction progressive",
+            "Maîtrise",
+            "Validation"
+        ]
+    
+    def get_stage_descriptions(self) -> Dict[int, str]:
+        """Obtenir les descriptions des étapes standard - Règle métier"""
+        return {
+            1: "Introduction, enjeux et objectifs - Mise en contexte",
+            2: "Concepts clés et théorie principale - Fondamentaux",
+            3: "Mise en pratique et exercices - Application", 
+            4: "Concepts avancés et cas complexes - Approfondissement",
+            5: "Synthèse, évaluation et perspectives - Validation"
+        }

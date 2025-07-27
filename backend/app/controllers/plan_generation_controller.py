@@ -1,6 +1,6 @@
 """
-FIA v3.0 - Plan Generation Controller (Simple)
-Controller simple pour endpoint unique de génération de plans
+FIA v3.0 - Integrated Plan Generation Controller
+Controller avec intégration base de données complète pour génération de plans
 """
 
 import logging
@@ -18,8 +18,11 @@ from app.schemas.plan_schemas import (
     PlanValidationResult,
     ValidationErrorDetail
 )
-from app.services.simple_plan_generation_service import (
-    SimplePlanGenerationService,
+from app.services.integrated_plan_generation_service import IntegratedPlanGenerationService
+from app.adapters.repositories.learner_training_plan_repository import LearnerTrainingPlanRepository
+from app.adapters.repositories.api_log_repository import ApiLogRepository
+from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
+from app.services.plan_generation_service import (
     PlanGenerationError,
     DocumentProcessingError,
     VertexAIError
@@ -29,44 +32,55 @@ from app.infrastructure.models.training_model import TrainingModel
 
 logger = logging.getLogger(__name__)
 
-# Router pour les endpoints de génération de plans
-router = APIRouter(prefix="/api", tags=["Plan Generation"])
+# Router pour les endpoints de génération de plans intégrés
+router = APIRouter(prefix="/api", tags=["Integrated Plan Generation"])
 
 
-def get_plan_generation_service() -> SimplePlanGenerationService:
-    """Dependency pour obtenir le service de génération de plans"""
-    return SimplePlanGenerationService()
+async def get_integrated_plan_generation_service(
+    session: AsyncSession = Depends(get_async_session)
+) -> IntegratedPlanGenerationService:
+    """Dependency pour obtenir le service de génération de plans intégré"""
+    # Créer les repositories
+    plan_repository = LearnerTrainingPlanRepository(session)
+    api_log_repository = ApiLogRepository(session)
+    
+    # Créer le service intégré avec la session DB
+    return IntegratedPlanGenerationService(
+        plan_repository=plan_repository,
+        api_log_repository=api_log_repository,
+        db_session=session
+    )
 
 
 @router.post(
-    "/generate-plan",
+    "/generate-plan-integrated",
     response_model=PlanGenerationResponse,
     responses={
         400: {"model": ErrorResponse},
         404: {"model": ErrorResponse}, 
         500: {"model": ErrorResponse}
     },
-    summary="Générer un plan de formation personnalisé",
-    description="Génère un plan de formation personnalisé basé sur le profil apprenant et le contenu de formation"
+    summary="Générer un plan de formation personnalisé avec persistance DB",
+    description="Génère un plan de formation personnalisé basé sur le profil apprenant et le contenu de formation, avec sauvegarde en base de données"
 )
-async def generate_plan(
+async def generate_plan_integrated(
     request: PlanGenerationRequest,
     session: AsyncSession = Depends(get_async_session),
-    plan_service: SimplePlanGenerationService = Depends(get_plan_generation_service)
+    integrated_service: IntegratedPlanGenerationService = Depends(get_integrated_plan_generation_service)
 ) -> PlanGenerationResponse:
     """
-    Générer un plan de formation personnalisé
+    Générer un plan de formation personnalisé avec intégration base de données
     
     Args:
         request: Requête avec training_id et profil apprenant
         session: Session base de données
-        plan_service: Service de génération de plans
+        integrated_service: Service de génération intégré
         
     Returns:
-        Plan de formation structuré en 5 étapes
+        Plan de formation structuré en 5 étapes avec métadonnées de persistance
     """
     try:
-        logger.info(f"🚀 Starting plan generation for training {request.training_id}")
+        logger.info(f"🚀 Starting integrated plan generation for training {request.training_id}")
         logger.info(f"👤 Learner profile: {request.learner_profile.experience_level}/{request.learner_profile.learning_style}")
         
         # Récupérer la formation depuis la base de données
@@ -86,7 +100,24 @@ async def generate_plan(
                 detail="No training file associated with this training"
             )
         
-        logger.info(f"📄 Using training file: {training.file_path}")
+        # Résoudre le chemin complet du fichier de formation
+        from app.domain.services.file_storage_service import FileStorageService
+        file_storage = FileStorageService()
+        full_file_path = await file_storage.get_training_file_path(training.file_path)
+        
+        # Vérifier que le fichier existe
+        if not full_file_path.exists():
+            logger.warning(f"❌ Training file not found: {full_file_path}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Training file not found: {training.file_path}"
+            )
+        
+        logger.info(f"📄 Using training file: {full_file_path}")
+        
+        # Utiliser l'ID de session apprenant fourni dans la requête
+        learner_session_id = request.learner_session_id
+        logger.info(f"👤 Using learner session ID: {learner_session_id}")
         
         # Convertir le profil Pydantic en dictionnaire
         learner_profile_dict = {
@@ -98,24 +129,32 @@ async def generate_plan(
             "language": request.learner_profile.language
         }
         
-        # Générer le plan avec le service
-        generated_plan = await plan_service.generate_plan(
+        # Générer et persister le plan avec le service intégré
+        persisted_plan = await integrated_service.generate_and_persist_plan(
+            learner_session_id=learner_session_id,
             learner_profile=learner_profile_dict,
-            file_path=training.file_path
+            file_path=str(full_file_path),
+            force_regenerate=request.force_regenerate
         )
         
         # Validation stricte côté backend avec Pydantic
         try:
             # Valider la structure du plan généré
-            if "training_plan" not in generated_plan:
+            if "training_plan" not in persisted_plan.plan_data:
                 logger.error("❌ Invalid plan structure: missing 'training_plan' key")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Invalid plan structure generated"
                 )
             
-            # Validation Pydantic stricte
-            training_plan_data = generated_plan["training_plan"]
+            # Validation Pydantic stricte avec mapping des champs
+            training_plan_data = persisted_plan.plan_data["training_plan"]
+            
+            # Mapper stage_name vers title si nécessaire (compatibilité avec ancien format)
+            for stage in training_plan_data.get("stages", []):
+                if "stage_name" in stage and "title" not in stage:
+                    stage["title"] = stage.pop("stage_name")
+            
             validated_plan = TrainingPlanSchema(**training_plan_data)
             
             logger.info("✅ Plan passed Pydantic validation successfully")
@@ -145,20 +184,15 @@ async def generate_plan(
                 }
             )
         
-        # Calculer les métadonnées
-        total_stages = len(training_plan_data.get("stages", []))
+        # Calculer les métadonnées enrichies
+        total_stages = persisted_plan.get_stage_count()
         total_modules = sum(len(stage.get("modules", [])) for stage in training_plan_data.get("stages", []))
         total_submodules = sum(
             len(module.get("submodules", [])) 
             for stage in training_plan_data.get("stages", [])
             for module in stage.get("modules", [])
         )
-        total_slides = sum(
-            submodule.get("slide_count", 0)
-            for stage in training_plan_data.get("stages", [])
-            for module in stage.get("modules", [])
-            for submodule in module.get("submodules", [])
-        )
+        total_slides = persisted_plan.get_total_slides()
         
         generation_metadata = {
             "training_id": str(request.training_id),
@@ -168,18 +202,27 @@ async def generate_plan(
             "total_modules": total_modules,
             "total_submodules": total_submodules,
             "total_slides": total_slides,
-            "generation_method": "vertex_ai" if plan_service.client else "mock",
-            "force_regenerate": request.force_regenerate
+            "generation_method": persisted_plan.generation_method,
+            "force_regenerate": request.force_regenerate,
+            
+            # Métadonnées de persistance
+            "database_integration": {
+                "plan_id": str(persisted_plan.id),
+                "persisted_at": persisted_plan.created_at.isoformat() if persisted_plan.created_at else None,
+                "generation_time_seconds": persisted_plan.generation_time_seconds,
+                "tokens_used": persisted_plan.tokens_used,
+                "ai_generated": persisted_plan.is_ai_generated()
+            }
         }
         
-        logger.info(f"✅ Plan generated successfully: {total_stages} stages, {total_modules} modules, {total_slides} slides")
+        logger.info(f"✅ Plan generated and persisted successfully: ID={persisted_plan.id}, {total_stages} stages, {total_modules} modules, {total_slides} slides")
         
         # Créer la réponse avec validation Pydantic
         response = PlanGenerationResponse(
             success=True,
             training_plan=training_plan_data,
             generation_metadata=generation_metadata,
-            message=f"Plan généré avec succès: {total_stages} étapes, {total_modules} modules, {total_slides} slides"
+            message=f"Plan généré et sauvegardé avec succès: {total_stages} étapes, {total_modules} modules, {total_slides} slides (ID: {persisted_plan.id})"
         )
         
         return response
@@ -205,74 +248,186 @@ async def generate_plan(
         
     except VertexAIError as e:
         logger.error(f"❌ Vertex AI error: {e}")
+        error_id = f"vertex_ai_{int(time.time())}"
+        technical_details = {
+            "error_id": error_id,
+            "error_type": "vertex_ai_error", 
+            "error_message": str(e),
+            "api_response": getattr(e, 'api_response', None),
+            "timestamp": time.time(),
+            "service": "vertex_ai"
+        }
+        logger.error(f"Technical details for support: {technical_details}")
+        
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
-                "error_type": "vertex_ai_error",
-                "error_message": str(e),
-                "api_response": getattr(e, 'api_response', None),
-                "details": {
-                    "service": "vertex_ai",
-                    "retry_suggested": True
-                }
+                "error_type": "service_unavailable",
+                "user_message": "Le service de génération de plan de formation est temporairement indisponible. Veuillez contacter le support technique.",
+                "support_contact": "jerome.iavarone@gmail.com",
+                "error_id": error_id,
+                "technical_details": f"VertexAI service error - Error ID: {error_id}. Please include this information when contacting support."
             }
         )
         
     except PlanGenerationError as e:
         logger.error(f"❌ Plan generation error: {e}")
+        error_id = f"plan_gen_{int(time.time())}"
+        technical_details = {
+            "error_id": error_id,
+            "error_type": e.error_type,
+            "error_message": str(e),
+            "original_error": str(e.original_error) if e.original_error else None,
+            "timestamp": time.time()
+        }
+        logger.error(f"Technical details for support: {technical_details}")
+        
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "error_type": e.error_type,
-                "error_message": str(e),
-                "original_error": str(e.original_error) if e.original_error else None
+                "error_type": "plan_generation_failed",
+                "user_message": "La génération du plan de formation a échoué. Veuillez contacter le support technique avec les détails de l'erreur.",
+                "support_contact": "jerome.iavarone@gmail.com",
+                "error_id": error_id,
+                "technical_details": f"Plan generation error - Error ID: {error_id}, Type: {e.error_type}. Please include this information when contacting support."
             }
         )
         
     except Exception as e:
-        logger.error(f"❌ Unexpected error during plan generation: {str(e)}")
+        logger.error(f"❌ Unexpected error during integrated plan generation: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        
+        error_id = f"internal_{int(time.time())}"
+        technical_details = {
+            "error_id": error_id,
+            "error_type": "internal_server_error",
+            "error_message": str(e),
+            "traceback": traceback.format_exc(),
+            "timestamp": time.time()
+        }
+        logger.error(f"Technical details for support: {technical_details}")
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "error_type": "internal_server_error",
-                "error_message": "An unexpected error occurred during plan generation",
-                "details": {
-                    "contact_support": True,
-                    "error_id": f"plan_gen_{int(time.time())}"
-                }
+                "user_message": "Une erreur technique inattendue s'est produite lors de la génération du plan de formation. Veuillez contacter le support technique.",
+                "support_contact": "jerome.iavarone@gmail.com",
+                "error_id": error_id,
+                "technical_details": f"Internal server error - Error ID: {error_id}. Please include this information when contacting support."
             }
         )
 
 
-@router.get(
-    "/generate-plan/health",
-    summary="Health check du service de génération",
-    description="Vérifier le statut du service de génération de plans"
+@router.post(
+    "/generate-plan",
+    response_model=PlanGenerationResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse}, 
+        500: {"model": ErrorResponse}
+    },
+    summary="Générer un plan de formation personnalisé (API compatible)",
+    description="Génère un plan de formation personnalisé - Compatibility endpoint qui redirige vers l'API intégrée"
 )
-async def health_check(
-    plan_service: SimplePlanGenerationService = Depends(get_plan_generation_service)
+async def generate_plan_compatible(
+    request: PlanGenerationRequest,
+    session: AsyncSession = Depends(get_async_session),
+    integrated_service: IntegratedPlanGenerationService = Depends(get_integrated_plan_generation_service)
+) -> PlanGenerationResponse:
+    """
+    Endpoint de compatibilité qui redirige vers l'API intégrée
+    
+    Cette route assure la compatibilité avec l'ancienne API /generate-plan
+    en redirigeant vers la nouvelle implémentation intégrée.
+    """
+    logger.info("🔄 Using compatibility endpoint, redirecting to integrated service")
+    
+    # Rediriger vers l'endpoint intégré
+    return await generate_plan_integrated(request, session, integrated_service)
+
+
+@router.get(
+    "/plan/{plan_id}",
+    summary="Récupérer un plan de formation par ID",
+    description="Récupère un plan de formation persisté en base de données"
+)
+async def get_plan_by_id(
+    plan_id: str,
+    integrated_service: IntegratedPlanGenerationService = Depends(get_integrated_plan_generation_service)
 ) -> Dict[str, Any]:
-    """Health check du service de génération de plans"""
+    """Récupérer un plan de formation par son ID"""
     try:
-        vertex_ai_configured = plan_service.client is not None
+        from uuid import UUID
+        plan_uuid = UUID(plan_id)
+        
+        plan = await integrated_service.plan_repository.get_by_id(plan_uuid)
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Plan with ID {plan_id} not found"
+            )
         
         return {
-            "status": "healthy",
-            "service": "plan_generation",
-            "vertex_ai_configured": vertex_ai_configured,
-            "model": plan_service.model_name if hasattr(plan_service, 'model_name') else "unknown"
+            "id": str(plan.id),
+            "learner_session_id": str(plan.learner_session_id),
+            "plan_data": plan.plan_data,
+            "generation_method": plan.generation_method,
+            "tokens_used": plan.tokens_used,
+            "generation_time_seconds": plan.generation_time_seconds,
+            "total_slides": plan.get_total_slides(),
+            "stage_count": plan.get_stage_count(),
+            "created_at": plan.created_at.isoformat() if plan.created_at else None,
+            "updated_at": plan.updated_at.isoformat() if plan.updated_at else None
         }
         
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid plan ID format"
+        )
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error(f"❌ Error retrieving plan {plan_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving plan"
+        )
+
+
+@router.get(
+    "/generate-plan-integrated/health",
+    summary="Health check du service intégré",
+    description="Vérifier le statut du service de génération intégré avec base de données"
+)
+async def integrated_health_check(
+    integrated_service: IntegratedPlanGenerationService = Depends(get_integrated_plan_generation_service)
+) -> Dict[str, Any]:
+    """Health check du service de génération intégré"""
+    return await integrated_service.health_check()
+
+
+@router.get(
+    "/generation-statistics",
+    summary="Statistiques de génération de plans",
+    description="Obtenir des statistiques sur la génération de plans de formation"
+)
+async def get_generation_statistics(
+    integrated_service: IntegratedPlanGenerationService = Depends(get_integrated_plan_generation_service)
+) -> Dict[str, Any]:
+    """Obtenir les statistiques de génération de plans"""
+    try:
+        stats = await integrated_service.get_generation_statistics()
         return {
-            "status": "unhealthy",
-            "service": "plan_generation",
-            "error": str(e)
+            "success": True,
+            "statistics": stats
         }
+    except Exception as e:
+        logger.error(f"❌ Error getting generation statistics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving generation statistics"
+        )
 
 
 @router.post(

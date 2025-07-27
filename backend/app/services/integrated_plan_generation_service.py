@@ -10,7 +10,7 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.simple_plan_generation_service import SimplePlanGenerationService
+from app.services.plan_generation_service import PlanGenerationService
 from app.services.plan_persistence_service import PlanPersistenceService
 from app.domain.entities.learner_training_plan import LearnerTrainingPlan
 from app.domain.entities.api_log import ApiLog
@@ -39,7 +39,7 @@ class IntegratedPlanGenerationService:
         self.plan_repository = plan_repository
         self.api_log_repository = api_log_repository
         self.db_session = db_session
-        self.plan_generation_service = SimplePlanGenerationService()
+        self.plan_generation_service = PlanGenerationService()
         
         # Décorer le service simple pour capturer les logs
         self._decorate_plan_service()
@@ -169,7 +169,7 @@ class IntegratedPlanGenerationService:
             generation_time_seconds = int(end_time - start_time)
             
             # Déterminer la méthode de génération
-            generation_method = "vertex_ai" if self.plan_generation_service.client else "fallback"
+            generation_method = "vertex_ai"
             
             # Créer l'entité domaine
             learner_training_plan = LearnerTrainingPlan(
@@ -354,7 +354,6 @@ class IntegratedPlanGenerationService:
         try:
             # Plans par méthode de génération
             vertex_plans = await self.plan_repository.get_plans_by_generation_method("vertex_ai", limit=1000)
-            fallback_plans = await self.plan_repository.get_plans_by_generation_method("fallback", limit=1000)
             
             # Plans avec de bonnes performances (< 30s de génération)
             fast_plans = await self.plan_repository.get_plans_with_performance_metrics(
@@ -362,13 +361,13 @@ class IntegratedPlanGenerationService:
             )
             
             # Statistiques générales
+            total_plans = len(vertex_plans)
             stats = {
-                "total_plans_generated": len(vertex_plans) + len(fallback_plans),
+                "total_plans_generated": total_plans,
                 "vertex_ai_plans": len(vertex_plans),
-                "fallback_plans": len(fallback_plans),
                 "fast_generation_plans": len(fast_plans),
-                "vertex_ai_success_rate": len(vertex_plans) / max(len(vertex_plans) + len(fallback_plans), 1) * 100,
-                "average_slides_per_plan": sum(plan.get_total_slides() for plan in vertex_plans + fallback_plans) / max(len(vertex_plans) + len(fallback_plans), 1)
+                "vertex_ai_success_rate": 100.0 if total_plans > 0 else 0.0,
+                "average_slides_per_plan": sum(plan.get_total_slides() for plan in vertex_plans) / max(total_plans, 1)
             }
             
             return stats

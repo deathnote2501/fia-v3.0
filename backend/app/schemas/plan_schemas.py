@@ -65,7 +65,7 @@ class ModuleSchema(BaseModel):
 class StageSchema(BaseModel):
     """Schema pour étape de formation avec validation stricte"""
     stage_number: int = Field(..., ge=1, le=5, description="Numéro d'étape (1-5)")
-    stage_name: Literal[
+    title: Literal[
         "Mise en contexte",
         "Acquisition des fondamentaux", 
         "Construction progressive",
@@ -74,7 +74,7 @@ class StageSchema(BaseModel):
     ] = Field(..., description="Nom exact de l'étape selon SPEC.md")
     modules: List[ModuleSchema] = Field(..., min_items=1, max_items=3, description="1-3 modules par étape")
     
-    @validator('stage_name')
+    @validator('title')
     def validate_stage_name_matches_number(cls, v, values):
         """Valider que le nom d'étape correspond au numéro"""
         if 'stage_number' not in values:
@@ -147,11 +147,11 @@ class TrainingPlanSchema(BaseModel):
             for submodule in module.submodules
         )
         
-        # Contraintes métier: entre 15 et 50 slides total
+        # Contraintes métier: entre 15 et 100 slides total
         if total_slides < 15:
             raise ValueError(f'Training plan too short: {total_slides} slides (minimum 15)')
-        if total_slides > 50:
-            raise ValueError(f'Training plan too long: {total_slides} slides (maximum 50)')
+        if total_slides > 150:
+            raise ValueError(f'Training plan too long: {total_slides} slides (maximum 150)')
         
         return v
 

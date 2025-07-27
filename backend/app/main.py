@@ -21,22 +21,14 @@ from app.adapters.inbound.dashboard_controller import router as dashboard_router
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
 
-# Import plan generation controllers
+# Import unified plan generation controller
 try:
     from app.controllers.plan_generation_controller import router as plan_generation_router
     PLAN_GENERATION_AVAILABLE = True
-    logger.info("✅ Simple plan generation controller loaded successfully")
+    logger.info("✅ Unified plan generation controller loaded successfully")
 except ImportError as e:
-    logger.warning(f"Simple plan generation controller not available: {e}")
+    logger.warning(f"Unified plan generation controller not available: {e}")
     PLAN_GENERATION_AVAILABLE = False
-
-try:
-    from app.controllers.integrated_plan_generation_controller import router as integrated_plan_generation_router
-    INTEGRATED_PLAN_GENERATION_AVAILABLE = True
-    logger.info("✅ Integrated plan generation controller loaded successfully")
-except ImportError as e:
-    logger.warning(f"Integrated plan generation controller not available: {e}")
-    INTEGRATED_PLAN_GENERATION_AVAILABLE = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -104,12 +96,9 @@ app.include_router(security_test_router)
 # Include dashboard router
 app.include_router(dashboard_router)
 
-# Include plan generation routers if available
+# Include unified plan generation router if available
 if PLAN_GENERATION_AVAILABLE:
     app.include_router(plan_generation_router)
-
-if INTEGRATED_PLAN_GENERATION_AVAILABLE:
-    app.include_router(integrated_plan_generation_router)
 
 
 @app.get("/")
