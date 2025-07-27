@@ -15,7 +15,7 @@ from pathlib import Path
 from app.infrastructure.database import get_database_session
 from app.infrastructure.auth import get_current_trainer
 from app.domain.entities.trainer import Trainer
-from app.domain.entities.training import Training
+from app.domain.entities.training import Training, FileType
 from app.domain.schemas.training import TrainingUpload, TrainingResponse, TrainingListResponse
 from app.domain.services.file_storage_service import FileStorageService
 from app.adapters.repositories.training_repository import TrainingRepository
@@ -47,7 +47,8 @@ async def create_training(
     try:
         # Validate uploaded file
         file_extension, mime_type = await validate_training_file(file)
-        file_type = get_file_type_from_extension(file_extension)
+        file_type_str = get_file_type_from_extension(file_extension)
+        file_type = FileType(file_type_str)
         
         # Initialize services
         file_storage = FileStorageService()
