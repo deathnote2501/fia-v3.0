@@ -21,6 +21,7 @@ class LearnerProfileRequest(BaseModel):
 class PlanGenerationRequest(BaseModel):
     """Schema pour requête de génération de plan"""
     training_id: UUID = Field(..., description="ID de la formation")
+    learner_session_id: UUID = Field(..., description="ID de la session apprenant")
     learner_profile: LearnerProfileRequest = Field(..., description="Profil de l'apprenant")
     force_regenerate: bool = Field(default=False, description="Forcer la régénération")
 

@@ -36,6 +36,15 @@ Etape
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
 
+## Les grandes fonctionnalités
+- La gestion des comptes formateurs : création, authentification, etc (FastAPI-Users)
+- La création des sessions pour les apprenants
+- La création du plan de formation personnalisé pour un apprenant
+- La génération des slides (pas encore implémenté)
+- Les interactions avec le formateur IA (pas encore implémenté)
+- Les boutons pour simplifier, approfondir, exercices, exemples et "le plus important" (pas encore implémenté)
+- La live API (pas encore implémenté)
+
 ---------------------------------------------------------------------------------------------------------------
 
 # Guide des Bonnes Pratiques à respecter pour le développement

@@ -29,51 +29,40 @@
 
     <!-- Main Content -->
     <div class="container my-4">
-        <div id="main-container">
-            <!-- Loading State -->
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <div class="card shadow-sm">
-                        <div class="card-body text-center py-5">
-                            <div class="spinner-border text-primary mb-3" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <h5 class="card-title">Loading Your Personalized Training Plan...</h5>
-                            <p class="text-muted">Please wait while we retrieve your customized learning experience.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="main-content">
+            <!-- Content will be loaded dynamically -->
         </div>
     </div>
 
-    <!-- Bootstrap 5.3.2 JS -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         class TrainingApp {
             constructor() {
-                this.token = this.getTokenFromUrl();
-                this.container = document.getElementById('main-container');
-                this.learnerData = null;
+                this.container = document.getElementById('main-content');
+                this.token = this.getTokenFromURL();
+                this.sessionData = null;
+                this.learnerSession = null;
                 
                 if (!this.token) {
-                    this.showError('Invalid session token');
+                    this.showError('No session token provided');
                     return;
                 }
                 
                 this.init();
             }
             
-            getTokenFromUrl() {
+            getTokenFromURL() {
                 const urlParams = new URLSearchParams(window.location.search);
                 return urlParams.get('token');
             }
             
             async init() {
                 try {
+                    console.log('🚀 Initializing TrainingApp with token:', this.token);
                     await this.loadLearnerData();
-                    this.displayTrainingPlan();
+                    await this.displayTrainingPlan();
                 } catch (error) {
                     console.error('Training app initialization error:', error);
                     this.showError(error.message);
@@ -82,6 +71,8 @@
             
             async loadLearnerData() {
                 try {
+                    console.log('🔍 Loading learner data for token:', this.token);
+                    
                     // Validate session token first
                     const sessionResponse = await fetch(`/api/session/${this.token}`);
                     if (!sessionResponse.ok) {
@@ -89,21 +80,186 @@
                     }
                     
                     const sessionData = await sessionResponse.json();
+                    console.log('✅ Session data loaded:', sessionData);
                     
-                    // Try to find learner session for this token
-                    // For now, we'll show a simple message as the endpoint structure needs to be clarified
-                    document.getElementById('learner-email').textContent = 'Your Training Session';
+                    this.sessionData = sessionData;
+                    this.learnerSession = sessionData.learner_session;
+                    
+                    // Update UI with learner info
+                    if (this.learnerSession) {
+                        document.getElementById('learner-email').textContent = this.learnerSession.email || 'Your Training Session';
+                    }
                     
                 } catch (error) {
+                    console.error('❌ Error loading learner data:', error);
                     throw new Error(`Failed to load training data: ${error.message}`);
                 }
             }
             
-            displayTrainingPlan() {
+            async displayTrainingPlan() {
+                // Afficher le loading d'abord
+                this.showLoading();
+                
+                try {
+                    console.log('🚀 Starting training plan generation...');
+                    
+                    // Vérifier qu'on a les données nécessaires
+                    if (!this.learnerSession) {
+                        console.log('⚠️ No learner session data available, redirecting to profile page...');
+                        // Rediriger vers la page de profil si pas de données learner
+                        window.location.href = `/frontend/public/session.html?token=${this.token}`;
+                        return;
+                    }
+                    
+                    if (!this.sessionData?.training_session?.training_id) {
+                        throw new Error('No training ID available');
+                    }
+                    
+                    // Préparer la requête de génération de plan
+                    const planRequest = {
+                        training_id: this.sessionData.training_session.training_id,
+                        learner_session_id: this.learnerSession.id,
+                        learner_profile: {
+                            experience_level: this.learnerSession.experience_level,
+                            learning_style: this.learnerSession.learning_style,
+                            job_position: this.learnerSession.job_position,
+                            activity_sector: this.learnerSession.activity_sector,
+                            country: this.learnerSession.country,
+                            language: this.learnerSession.language
+                        },
+                        force_regenerate: false
+                    };
+                    
+                    console.log('📝 Plan generation request:', planRequest);
+                    
+                    // Appeler l'API de génération de plans intégrée
+                    console.log('🔄 Calling /api/generate-plan-integrated...');
+                    const planResponse = await fetch('/api/generate-plan-integrated', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(planRequest)
+                    });
+                    
+                    console.log('📊 Plan response status:', planResponse.status);
+                    console.log('📊 Plan response headers:', [...planResponse.headers.entries()]);
+                    
+                    if (!planResponse.ok) {
+                        const errorText = await planResponse.text();
+                        console.error('❌ Plan generation failed - Raw response:', errorText);
+                        
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { detail: { error_message: errorText } };
+                        }
+                        
+                        console.error('❌ Plan generation failed:', errorData);
+                        throw new Error(`Plan generation failed: ${errorData.detail?.error_message || planResponse.statusText}`);
+                    }
+                    
+                    const planData = await planResponse.json();
+                    console.log('✅ Plan generated successfully:', planData);
+                    
+                    // Afficher le plan généré
+                    this.renderGeneratedPlan(planData);
+                    
+                } catch (error) {
+                    console.error('❌ Error generating training plan:', error);
+                    this.showError(`Failed to generate training plan: ${error.message}`);
+                }
+            }
+            
+            showLoading() {
+                this.container.innerHTML = `
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card shadow-sm">
+                                <div class="card-body text-center py-5">
+                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <h5 class="card-title">Generating Your Personalized Training Plan</h5>
+                                    <p class="card-text text-muted">
+                                        Our AI is analyzing your profile and creating a customized learning experience...
+                                        <br>This may take a few moments.
+                                    </p>
+                                    <div class="progress mt-3" style="height: 6px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 100%"></div>
+                                    </div>
+                                    
+                                    <div class="mt-4">
+                                        <small class="text-muted">
+                                            <strong>Debug Info:</strong><br>
+                                            Session Token: ${this.token}<br>
+                                            Training ID: ${this.sessionData?.training_session?.training_id || 'Loading...'}<br>
+                                            Learner Email: ${this.learnerSession?.email || 'Loading...'}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            renderGeneratedPlan(planData) {
+                console.log('🎨 Rendering generated plan:', planData);
+                
+                const trainingPlan = planData.training_plan;
+                const metadata = planData.generation_metadata;
+                
+                let accordionHTML = '';
+                trainingPlan.stages.forEach((stage, stageIndex) => {
+                    let modulesHTML = '';
+                    stage.modules.forEach((module, moduleIndex) => {
+                        let submodulesHTML = '';
+                        module.submodules.forEach((submodule, submoduleIndex) => {
+                            submodulesHTML += `
+                                <div class="col-md-6 mb-2">
+                                    <div class="card border-light bg-light">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title text-primary">${submodule.submodule_name}</h6>
+                                            <span class="badge bg-secondary">${submodule.slide_count} slides</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        modulesHTML += `
+                            <div class="mb-3">
+                                <h6 class="text-dark">${module.module_name}</h6>
+                                <div class="row">${submodulesHTML}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    const isFirstStage = stageIndex === 0;
+                    accordionHTML += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button ${isFirstStage ? '' : 'collapsed'}" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#stage${stage.stage_number}">
+                                    <i class="bi bi-mortarboard me-2 text-primary"></i>
+                                    Étape ${stage.stage_number}: ${stage.stage_name}
+                                </button>
+                            </h2>
+                            <div id="stage${stage.stage_number}" class="accordion-collapse collapse ${isFirstStage ? 'show' : ''}">
+                                <div class="accordion-body">
+                                    ${modulesHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
                 this.container.innerHTML = `
                     <div class="row">
                         <div class="col-md-8">
-                            <!-- Training Content Area -->
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white">
                                     <h5 class="mb-0">
@@ -113,61 +269,131 @@
                                 <div class="card-body">
                                     <div class="alert alert-success">
                                         <i class="bi bi-check-circle me-2"></i>
-                                        <strong>Success!</strong> Your personalized training plan has been generated and saved to the database.
+                                        <strong>Success!</strong> ${planData.message}
+                                        <br><small class="text-muted">Method: ${metadata.generation_method} | 
+                                        Plan ID: ${metadata.database_integration?.plan_id || 'N/A'}</small>
                                     </div>
                                     
-                                    <h6 class="text-muted mb-3">Training Structure:</h6>
-                                    <div class="accordion" id="trainingAccordion">
-                                        <!-- Dynamic content will be loaded here -->
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#phase1">
-                                                    <i class="bi bi-lightbulb me-2 text-warning"></i>
-                                                    Phase 1: Discovery
-                                                </button>
-                                            </h2>
-                                            <div id="phase1" class="accordion-collapse collapse show">
-                                                <div class="accordion-body">
-                                                    <p class="text-muted">Your personalized learning modules are being prepared...</p>
-                                                </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <div class="h4 text-primary">${metadata.total_stages}</div>
+                                                <small class="text-muted">Stages</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <div class="h4 text-info">${metadata.total_modules}</div>
+                                                <small class="text-muted">Modules</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <div class="h4 text-success">${metadata.total_slides}</div>
+                                                <small class="text-muted">Slides</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-center">
+                                                <div class="h4 text-warning">${metadata.database_integration?.generation_time_seconds || 0}s</div>
+                                                <small class="text-muted">Generation Time</small>
                                             </div>
                                         </div>
                                     </div>
                                     
+                                    <h6 class="text-muted mb-3">Training Structure:</h6>
+                                    <div class="accordion" id="trainingAccordion">
+                                        ${accordionHTML}
+                                    </div>
+                                    
                                     <div class="mt-4">
-                                        <button class="btn btn-primary" onclick="window.trainingApp.checkDatabaseContent()">
-                                            <i class="bi bi-database me-2"></i>View Database Content
+                                        <button class="btn btn-primary me-2">
+                                            <i class="bi bi-play-circle me-1"></i>Start Training
                                         </button>
+                                        <button class="btn btn-outline-secondary me-2">
+                                            <i class="bi bi-download me-1"></i>Download Plan
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="location.reload()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Debug Information -->
+                                    <div class="mt-4">
+                                        <details>
+                                            <summary class="text-muted">Debug Information</summary>
+                                            <pre class="bg-light p-3 mt-2 small">${JSON.stringify(metadata, null, 2)}</pre>
+                                        </details>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-4">
-                            <!-- Chat/Progress Area -->
+                            <!-- AI Assistant Chat -->
                             <div class="card shadow-sm">
                                 <div class="card-header bg-success text-white">
                                     <h6 class="mb-0">
-                                        <i class="bi bi-chat-dots me-2"></i>AI Training Assistant
+                                        <i class="bi bi-robot me-2"></i>AI Training Assistant
                                     </h6>
                                 </div>
-                                <div class="card-body">
-                                    <p class="text-muted small">Your AI assistant will appear here to help guide you through the training.</p>
+                                <div class="card-body" style="height: 400px; overflow-y: auto;">
+                                    <div class="chat-messages">
+                                        <div class="message assistant mb-3">
+                                            <div class="d-flex align-items-start">
+                                                <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 14px;">
+                                                    AI
+                                                </div>
+                                                <div class="message-content">
+                                                    <div class="bg-light p-3 rounded">
+                                                        <p class="mb-0 small">Hello! I've just generated your personalized ${metadata.total_slides}-slide training plan with ${metadata.total_stages} stages. The plan was created using ${metadata.generation_method} and is now saved in our database. I'm here to help you throughout your learning journey!</p>
+                                                    </div>
+                                                    <small class="text-muted">Just now</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="Type your question...">
+                                        <button class="btn btn-success" type="button">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <!-- Progress Card -->
+                            <!-- Progress Panel -->
                             <div class="card shadow-sm mt-3">
-                                <div class="card-header bg-info text-white">
+                                <div class="card-header">
                                     <h6 class="mb-0">
                                         <i class="bi bi-graph-up me-2"></i>Your Progress
                                     </h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="progress mb-2">
-                                        <div class="progress-bar" style="width: 0%"></div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small">Overall Progress</span>
+                                        <span class="badge bg-primary">0%</span>
                                     </div>
-                                    <small class="text-muted">0% Complete</small>
+                                    <div class="progress mb-3" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    
+                                    <div class="small text-muted">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Slides completed:</span>
+                                            <span>0 / ${metadata.total_slides}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Time spent:</span>
+                                            <span>0 min</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Current stage:</span>
+                                            <span>${trainingPlan.stages[0]?.stage_name || 'Discovery'}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -175,30 +401,23 @@
                 `;
             }
             
-            checkDatabaseContent() {
-                alert('Database content check:\n\n' +
-                      '✅ learner_sessions: Profile created\n' +
-                      '✅ learner_training_plans: Plan generated\n' +
-                      '✅ training_modules: Hierarchical structure\n' +
-                      '✅ training_submodules: Learning modules\n' +
-                      '✅ training_slides: Individual slides\n\n' +
-                      'The personalized training plan generation is working correctly!');
-            }
-            
             showError(message) {
                 this.container.innerHTML = `
-                    <div class="row justify-content-center">
-                        <div class="col-md-6">
-                            <div class="card border-danger shadow-sm">
-                                <div class="card-body text-center py-5">
-                                    <div class="text-danger mb-3">
-                                        <i class="bi bi-exclamation-triangle display-1"></i>
-                                    </div>
-                                    <h5 class="card-title text-danger">Access Error</h5>
-                                    <p class="card-text text-muted mb-4">${message}</p>
-                                    <a href="/frontend/public/index.html" class="btn btn-primary">
-                                        <i class="bi bi-house me-2"></i>Return to Home
-                                    </a>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-danger" role="alert">
+                                <h4 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Error
+                                </h4>
+                                <p>${message}</p>
+                                <hr>
+                                <div class="mb-0">
+                                    <button class="btn btn-outline-danger" onclick="location.reload()">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="history.back()">
+                                        <i class="bi bi-arrow-left me-1"></i>Go Back
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -207,9 +426,10 @@
             }
         }
         
-        // Initialize the training app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            window.trainingApp = new TrainingApp();
+        // Initialize the application when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🌟 Training page loaded, initializing app...');
+            new TrainingApp();
         });
     </script>
 </body>

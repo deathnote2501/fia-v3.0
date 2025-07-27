@@ -99,11 +99,24 @@ async def generate_plan_integrated(
                 detail="No training file associated with this training"
             )
         
-        logger.info(f"📄 Using training file: {training.file_path}")
+        # Résoudre le chemin complet du fichier de formation
+        from app.domain.services.file_storage_service import FileStorageService
+        file_storage = FileStorageService()
+        full_file_path = await file_storage.get_training_file_path(training.file_path)
         
-        # Vérifier si une session apprenant existe déjà ou en créer une temporaire
-        # Pour ce MVP, on utilise l'ID de training comme session temporaire
-        learner_session_id = request.training_id  # Temporaire pour le MVP
+        # Vérifier que le fichier existe
+        if not full_file_path.exists():
+            logger.warning(f"❌ Training file not found: {full_file_path}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Training file not found: {training.file_path}"
+            )
+        
+        logger.info(f"📄 Using training file: {full_file_path}")
+        
+        # Utiliser l'ID de session apprenant fourni dans la requête
+        learner_session_id = request.learner_session_id
+        logger.info(f"👤 Using learner session ID: {learner_session_id}")
         
         # Convertir le profil Pydantic en dictionnaire
         learner_profile_dict = {
@@ -119,7 +132,7 @@ async def generate_plan_integrated(
         persisted_plan = await integrated_service.generate_and_persist_plan(
             learner_session_id=learner_session_id,
             learner_profile=learner_profile_dict,
-            file_path=training.file_path,
+            file_path=str(full_file_path),
             force_regenerate=request.force_regenerate
         )
         

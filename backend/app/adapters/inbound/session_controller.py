@@ -237,14 +237,49 @@ async def validate_session_token(
                 detail="Training not found"
             )
         
-        return {
+        # Try to get learner session if it exists
+        learner_session = None
+        learner_repo = LearnerSessionRepository(db)
+        
+        # For now, we'll get the first learner session for this training session
+        # In a real implementation, we'd identify the learner by some criteria
+        learner_sessions = await learner_repo.get_by_training_session_id(training_session.id)
+        if learner_sessions:
+            # For demo purposes, take the most recent one
+            learner_session = max(learner_sessions, key=lambda x: x.started_at)
+        
+        response_data = {
             "session_id": training_session.id,
             "session_name": training_session.name,
             "session_description": training_session.description,
             "training_name": training.name,
             "training_description": training.description,
+            "training_session": {
+                "id": training_session.id,
+                "training_id": training_session.training_id,
+                "name": training_session.name,
+                "description": training_session.description
+            },
             "is_valid": True
         }
+        
+        # Add learner session data if available
+        if learner_session:
+            response_data["learner_session"] = {
+                "id": learner_session.id,
+                "email": learner_session.email,
+                "experience_level": learner_session.experience_level,
+                "learning_style": learner_session.learning_style,
+                "job_position": learner_session.job_position,
+                "activity_sector": learner_session.activity_sector,
+                "country": learner_session.country,
+                "language": learner_session.language,
+                "current_slide_number": learner_session.current_slide_number,
+                "total_time_spent": learner_session.total_time_spent,
+                "started_at": learner_session.started_at.isoformat() if learner_session.started_at else None
+            }
+        
+        return response_data
         
     except HTTPException:
         raise
