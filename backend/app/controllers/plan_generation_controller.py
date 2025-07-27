@@ -22,11 +22,9 @@ from app.services.integrated_plan_generation_service import IntegratedPlanGenera
 from app.adapters.repositories.learner_training_plan_repository import LearnerTrainingPlanRepository
 from app.adapters.repositories.api_log_repository import ApiLogRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
-from app.services.plan_generation_service import (
-    PlanGenerationError,
-    DocumentProcessingError,
-    VertexAIError
-)
+from app.services.plan_generation_service_v2 import PlanGenerationError
+from app.domain.services.document_processor import DocumentProcessingError
+from app.infrastructure.adapters.vertex_ai_adapter import VertexAIError
 from app.infrastructure.database import get_async_session
 from app.infrastructure.models.training_model import TrainingModel
 

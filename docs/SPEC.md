@@ -70,7 +70,7 @@ Etape
 - **Architecture** : Architecture hexagonale avec séparation des couches
 - **Serveur** : FastAPI server
 - **Authentification & Sessions** : FastAPI-Users pour la gestion des sessions formateurs et apprenants + JWT
-- **IA** : Google Gemini Flash 2.0 avec Context Caching et Structured Output via Vertex AI (important!)
+- **IA** : Google Gemini Flash 2.0 avec Context Caching et Structured Output via Vertex AI (important!). On n'utilise que VertexAI !!!!!!!!!!!!!! On n'utilise que VertexAI !!!!!!!!!!!!!! On n'utilise que VertexAI !!!!!!!!!!!!!! On n'utilise que VertexAI !!!!!!!!!!!!!!
 - **Frontend** : HTML5/CSS3/JavaScript ES6 vanilla
 - **UI** : Bootstrap + Bootstrap Icons uniquement
 - **Infrastructure** : Railway (déploiement) + GitHub (versioning)

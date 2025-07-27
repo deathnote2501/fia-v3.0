@@ -10,7 +10,7 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.plan_generation_service import PlanGenerationService
+from app.services.plan_generation_service_v2 import PlanGenerationService
 from app.services.plan_persistence_service import PlanPersistenceService
 from app.domain.entities.learner_training_plan import LearnerTrainingPlan
 from app.domain.entities.api_log import ApiLog
@@ -50,21 +50,24 @@ class IntegratedPlanGenerationService:
         logger.info(f"Database integration: relational persistence enabled")
     
     def _decorate_plan_service(self):
-        """Décorer le service simple pour capturer les appels API"""
-        original_log_method = self.plan_generation_service._log_gemini_api_call
-        
-        def enhanced_log_method(*args, **kwargs):
-            """Méthode de log enrichie qui sauve aussi en DB"""
-            # Appeler la méthode originale (logging structuré)
-            original_log_method(*args, **kwargs)
+        """Décorer le service v2 pour capturer les appels API"""
+        # Le service v2 utilise l'adapter VertexAI qui a son propre logging
+        # On va intercepter au niveau de l'adapter
+        if hasattr(self.plan_generation_service, 'vertex_ai_adapter'):
+            original_log_method = self.plan_generation_service.vertex_ai_adapter._log_api_call
             
-            # Stocker pour persistance ultérieure (async sera géré dans le service)
-            if hasattr(self, '_current_learner_session_id'):
-                kwargs['learner_session_id'] = self._current_learner_session_id
-                self._pending_api_logs.append((args, kwargs))
-        
-        # Remplacer la méthode de log
-        self.plan_generation_service._log_gemini_api_call = enhanced_log_method
+            def enhanced_log_method(*args, **kwargs):
+                """Méthode de log enrichie qui sauve aussi en DB"""
+                # Appeler la méthode originale (logging structuré)
+                original_log_method(*args, **kwargs)
+                
+                # Stocker pour persistance ultérieure (async sera géré dans le service)
+                if hasattr(self, '_current_learner_session_id'):
+                    kwargs['learner_session_id'] = self._current_learner_session_id
+                    self._pending_api_logs.append((args, kwargs))
+            
+            # Remplacer la méthode de log dans l'adapter
+            self.plan_generation_service.vertex_ai_adapter._log_api_call = enhanced_log_method
         
         # Liste pour stocker les logs en attente
         self._pending_api_logs = []
@@ -159,8 +162,8 @@ class IntegratedPlanGenerationService:
             # Configurer le contexte pour les logs API
             self._current_learner_session_id = learner_session_id
             
-            # Générer le plan avec le service simple (qui va maintenant logger en DB)
-            plan_data = await self.plan_generation_service.generate_plan(
+            # Générer le plan avec le service v2 (qui va maintenant logger en DB)
+            plan_data = await self.plan_generation_service.generate_plan_simple(
                 learner_profile=learner_profile,
                 file_path=file_path
             )
