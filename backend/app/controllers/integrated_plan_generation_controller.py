@@ -44,10 +44,11 @@ async def get_integrated_plan_generation_service(
     plan_repository = LearnerTrainingPlanRepository(session)
     api_log_repository = ApiLogRepository(session)
     
-    # Créer le service intégré
+    # Créer le service intégré avec la session DB
     return IntegratedPlanGenerationService(
         plan_repository=plan_repository,
-        api_log_repository=api_log_repository
+        api_log_repository=api_log_repository,
+        db_session=session
     )
 
 

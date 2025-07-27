@@ -8,8 +8,10 @@ import time
 from typing import Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.simple_plan_generation_service import SimplePlanGenerationService
+from app.services.plan_persistence_service import PlanPersistenceService
 from app.domain.entities.learner_training_plan import LearnerTrainingPlan
 from app.domain.entities.api_log import ApiLog
 from app.domain.ports.repositories import LearnerTrainingPlanRepositoryPort, ApiLogRepositoryPort
@@ -23,7 +25,8 @@ class IntegratedPlanGenerationService:
     def __init__(
         self,
         plan_repository: LearnerTrainingPlanRepositoryPort,
-        api_log_repository: ApiLogRepositoryPort
+        api_log_repository: ApiLogRepositoryPort,
+        db_session: AsyncSession
     ):
         """
         Initialiser le service intégré
@@ -31,9 +34,11 @@ class IntegratedPlanGenerationService:
         Args:
             plan_repository: Repository pour les plans de formation
             api_log_repository: Repository pour les logs API
+            db_session: Session de base de données pour la persistance relationnelle
         """
         self.plan_repository = plan_repository
         self.api_log_repository = api_log_repository
+        self.db_session = db_session
         self.plan_generation_service = SimplePlanGenerationService()
         
         # Décorer le service simple pour capturer les logs
@@ -42,6 +47,7 @@ class IntegratedPlanGenerationService:
         logger.info("IntegratedPlanGenerationService initialized")
         logger.info(f"Database integration: plan_repository={type(plan_repository).__name__}")
         logger.info(f"Database integration: api_log_repository={type(api_log_repository).__name__}")
+        logger.info(f"Database integration: relational persistence enabled")
     
     def _decorate_plan_service(self):
         """Décorer le service simple pour capturer les appels API"""
@@ -180,6 +186,9 @@ class IntegratedPlanGenerationService:
             # Persister en base de données
             persisted_plan = await self.plan_repository.create(learner_training_plan)
             
+            # Persister la structure relationnelle (modules, sous-modules, slides)
+            await self._persist_relational_structure(persisted_plan.id, plan_data)
+            
             # Persister tous les logs API en attente
             await self._persist_pending_api_logs()
             
@@ -209,6 +218,38 @@ class IntegratedPlanGenerationService:
             # Nettoyer le contexte
             self._current_learner_session_id = None
             self._pending_api_logs.clear()
+    
+    async def _persist_relational_structure(self, plan_id: UUID, plan_data: Dict[str, Any]) -> None:
+        """
+        Persister la structure relationnelle du plan (modules, sous-modules, slides)
+        
+        Args:
+            plan_id: ID du plan de formation
+            plan_data: Données JSON du plan généré
+        """
+        try:
+            logger.info(f"🗄️ Starting relational persistence for plan {plan_id}")
+            
+            # Créer le service de persistance
+            persistence_service = PlanPersistenceService(self.db_session)
+            
+            # Persister la structure
+            success = await persistence_service.persist_plan_structure(plan_id, plan_data)
+            
+            if success:
+                # Obtenir les statistiques pour vérification
+                stats = await persistence_service.get_plan_statistics(plan_id)
+                logger.info(
+                    f"✅ Relational structure persisted successfully for plan {plan_id}: "
+                    f"{stats['modules_count']} modules, {stats['submodules_count']} submodules, "
+                    f"{stats['slides_count']} slides"
+                )
+            else:
+                logger.warning(f"⚠️ Relational persistence failed for plan {plan_id}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error persisting relational structure for plan {plan_id}: {e}")
+            # Ne pas faire échouer la génération pour un problème de persistance relationnelle
     
     async def _persist_pending_api_logs(self):
         """Persister tous les logs API en attente"""

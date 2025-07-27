@@ -18,15 +18,12 @@ class TrainingModuleModel(Base):
     __tablename__ = "training_modules"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    learner_training_plan_id = Column(UUID(as_uuid=True), ForeignKey("learner_training_plans.id"), nullable=False)
-    module_number = Column(Integer, nullable=False)
-    phase_name = Column(String, nullable=False)  # 'Discovery', 'Learning', etc.
-    module_name = Column(String, nullable=False)
+    plan_id = Column(UUID(as_uuid=True), ForeignKey("learner_training_plans.id", ondelete="CASCADE"), nullable=False)
+    stage_number = Column(Integer, nullable=False)  # 1-5 (fixed stages)
+    order_in_stage = Column(Integer, nullable=False)  # Order within stage
+    title = Column(String, nullable=False)
     description = Column(String)
-    learning_objectives = Column(JSONB)  # Array of objectives
-    duration_hours = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     learner_training_plan = relationship("LearnerTrainingPlanModel", back_populates="training_modules")

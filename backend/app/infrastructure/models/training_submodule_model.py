@@ -18,14 +18,11 @@ class TrainingSubmoduleModel(Base):
     __tablename__ = "training_submodules"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    training_module_id = Column(UUID(as_uuid=True), ForeignKey("training_modules.id"), nullable=False)
-    submodule_number = Column(Integer, nullable=False)
-    submodule_name = Column(String, nullable=False)
+    module_id = Column(UUID(as_uuid=True), ForeignKey("training_modules.id", ondelete="CASCADE"), nullable=False)
+    order_in_module = Column(Integer, nullable=False)  # Order within module
+    title = Column(String, nullable=False)
     description = Column(String)
-    content_sections = Column(JSONB)  # Array of content sections
-    estimated_duration_minutes = Column(Integer)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     training_module = relationship("TrainingModuleModel", back_populates="training_submodules")
