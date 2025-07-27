@@ -12,7 +12,7 @@
 - Quand une session est créée par le formateur, un lien de session est généré et est envoyé à l'apprenant par email
 - L'apprenant clique sur le lien est arrive sur une page ou on lui pose des questions pour créer son profil que l'on enregister en BD (email, niveau, style d'apprentissage, poste occupé, secteur d'activité, pays de résidence et langue (par defaut la langue du navigateur))
 
-- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 via Vertex AI (important!) Document Understanding pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
+- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 via Vertex AI (avec les capacités https://ai.google.dev/gemini-api/docs/document-processing + https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output + https://ai.google.dev/gemini-api/docs/prompting-strategies) pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
     - 1. Mise en contexte : enjeux, objectifs, etc.
     - 2. Acquisition des Fondamentaux : Concepts de base
     - 3. Construction Progressive : Approfondissement par étapes

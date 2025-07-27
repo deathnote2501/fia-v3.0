@@ -21,13 +21,14 @@ from app.adapters.inbound.dashboard_controller import router as dashboard_router
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
 
-# Temporarily disable plan generation controller due to domain entity conflicts
-# try:
-#     from app.adapters.inbound.plan_generation_controller import router as plan_generation_router
-#     PLAN_GENERATION_AVAILABLE = True
-# except ImportError as e:
-#     logger.warning(f"Plan generation controller not available: {e}")
-PLAN_GENERATION_AVAILABLE = False
+# Import simple plan generation controller
+try:
+    from app.controllers.plan_generation_controller import router as plan_generation_router
+    PLAN_GENERATION_AVAILABLE = True
+    logger.info("✅ Simple plan generation controller loaded successfully")
+except ImportError as e:
+    logger.warning(f"Plan generation controller not available: {e}")
+    PLAN_GENERATION_AVAILABLE = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
