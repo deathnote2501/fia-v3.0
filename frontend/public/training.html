@@ -98,7 +98,7 @@
         /* PowerPoint-style Layout - Flat design, no shadows */
         .powerpoint-container {
             display: flex;
-            height: 100vh;
+            height: calc(100vh - 60px); /* Subtract progress bar height */
             width: 100%;
             background: white;
         }
@@ -110,14 +110,6 @@
             border-right: 1px solid #dee2e6;
             display: flex;
             flex-direction: column;
-        }
-        
-        .chat-header {
-            padding: 1rem;
-            background: white;
-            border-bottom: 1px solid #dee2e6;
-            font-weight: 600;
-            color: #495057;
         }
         
         /* Chat Messages Area */
@@ -223,19 +215,6 @@
             flex-direction: column;
         }
         
-        .content-header {
-            padding: 1rem;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: flex-end;
-        }
-        
-        .learner-info {
-            color: #495057;
-            font-weight: 500;
-        }
-        
         /* Progress Bar */
         .progress-bar-container {
             background: #f8f9fa;
@@ -292,18 +271,26 @@
         .form-control {
             box-shadow: none !important;
         }
+        
+        /* Prevent body scrollbar */
+        body {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-white">
+    
+    <!-- Progress Bar - Full Width at Top -->
+    <div class="progress-bar-container">
+        <div id="progress-breadcrumb" class="progress-breadcrumb">
+            <span class="progress-text">Training Plan</span>
+        </div>
+    </div>
     
     <!-- PowerPoint-style Layout: 25% Chat + 75% Content -->
     <div class="powerpoint-container">
         <!-- Left Panel: Chat IA (25%) -->
         <div class="chat-panel">
-            <div class="chat-header">
-                <i class="bi bi-chat-dots me-2"></i>AI Trainer
-            </div>
-            
             <!-- Chat Messages Area (scrollable) -->
             <div class="chat-messages" id="chat-messages">
                 <!-- Welcome message -->
@@ -346,21 +333,6 @@
         
         <!-- Right Panel: Content Area (75%) -->
         <div class="content-panel">
-            <!-- Header with learner info -->
-            <div class="content-header">
-                <div class="learner-info">
-                    <i class="bi bi-person-circle me-2"></i>
-                    <span id="learner-email">Loading...</span>
-                </div>
-            </div>
-            
-            <!-- Progress Bar -->
-            <div class="progress-bar-container">
-                <div id="progress-breadcrumb" class="progress-breadcrumb">
-                    <span class="progress-text">Training Plan</span>
-                </div>
-            </div>
-            
             <!-- Slide Content Area (scrollable) -->
             <div id="main-content" class="slide-content-area">
                 <!-- Content will be loaded dynamically -->
@@ -443,9 +415,9 @@
                     this.sessionData = sessionData;
                     this.learnerSession = sessionData.learner_session;
                     
-                    // Update UI with learner info
+                    // Update UI with learner info (removed UI element, keeping data)
                     if (this.learnerSession) {
-                        document.getElementById('learner-email').textContent = this.learnerSession.email || 'Your Training Session';
+                        console.log('✅ Learner session loaded:', this.learnerSession.email);
                     }
                     
                 } catch (error) {
@@ -534,29 +506,27 @@
                 this.container.innerHTML = `
                     <div class="row">
                         <div class="col-12">
-                            <div class="card shadow-sm">
-                                <div class="card-body text-center py-5">
-                                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <h5 class="card-title">Generating Your Personalized Training Plan</h5>
-                                    <p class="card-text text-muted">
-                                        Our AI is analyzing your profile and creating a customized learning experience...
-                                        <br>This may take a few moments.
-                                    </p>
-                                    <div class="progress mt-3" style="height: 6px;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                             role="progressbar" style="width: 100%"></div>
-                                    </div>
-                                    
-                                    <div class="mt-4">
-                                        <small class="text-muted">
-                                            <strong>Debug Info:</strong><br>
-                                            Session Token: ${this.token}<br>
-                                            Training ID: ${this.sessionData?.training_session?.training_id || 'Loading...'}<br>
-                                            Learner Email: ${this.learnerSession?.email || 'Loading...'}
-                                        </small>
-                                    </div>
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h5>Generating Your Personalized Training Plan</h5>
+                                <p class="text-muted">
+                                    Our AI is analyzing your profile and creating a customized learning experience...
+                                    <br>This may take a few moments.
+                                </p>
+                                <div class="progress mt-3" style="height: 6px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 100%"></div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <small class="text-muted">
+                                        <strong>Debug Info:</strong><br>
+                                        Session Token: ${this.token}<br>
+                                        Training ID: ${this.sessionData?.training_session?.training_id || 'Loading...'}<br>
+                                        Learner Email: ${this.learnerSession?.email || 'Loading...'}
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -618,13 +588,7 @@
                 this.container.innerHTML = `
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-book me-2"></i>Your Personalized Training Plan
-                                    </h5>
-                                </div>
-                                <div class="card-body">
+                            <div>
                                     
                                     <div class="row mb-3">
                                         <div class="col-md-3">
@@ -677,7 +641,6 @@
                                             <pre class="bg-light p-3 mt-2 small">${JSON.stringify(metadata, null, 2)}</pre>
                                         </details>
                                     </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -859,21 +822,9 @@
                     <div class="row">
                         <!-- Main slide content (full width) -->
                         <div class="col-lg-12">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-file-slides me-2"></i>${title}
-                                    </h5>
-                                    <div>
-                                        <span class="badge bg-light text-dark">Slide ${slideData.order_in_submodule || 1}</span>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Slide content in markdown format -->
-                                    <div id="slide-content" class="slide-content">
-                                        ${this.markdownToHtml(content)}
-                                    </div>
-                                </div>
+                            <!-- Slide content in markdown format -->
+                            <div id="slide-content" class="slide-content">
+                                ${this.markdownToHtml(content)}
                             </div>
                         </div>
                     </div>
