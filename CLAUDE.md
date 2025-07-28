@@ -129,9 +129,9 @@ poetry run pytest
 
 ## Current Implementation Status
 
-### ✅ Complete: Full SPEC.md Compliance + Trainer Dashboard (January 2025)
+### ✅ Complete: Full SPEC.md Compliance + Trainer Dashboard + Learner Profile Enrichment (January 2025)
 
-**Phase 3 Complete: Security & Quality + Functional Trainer Dashboard**
+**Phase 4 Complete: Security & Quality + Functional Trainer Dashboard + Progressive Learner Profiling**
 
 **Architecture Refactoring Completed:**
 1. **Hexagonal Architecture**: Pure domain entities separated from infrastructure models
@@ -142,11 +142,12 @@ poetry run pytest
 
 **Core Services Implemented:**
 1. **Plan Generation Service (Vertex)**: Gemini 2.0 Flash with personalized training plans
-2. **Conversation Service**: Dedicated AI chat service for learner interactions
-3. **Engagement Analysis Service**: AI-powered learner behavior and progress analysis
-4. **Context Caching Service**: 75% cost optimization (6-24h TTL)
-5. **Document Processing Service**: PDF/PowerPoint analysis with Gemini Document API
-6. **File Storage Service**: Local file system with organized directory structure
+2. **Conversation Service**: Dedicated AI chat service for learner interactions with profile enrichment
+3. **Learner Profile Enrichment Service**: Progressive profiling through conversation analysis
+4. **Engagement Analysis Service**: AI-powered learner behavior and progress analysis
+5. **Context Caching Service**: 75% cost optimization (6-24h TTL)
+6. **Document Processing Service**: PDF/PowerPoint analysis with Gemini Document API
+7. **File Storage Service**: Local file system with organized directory structure
 
 **Trainer Dashboard Features (Fully Functional):**
 - **Authentication System**: FastAPI-Users with JWT authentication working correctly
@@ -158,12 +159,21 @@ poetry run pytest
 - **File Download**: Direct download of uploaded training materials
 - **Profile Management**: Update trainer profile information
 
+**Learner Profile Enrichment Features (Newly Implemented):**
+- **Progressive Profiling**: AI analyzes each conversation to enrich learner profile
+- **Automatic Enrichment**: Every chat interaction updates the learner's enriched profile
+- **Intelligent Fusion**: New insights merge with existing data without loss
+- **Personalized Slides**: Slide generation uses enriched profile for maximum personalization
+- **Profile Evolution**: Learner profile becomes more accurate with each interaction
+- **Structured Storage**: Enriched data stored in `enriched_profile` JSONB column
+
 **Fixed Critical Issues:**
 1. **FastAPI-Users Authentication**: Fixed domain entity vs SQLAlchemy model conflict
 2. **Dashboard Endpoints**: Created missing `/api/dashboard/stats` and `/api/dashboard/recent-activity`
 3. **Database Schema**: Fixed column mismatches (expires_at vs updated_at)
 4. **Training Creation**: Fixed FileType enum handling and domain entity mapping
 5. **File Download**: Added file_path to API responses for download functionality
+6. **Profile Enrichment Integration**: Fixed conversation service signatures for profile enrichment
 
 **Key Architectural Features:**
 - **Domain Purity**: Clean separation between business logic and infrastructure
@@ -172,10 +182,12 @@ poetry run pytest
 - **Error Handling**: Secure error handling with fallback mechanisms
 - **Database Optimization**: Performance indexes for frequent queries
 - **File Management**: Secure file storage with trainer ownership validation
+- **Progressive Profiling**: Automatic learner profile enrichment through conversation analysis
+- **Adaptive Personalization**: Dynamic slide content based on enriched learner insights
 
 **API Endpoints Available:**
 - `POST /api/plan-generation/*` - Personalized training plan generation
-- `POST /api/conversation/*` - AI conversation and chat services
+- `POST /api/conversation/*` - AI conversation and chat services with profile enrichment
 - `POST /api/engagement/*` - Learner engagement analysis
 - `POST /api/context-cache/*` - Document caching and management
 - `POST /api/document-processing/*` - Document analysis and parsing
@@ -187,12 +199,15 @@ poetry run pytest
 - `GET /api/dashboard/stats` - Dashboard statistics
 - `GET /api/dashboard/recent-activity` - Recent activity timeline
 - `POST /api/sessions/` - Create training sessions
+- `POST /api/chat` - Learner chat with automatic profile enrichment
 - `POST /auth/register` - Trainer registration
 - `POST /auth/jwt/login` - JWT authentication
 
 **Production Ready Features:**
 - Complete hexagonal architecture implementation
 - Fully functional trainer dashboard at `/frontend/public/trainer.html`
+- **Progressive Learner Profile Enrichment System** (NEW)
+- **AI-Powered Slide Personalization** (NEW)
 - Secure file upload and download system
 - Real-time dashboard analytics
 - Session management for learners
@@ -209,6 +224,94 @@ poetry run pytest
 - ✅ Session creation (basic functionality)
 - ✅ Profile management
 - ✅ Error handling and validation
+- ✅ **Progressive profile enrichment logic** (NEW)
+- ✅ **Conversation service integration** (NEW)
+- ✅ **Slide personalization with enriched profile** (NEW)
+
+## Progressive Learner Profile Enrichment System
+
+### 🧠 Architecture Overview
+
+The learner profile enrichment system is designed using the **KISS principle** to progressively enhance learner profiles through conversation analysis, enabling increasingly personalized slide content.
+
+### Database Schema Changes
+
+**Migration Applied:** `007_rename_personalized_plan_to_enriched_profile`
+- Renamed `learner_sessions.personalized_plan` → `learner_sessions.enriched_profile`
+- Column stores JSONB data with structured learner insights
+
+### Core Components
+
+#### 1. LearnerProfileEnrichmentService (`app/domain/services/learner_profile_enrichment_service.py`)
+- **Progressive Fusion**: Intelligently merges new insights with existing profile data
+- **Data Preservation**: Arrays merge without duplicates, single values update with latest insights
+- **Metadata Tracking**: Maintains enrichment history with timestamps and counters
+
+#### 2. Enhanced Conversation Adapter (`app/adapters/outbound/conversation_adapter.py`)
+- **Automatic Enrichment**: Every chat interaction generates learner profile insights
+- **Structured Analysis**: AI analyzes conversation to extract learning patterns
+- **JSON Schema**: Validates enriched profile data structure
+
+#### 3. Slide Generation Integration (`app/services/slide_generation_service.py`)
+- **Dynamic Personalization**: Uses enriched profile data in slide generation prompts
+- **Adaptive Content**: Slide content becomes more personalized with each interaction
+
+### Enriched Profile Structure
+
+```json
+{
+  "learning_style_observed": "prefers concrete examples and visual aids",
+  "comprehension_level": "good understanding but needs repetition on complex topics", 
+  "interests": ["practical applications", "real-world case studies", "templates"],
+  "blockers": ["abstract concepts", "too much theory at once", "complex planning"],
+  "objectives": "apply knowledge to current job challenges",
+  "engagement_patterns": "asks detailed questions, prefers step-by-step approach",
+  "enrichment_history": {
+    "first_enriched_at": "2025-01-28T14:00:00Z",
+    "total_enrichments": 3,
+    "last_updated_at": "2025-01-28T16:30:00Z"
+  }
+}
+```
+
+### Flow Architecture
+
+```
+💬 Learner Chat Message 
+    ↓
+🤖 AI Conversation Analysis (ConversationAdapter)
+    ↓ 
+📊 Profile Insights Extraction (JSON structured output)
+    ↓
+🔄 Intelligent Profile Fusion (LearnerProfileEnrichmentService)
+    ↓
+💾 Automatic Database Save (enriched_profile column)
+    ↓
+🎯 Enhanced Slide Personalization (SlideGenerationService)
+```
+
+### Key Features
+
+- **Zero Configuration**: Works automatically with existing chat system
+- **Intelligent Fusion**: New insights enhance rather than replace existing data
+- **Performance Optimized**: Uses existing rate limiting and structured output
+- **Error Resilient**: Profile enrichment failures don't break conversation flow
+- **Hexagonal Compliance**: Clean separation between domain logic and infrastructure
+
+### Implementation Files
+
+**New Files Created:**
+- `app/domain/services/learner_profile_enrichment_service.py` - Core enrichment service
+- `alembic/versions/007_rename_personalized_plan_to_enriched_profile.py` - Database migration
+
+**Modified Files:**
+- `app/adapters/outbound/conversation_adapter.py` - Added profile enrichment to chat responses
+- `app/services/slide_generation_service.py` - Integrated enriched profile in slide generation
+- `app/domain/entities/learner_session.py` - Updated entity with enriched_profile field
+- `app/domain/schemas/learner_session.py` - Updated Pydantic schema
+- `app/adapters/repositories/learner_session_repository.py` - Updated repository mappings
+- `app/domain/ports/outbound_ports.py` - Added learner_session_id parameter
+- `app/domain/services/conversation_service.py` - Updated service call signatures
 
 ## Development Phases
 
