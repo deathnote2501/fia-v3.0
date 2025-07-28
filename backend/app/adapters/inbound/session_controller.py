@@ -388,9 +388,9 @@ async def save_learner_profile(
                 logger.info(f"Plan generated successfully: {generated_plan.success}")
                 logger.debug(f"Generation metadata: {generated_plan.generation_metadata}")
                 
-                # Update session with generated plan
+                # Update session with generated plan (temporary storage until plan_data is used)
                 logger.info("Saving plan to database...")
-                created_learner_session.personalized_plan = generated_plan.plan_data
+                created_learner_session.enriched_profile = generated_plan.plan_data
                 updated_session = await learner_repo.update(created_learner_session)
                 
                 logger.info(f"Plan saved to database. Session updated: {updated_session.id}")

@@ -142,7 +142,9 @@ class GeminiAdapter(GeminiServicePort):
         self,
         message: str,
         conversation_history: List[Dict[str, Any]],
-        training_context: str
+        training_context: str,
+        learner_profile: Dict[str, Any],
+        learner_session_id: UUID
     ) -> str:
         """Handle learner chat interactions"""
         try:

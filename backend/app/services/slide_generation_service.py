@@ -14,6 +14,7 @@ from app.adapters.repositories.learner_training_plan_repository import LearnerTr
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
 from app.infrastructure.database import AsyncSessionLocal
+from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
 
 logger = logging.getLogger(__name__)
 
@@ -550,7 +551,7 @@ Génère maintenant la version approfondie au format JSON :"""
     ) -> str:
         """Construire le prompt personnalisé pour générer le contenu de la slide"""
         
-        # Extraire les informations du profil apprenant
+        # Extraire les informations du profil apprenant de base
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
             "style_apprentissage": learner_profile.learning_style or "visuel",
@@ -558,6 +559,33 @@ Génère maintenant la version approfondie au format JSON :"""
             "secteur": learner_profile.activity_sector or "non spécifié",
             "langue": learner_profile.language or "français"
         }
+        
+        # Récupérer le profil enrichi s'il existe
+        enriched_profile_context = ""
+        if hasattr(learner_profile, 'enriched_profile') and learner_profile.enriched_profile:
+            enriched_data = learner_profile.enriched_profile
+            
+            enriched_insights = []
+            if enriched_data.get("learning_style_observed"):
+                enriched_insights.append(f"Style d'apprentissage observé : {enriched_data['learning_style_observed']}")
+            if enriched_data.get("comprehension_level"):
+                enriched_insights.append(f"Niveau de compréhension : {enriched_data['comprehension_level']}")
+            if enriched_data.get("interests"):
+                enriched_insights.append(f"Centres d'intérêt : {', '.join(enriched_data['interests'])}")
+            if enriched_data.get("blockers"):
+                enriched_insights.append(f"Difficultés identifiées : {', '.join(enriched_data['blockers'])}")
+            if enriched_data.get("objectives"):
+                enriched_insights.append(f"Objectifs spécifiques : {enriched_data['objectives']}")
+            if enriched_data.get("engagement_patterns"):
+                enriched_insights.append(f"Style d'engagement : {enriched_data['engagement_patterns']}")
+            
+            if enriched_insights:
+                enriched_profile_context = f"""
+PROFIL ENRICHI OBSERVÉ :
+{chr(10).join(f"- {insight}" for insight in enriched_insights)}
+
+IMPORTANTE : Utilise ces insights pour personnaliser au maximum le contenu de cette slide !
+"""
         
         # Extraire des informations du plan de formation
         plan_context = ""
@@ -582,6 +610,7 @@ PROFIL APPRENANT :
 - Poste : {profile_info['poste']}
 - Secteur d'activité : {profile_info['secteur']}
 - Langue : {profile_info['langue']}
+{enriched_profile_context}
 
 INSTRUCTIONS :
 1. Crée le contenu d'une slide de formation en markdown

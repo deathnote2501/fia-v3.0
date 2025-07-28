@@ -40,9 +40,9 @@ class LearnerSessionResponse(BaseModel):
         from_attributes = True
 
 
-class LearnerSessionWithPlan(LearnerSessionResponse):
-    """Schema for learner session with personalized plan"""
-    personalized_plan: Optional[Dict[str, Any]]
+class LearnerSessionWithEnrichedProfile(LearnerSessionResponse):
+    """Schema for learner session with enriched profile"""
+    enriched_profile: Optional[Dict[str, Any]]
 
 
 class LearnerProgressUpdate(BaseModel):

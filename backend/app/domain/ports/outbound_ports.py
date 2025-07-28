@@ -41,7 +41,8 @@ class ConversationServicePort(ABC):
         message: str,
         conversation_history: List[Dict[str, Any]],
         training_context: str,
-        learner_profile: Dict[str, Any]
+        learner_profile: Dict[str, Any],
+        learner_session_id: UUID
     ) -> Dict[str, Any]:
         """Handle learner chat interactions and return structured response"""
         pass

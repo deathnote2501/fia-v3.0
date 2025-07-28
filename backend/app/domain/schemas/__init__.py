@@ -7,7 +7,7 @@ from .training_session import (
     TrainingSessionCreate, TrainingSessionUpdate, TrainingSessionResponse, TrainingSessionWithLink
 )
 from .learner_session import (
-    LearnerProfileCreate, LearnerSessionResponse, LearnerSessionWithPlan, LearnerProgressUpdate
+    LearnerProfileCreate, LearnerSessionResponse, LearnerSessionWithEnrichedProfile, LearnerProgressUpdate
 )
 from .learner_training_plan import (
     LearnerTrainingPlanCreate, LearnerTrainingPlanResponse, TrainingModuleResponse,
@@ -53,7 +53,7 @@ __all__ = [
     "TrainingSessionCreate", "TrainingSessionUpdate", "TrainingSessionResponse", "TrainingSessionWithLink",
     
     # Learner session schemas
-    "LearnerProfileCreate", "LearnerSessionResponse", "LearnerSessionWithPlan", "LearnerProgressUpdate",
+    "LearnerProfileCreate", "LearnerSessionResponse", "LearnerSessionWithEnrichedProfile", "LearnerProgressUpdate",
     
     # Learner training plan schemas
     "LearnerTrainingPlanCreate", "LearnerTrainingPlanResponse", "TrainingModuleResponse",

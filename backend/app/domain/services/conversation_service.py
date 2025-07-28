@@ -58,7 +58,8 @@ class ConversationService:
                 message=chat_request.message,
                 conversation_history=conversation_history,
                 training_context=chat_request.context.training_content,
-                learner_profile=chat_request.context.learner_profile
+                learner_profile=chat_request.context.learner_profile,
+                learner_session_id=chat_request.context.learner_session_id
             )
             
             # Convert port response to domain schema

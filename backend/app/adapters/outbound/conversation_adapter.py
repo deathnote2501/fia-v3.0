@@ -6,10 +6,13 @@ Implementation of AI conversation service using Vertex AI
 import json
 import logging
 from typing import Dict, Any, List
+from uuid import UUID
 
 from app.domain.ports.outbound_ports import ConversationServicePort
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 from app.infrastructure.rate_limiter import gemini_rate_limiter
+from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
+from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +22,7 @@ class ConversationAdapter(ConversationServicePort):
     
     def __init__(self):
         self.vertex_adapter = VertexAIAdapter()
+        self._enrichment_service = None  # Will be initialized lazily
         logger.info("🤖 CONVERSATION [ADAPTER] Initialized with Vertex AI")
         
     async def chat_with_learner(
@@ -26,7 +30,8 @@ class ConversationAdapter(ConversationServicePort):
         message: str,
         conversation_history: List[Dict[str, Any]],
         training_context: str,
-        learner_profile: Dict[str, Any]
+        learner_profile: Dict[str, Any],
+        learner_session_id: UUID
     ) -> Dict[str, Any]:
         """Handle learner chat interactions using Vertex AI"""
         try:
@@ -63,14 +68,24 @@ class ConversationAdapter(ConversationServicePort):
                     "response": "I understand your question. Let me help you with that.",
                     "confidence_score": 0.7,
                     "suggested_actions": ["Ask a more specific question"],
-                    "related_concepts": []
+                    "related_concepts": [],
+                    "learner_profile": {}
                 }
+            
+            # Extract and save enriched profile data
+            enriched_profile_data = response_data.get("learner_profile", {})
+            if enriched_profile_data and learner_session_id:
+                try:
+                    await self._save_enriched_profile(learner_session_id, enriched_profile_data)
+                except Exception as e:
+                    logger.warning(f"⚠️ CONVERSATION [PROFILE] Failed to save enriched profile: {str(e)}")
             
             return {
                 "response": response_data.get("response", "I understand your question. Let me help you with that."),
                 "confidence_score": response_data.get("confidence_score", 0.8),
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
+                "learner_profile": enriched_profile_data,
                 "metadata": {
                     "model_used": "gemini-2.0-flash-exp",
                     "generation_time": response_data.get("generation_time_ms", 0),
@@ -86,6 +101,7 @@ class ConversationAdapter(ConversationServicePort):
                 "confidence_score": 0.5,
                 "suggested_actions": ["Ask a more specific question", "Review the current slide"],
                 "related_concepts": [],
+                "learner_profile": {},
                 "metadata": {"error": str(e), "fallback": True}
             }
     
@@ -193,12 +209,29 @@ INSTRUCTIONS:
 - Suggest specific actions they can take
 - Identify related concepts they should explore
 
+AI PROFILE ENRICHMENT TASK:
+En te basant sur LEARNER'S CURRENT MESSAGE et l'historique de conversation, enrichis le profil de l'apprenant pour personnaliser au maximum les prochaines slides. Identifie et analyse :
+- Son style d'apprentissage réel observé (au-delà du profil initial)
+- Ses préférences de contenu et formats d'explication
+- Son niveau de compréhension réel sur les sujets abordés
+- Ses objectifs personnels et professionnels spécifiques
+- Ses blocages ou difficultés récurrentes
+- Ses patterns d'engagement et questions fréquentes
+
 Respond in JSON format with this exact structure:
 {{
   "response": "Your helpful response to the learner",
   "confidence_score": 0.85,
   "suggested_actions": ["Action 1", "Action 2"],
   "related_concepts": ["Concept 1", "Concept 2"],
+  "learner_profile": {{
+    "learning_style_observed": "prefers concrete examples and visual aids",
+    "comprehension_level": "good understanding but needs repetition on complex topics",
+    "interests": ["practical applications", "real-world case studies"],
+    "blockers": ["abstract concepts", "too much theory at once"],
+    "objectives": "apply knowledge to current job challenges",
+    "engagement_patterns": "asks detailed questions, prefers step-by-step approach"
+  }},
   "generation_time_ms": 1500
 }}"""
     
@@ -673,6 +706,18 @@ Respond in JSON format with this exact structure:
                     "items": {"type": "string"},
                     "description": "Related concepts the learner should explore"
                 },
+                "learner_profile": {
+                    "type": "object",
+                    "description": "Enriched learner profile based on conversation analysis",
+                    "properties": {
+                        "learning_style_observed": {"type": "string"},
+                        "comprehension_level": {"type": "string"},
+                        "interests": {"type": "array", "items": {"type": "string"}},
+                        "blockers": {"type": "array", "items": {"type": "string"}},
+                        "objectives": {"type": "string"},
+                        "engagement_patterns": {"type": "string"}
+                    }
+                },
                 "generation_time_ms": {
                     "type": "number",
                     "description": "Time taken to generate response in milliseconds"
@@ -680,3 +725,25 @@ Respond in JSON format with this exact structure:
             },
             "required": ["response", "confidence_score"]
         }
+    
+    async def _save_enriched_profile(self, learner_session_id: UUID, enriched_profile_data: Dict[str, Any]) -> None:
+        """Save enriched profile data to the learner session"""
+        try:
+            # Create a new session and service for each call
+            from app.infrastructure.database import AsyncSessionLocal
+            async with AsyncSessionLocal() as db_session:
+                learner_repo = LearnerSessionRepository(db_session)
+                enrichment_service = LearnerProfileEnrichmentService(learner_repo)
+                
+                # Save the enriched profile
+                await enrichment_service.enrich_learner_profile(
+                    learner_session_id=learner_session_id,
+                    new_profile_data=enriched_profile_data
+                )
+            
+            logger.info(f"🧠 CONVERSATION [PROFILE] Enriched profile saved for learner {learner_session_id}")
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [PROFILE] Failed to save enriched profile: {str(e)}")
+            # Don't raise to avoid breaking the conversation flow
+            pass

@@ -31,7 +31,7 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
             country=model.country,
             language=model.language,
             learner_session_id=model.id,
-            personalized_plan=model.personalized_plan,
+            enriched_profile=model.enriched_profile,
             current_slide_number=model.current_slide_number,
             total_time_spent=model.total_time_spent,
             started_at=model.started_at,
@@ -50,7 +50,7 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
             activity_sector=entity.activity_sector,
             country=entity.country,
             language=entity.language,
-            personalized_plan=entity.personalized_plan,
+            enriched_profile=entity.enriched_profile,
             current_slide_number=entity.current_slide_number,
             total_time_spent=entity.total_time_spent,
             started_at=entity.started_at,
@@ -104,7 +104,7 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
         model.activity_sector = learner_session.activity_sector
         model.country = learner_session.country
         model.language = learner_session.language
-        model.personalized_plan = learner_session.personalized_plan
+        model.enriched_profile = learner_session.enriched_profile
         model.current_slide_number = learner_session.current_slide_number
         model.total_time_spent = learner_session.total_time_spent
         model.last_activity_at = learner_session.last_activity_at

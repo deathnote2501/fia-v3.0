@@ -50,10 +50,10 @@ Etape
 ### Pas encore implémenté
 - Interactions Apprenants (en cours d'implémentation) :
   - Génération des slides individuelles en markdown affiché avec Marked.js-
-  - Chat avec formateur IA intégré (avec boutons : exercices, exemples, "le plus important")
+  - Chat avec formateur IA intégré (avec boutons : exercices, exemples, "le plus important")-
   - Boutons d'interaction avec les slides : simplifier et approfondir-
-  - Quiz ou question avez-vous bien compris slide, sous module, module, etapes > Chat formateur
-  - Enrichissement profil apprenant
+  - Quiz ou question avez-vous bien compris slide, sous module, module, etapes > Chat formateur-
+  - Enrichissement profil apprenant-
   - Monitoring et Administration
 - Live API (pas encore implémenté)
 

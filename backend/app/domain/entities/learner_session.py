@@ -22,7 +22,7 @@ class LearnerSession:
         country: str,
         language: str = 'fr',
         learner_session_id: Optional[UUID] = None,
-        personalized_plan: Optional[Dict[str, Any]] = None,
+        enriched_profile: Optional[Dict[str, Any]] = None,
         current_slide_number: int = 1,
         total_time_spent: int = 0,
         started_at: Optional[datetime] = None,
@@ -37,7 +37,7 @@ class LearnerSession:
         self.activity_sector = activity_sector
         self.country = country
         self.language = language
-        self.personalized_plan = personalized_plan
+        self.enriched_profile = enriched_profile
         self.current_slide_number = current_slide_number
         self.total_time_spent = total_time_spent
         self.started_at = started_at or datetime.utcnow()
@@ -114,12 +114,12 @@ class LearnerSession:
         self.current_slide_number = slide_number
         self.last_activity_at = datetime.utcnow()
     
-    def set_personalized_plan(self, plan: Dict[str, Any]) -> None:
-        """Set the personalized training plan"""
-        if not isinstance(plan, dict):
-            raise ValueError("Plan must be a dictionary")
+    def set_enriched_profile(self, profile: Dict[str, Any]) -> None:
+        """Set the enriched learner profile data"""
+        if not isinstance(profile, dict):
+            raise ValueError("Profile must be a dictionary")
         
-        self.personalized_plan = plan
+        self.enriched_profile = profile
         self.last_activity_at = datetime.utcnow()
     
     def get_profile_summary(self) -> Dict[str, Any]:
@@ -135,7 +135,7 @@ class LearnerSession:
             "progress": {
                 "current_slide": self.current_slide_number,
                 "total_time_spent": self.total_time_spent,
-                "has_plan": self.personalized_plan is not None
+                "has_enriched_profile": self.enriched_profile is not None
             }
         }
     

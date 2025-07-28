@@ -142,10 +142,13 @@ async def test_chat_functionality(
             {"role": "assistant", "content": "Hello! How can I help you with your training?"}
         ]
         
+        from uuid import uuid4
         result = await gemini_adapter.chat_with_learner(
             message="Can you explain what AI is?",
             conversation_history=conversation_history,
-            training_context="Introduction to Artificial Intelligence course"
+            training_context="Introduction to Artificial Intelligence course",
+            learner_profile={"experience_level": "beginner", "learning_style": "visual"},
+            learner_session_id=uuid4()
         )
         
         return {
