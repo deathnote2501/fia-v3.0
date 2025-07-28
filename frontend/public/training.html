@@ -645,7 +645,7 @@
                                     
                                     <!-- Navigation buttons -->
                                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                                        <button class="btn btn-outline-secondary" disabled>
+                                        <button id="previous-btn" class="btn btn-outline-secondary">
                                             <i class="bi bi-arrow-left me-1"></i>Previous
                                         </button>
                                         <div class="btn-group">
@@ -713,6 +713,9 @@
                 // Ajouter event listeners pour le chat
                 this.setupChatFunctionality();
                 this.setupSlideInteractionButtons();
+                
+                // Update navigation button states
+                this.updateNavigationButtonStates();
             }
             
             markdownToHtml(markdown) {
@@ -985,10 +988,57 @@
                 return messages.slice(-10); // Garder seulement les 10 derniers messages pour le contexte
             }
             
+            updateNavigationButtonStates() {
+                const previousBtn = document.getElementById('previous-btn');
+                const nextBtn = document.getElementById('next-btn');
+                
+                if (!this.currentSlide || !this.currentSlide.position) {
+                    console.log('🔄 [NAVIGATION] No position data available, keeping buttons enabled');
+                    return;
+                }
+                
+                const position = this.currentSlide.position;
+                console.log('🔄 [NAVIGATION] Updating button states:', position);
+                
+                // Update Previous button
+                if (previousBtn) {
+                    if (position.has_previous === false) {
+                        previousBtn.disabled = true;
+                        previousBtn.classList.add('opacity-50');
+                        console.log('🔄 [NAVIGATION] Previous button disabled - at beginning');
+                    } else {
+                        previousBtn.disabled = false;
+                        previousBtn.classList.remove('opacity-50');
+                        console.log('🔄 [NAVIGATION] Previous button enabled');
+                    }
+                }
+                
+                // Update Next button
+                if (nextBtn) {
+                    if (position.has_next === false) {
+                        nextBtn.disabled = true;
+                        nextBtn.classList.add('opacity-50');
+                        nextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
+                        console.log('🔄 [NAVIGATION] Next button disabled - at end');
+                    } else {
+                        nextBtn.disabled = false;
+                        nextBtn.classList.remove('opacity-50');
+                        nextBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next';
+                        console.log('🔄 [NAVIGATION] Next button enabled');
+                    }
+                }
+                
+                // Show progress info
+                if (position.current_position && position.total_slides) {
+                    console.log(`🔄 [NAVIGATION] Progress: ${position.current_position}/${position.total_slides} slides`);
+                }
+            }
+            
             setupSlideInteractionButtons() {
                 const simplifyBtn = document.getElementById('simplify-btn');
                 const moreDetailsBtn = document.getElementById('more-details-btn');
                 const nextBtn = document.getElementById('next-btn');
+                const previousBtn = document.getElementById('previous-btn');
                 
                 if (simplifyBtn) {
                     simplifyBtn.addEventListener('click', () => this.simplifySlideContent());
@@ -1009,6 +1059,13 @@
                     console.log('✅ [BUTTONS] Next button event listener added');
                 } else {
                     console.warn('⚠️ [BUTTONS] Next button not found');
+                }
+                
+                if (previousBtn) {
+                    previousBtn.addEventListener('click', () => this.navigateToPreviousSlide());
+                    console.log('✅ [BUTTONS] Previous button event listener added');
+                } else {
+                    console.warn('⚠️ [BUTTONS] Previous button not found');
                 }
             }
             
@@ -1409,6 +1466,141 @@
                         const alert = document.querySelector('.alert-warning');
                         if (alert) alert.remove();
                     }, 8000);
+                }
+            }
+            
+            async navigateToPreviousSlide() {
+                const previousBtn = document.getElementById('previous-btn');
+                
+                if (!this.currentSlide) {
+                    console.error('❌ [NAVIGATION] No current slide data available');
+                    this.showNavigationError('No current slide information available');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [NAVIGATION] Starting navigation to previous slide');
+                    
+                    // Désactiver le bouton pendant le traitement
+                    if (previousBtn) {
+                        previousBtn.disabled = true;
+                        previousBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                    }
+                    
+                    // Obtenir l'ID de la slide actuelle
+                    const currentSlideId = this.currentSlide.slide_id || this.currentSlide.id;
+                    if (!currentSlideId) {
+                        console.error('❌ [NAVIGATION] No current slide ID found');
+                        this.showNavigationError('Could not determine current slide');
+                        return;
+                    }
+                    
+                    console.log('📝 [NAVIGATION] Current slide ID:', currentSlideId);
+                    console.log('📝 [NAVIGATION] Learner session ID:', this.learnerSession.id);
+                    
+                    // Appeler l'API de navigation précédente
+                    const response = await fetch(`/api/slides/previous/${this.learnerSession.id}/${currentSlideId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    console.log('📥 [NAVIGATION] Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('❌ [NAVIGATION] Error response:', errorData);
+                        
+                        // Check if we've reached the beginning
+                        if (response.status === 404 || errorData.message?.includes('beginning')) {
+                            this.showNavigationBeginning();
+                            return;
+                        }
+                        
+                        throw new Error(errorData.detail || 'Failed to navigate to previous slide');
+                    }
+                    
+                    const navigationResult = await response.json();
+                    console.log('✅ [NAVIGATION] Success response:', navigationResult);
+                    
+                    // Check if there's no previous slide
+                    if (!navigationResult.success || !navigationResult.data.has_previous) {
+                        this.showNavigationBeginning();
+                        return;
+                    }
+                    
+                    // Display the previous slide
+                    this.displaySlideContent(navigationResult.data);
+                    this.showPreviousNavigationSuccess(navigationResult.data);
+                    
+                } catch (error) {
+                    console.error('❌ [NAVIGATION] Error:', error);
+                    this.showNavigationError(error.message);
+                    
+                } finally {
+                    // Réactiver le bouton
+                    if (previousBtn) {
+                        previousBtn.disabled = false;
+                        previousBtn.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Previous';
+                    }
+                }
+            }
+            
+            showPreviousNavigationSuccess(slideData) {
+                const alertHtml = `
+                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        <strong>Navigated Back!</strong> 
+                        Now showing: ${slideData.title || 'Previous slide'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 3 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-info');
+                        if (alert) alert.remove();
+                    }, 3000);
+                }
+            }
+            
+            showNavigationBeginning() {
+                const alertHtml = `
+                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>At the Beginning!</strong> 
+                        You are already at the first slide of this training.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Disable the Previous button
+                    const previousBtn = document.getElementById('previous-btn');
+                    if (previousBtn) {
+                        previousBtn.disabled = true;
+                        previousBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Beginning';
+                    }
+                    
+                    // Supprimer l'alerte après 5 secondes et réactiver le bouton
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-info');
+                        if (alert) alert.remove();
+                        
+                        // Réactiver le bouton après l'alerte
+                        if (previousBtn && this.currentSlide && (this.currentSlide.position?.has_previous !== false)) {
+                            previousBtn.disabled = false;
+                            previousBtn.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Previous';
+                        }
+                    }, 5000);
                 }
             }
             

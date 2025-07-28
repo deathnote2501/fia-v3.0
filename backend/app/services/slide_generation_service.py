@@ -633,16 +633,34 @@ Génère maintenant le contenu de la slide :"""
                 
                 if isinstance(first_item, dict):
                     logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Premier élément KEYS: {list(first_item.keys())}")
-                    if 'slide_content' in first_item:
-                        content = first_item['slide_content']
-                        logger.info(f"✅✅✅ SLIDE GENERATION [JSON-EXTRACTION] TROUVÉ slide_content dans array[0]!")
-                        logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content TYPE: {type(content)}")
-                        logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content LONGUEUR: {len(content) if content else 'NULL'}")
-                        logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content PREVIEW (200 chars): {content[:200] if content else 'NULL'}")
-                        logger.info(f"🎯🎯🎯 SLIDE GENERATION [JSON-EXTRACTION] RETOUR content depuis array[0].slide_content")
-                        return content
-                    else:
-                        logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [JSON-EXTRACTION] Pas de 'slide_content' dans array[0]")
+                    
+                    # Essayer différentes clés possibles
+                    possible_keys = ['slide_content', 'content', 'markdown', 'text', 'slide', 'response']
+                    
+                    for key in possible_keys:
+                        if key in first_item:
+                            content = first_item[key]
+                            logger.info(f"✅✅✅ SLIDE GENERATION [JSON-EXTRACTION] TROUVÉ '{key}' dans array[0]!")
+                            logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content TYPE: {type(content)}")
+                            logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content LONGUEUR: {len(content) if content else 'NULL'}")
+                            logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content PREVIEW (200 chars): {content[:200] if content else 'NULL'}")
+                            logger.info(f"🎯🎯🎯 SLIDE GENERATION [JSON-EXTRACTION] RETOUR content depuis array[0].{key}")
+                            
+                            # Si c'est un dict avec une structure imbriquée, chercher plus profond
+                            if isinstance(content, dict) and 'content' in content:
+                                content = content['content']
+                                logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Contenu imbriqué trouvé: {content[:200] if content else 'NULL'}")
+                            
+                            return content
+                    
+                    logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [JSON-EXTRACTION] Aucune clé de contenu trouvée dans array[0]")
+                    logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [JSON-EXTRACTION] Clés disponibles: {list(first_item.keys())}")
+                    
+                    # Fallback: utiliser la première valeur qui semble être du texte
+                    for key, value in first_item.items():
+                        if isinstance(value, str) and len(value) > 50:  # Probablement du contenu
+                            logger.info(f"🔄🔄🔄 SLIDE GENERATION [JSON-EXTRACTION] FALLBACK: utilisation de '{key}' comme contenu")
+                            return value
                 else:
                     logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [JSON-EXTRACTION] Premier élément n'est pas un dict")
                     
@@ -941,13 +959,21 @@ Génère maintenant le contenu de la slide :"""
                         "message": "You are at the beginning of the training"
                     }
                 
-                # Les slides précédentes doivent déjà avoir du contenu
+                # Si la slide précédente n'a pas de contenu, le générer (cas où elle n'a jamais été consultée)
                 if not previous_slide.content:
-                    logger.warning(f"⚠️ SLIDE NAVIGATION [PREV] Previous slide has no content: {previous_slide.id}")
-                    return {
-                        "has_previous": False,
-                        "message": "Previous slide content not available"
-                    }
+                    logger.info(f"📝 SLIDE NAVIGATION [PREV] Generating content for previous slide: {previous_slide.title}")
+                    
+                    slide_content = await self._generate_slide_content(
+                        slide_title=previous_slide.title,
+                        learner_profile=learner_session,
+                        training_plan=training_plan,
+                        slide_position="middle"  # Les slides précédentes sont généralement "middle"
+                    )
+                    
+                    # Sauvegarder le contenu généré
+                    await slide_repo.update_content(previous_slide.id, slide_content)
+                    previous_slide.content = slide_content
+                    previous_slide.generated_at = datetime.now(timezone.utc)
                 
                 # Obtenir les informations de position
                 position_info = await slide_repo.get_slide_position(previous_slide.id, training_plan.id)
