@@ -617,6 +617,10 @@
                 console.log('📝 [DISPLAY] content FINAL (preview):', content ? content.substring(0, 100) + '...' : 'NULL');
                 console.log('🎨 [DISPLAY] === AVANT PASSAGE À MARKDOWN ===');
                 
+                // Stocker le contenu markdown original pour les fonctionnalités d'interaction
+                this.currentSlideContent = content;
+                console.log('💾 [DISPLAY] Current slide content stored for interactions');
+                
                 this.container.innerHTML = `
                     <div class="row">
                         <!-- Main slide content (75% width) -->
@@ -642,7 +646,7 @@
                                             <i class="bi bi-arrow-left me-1"></i>Previous
                                         </button>
                                         <div class="btn-group">
-                                            <button class="btn btn-outline-primary">
+                                            <button id="simplify-btn" class="btn btn-outline-primary">
                                                 <i class="bi bi-lightbulb me-1"></i>Simplify
                                             </button>
                                             <button class="btn btn-outline-info">
@@ -708,6 +712,7 @@
                 
                 // Ajouter event listeners pour le chat
                 this.setupChatFunctionality();
+                this.setupSlideInteractionButtons();
             }
             
             markdownToHtml(markdown) {
@@ -978,6 +983,148 @@
                 
                 console.log('📝 [CHAT] Chat history retrieved:', messages.length, 'messages');
                 return messages.slice(-10); // Garder seulement les 10 derniers messages pour le contexte
+            }
+            
+            setupSlideInteractionButtons() {
+                const simplifyBtn = document.getElementById('simplify-btn');
+                
+                if (simplifyBtn) {
+                    simplifyBtn.addEventListener('click', () => this.simplifySlideContent());
+                    console.log('✅ [BUTTONS] Simplify button event listener added');
+                } else {
+                    console.warn('⚠️ [BUTTONS] Simplify button not found');
+                }
+            }
+            
+            async simplifySlideContent() {
+                const simplifyBtn = document.getElementById('simplify-btn');
+                const slideContentEl = document.getElementById('slide-content');
+                
+                if (!slideContentEl) {
+                    console.error('❌ [SIMPLIFY] Slide content element not found');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [SIMPLIFY] Starting slide content simplification');
+                    
+                    // Désactiver le bouton pendant le traitement
+                    if (simplifyBtn) {
+                        simplifyBtn.disabled = true;
+                        simplifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Simplifying...';
+                    }
+                    
+                    // Obtenir le contenu markdown actuel
+                    const currentMarkdown = this.getCurrentSlideMarkdown();
+                    if (!currentMarkdown) {
+                        console.error('❌ [SIMPLIFY] No current slide content to simplify');
+                        return;
+                    }
+                    
+                    console.log('📝 [SIMPLIFY] Current content length:', currentMarkdown.length);
+                    console.log('📝 [SIMPLIFY] Current content preview:', currentMarkdown.substring(0, 100) + '...');
+                    
+                    // Appeler l'API de simplification
+                    const response = await fetch(`/api/slides/simplify/${this.learnerSession.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            current_content: currentMarkdown
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ [SIMPLIFY] API response received:', result);
+                    
+                    if (result.success && result.data.simplified_content) {
+                        // Remplacer le contenu de la slide avec la version simplifiée
+                        const simplifiedContent = result.data.simplified_content;
+                        console.log('📝 [SIMPLIFY] Simplified content length:', simplifiedContent.length);
+                        console.log('📝 [SIMPLIFY] Simplified content preview:', simplifiedContent.substring(0, 100) + '...');
+                        
+                        // Mettre à jour l'affichage
+                        slideContentEl.innerHTML = this.markdownToHtml(simplifiedContent);
+                        
+                        // Sauvegarder le nouveau contenu pour usage futur
+                        this.currentSlideContent = simplifiedContent;
+                        
+                        console.log('✅ [SIMPLIFY] Slide content simplified successfully');
+                        
+                        // Afficher un message de succès temporaire
+                        this.showSimplifySuccess(result.data);
+                        
+                    } else {
+                        throw new Error('Invalid API response structure');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [SIMPLIFY] Error simplifying slide content:', error);
+                    
+                    // Afficher une erreur à l'utilisateur
+                    this.showSimplifyError(error.message);
+                    
+                } finally {
+                    // Réactiver le bouton
+                    if (simplifyBtn) {
+                        simplifyBtn.disabled = false;
+                        simplifyBtn.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Simplify';
+                    }
+                }
+            }
+            
+            getCurrentSlideMarkdown() {
+                // Pour l'instant, nous devons reconstruire le markdown à partir du HTML affiché
+                // Dans une implémentation future, nous pourrions stocker le markdown original
+                return this.currentSlideContent || 'No slide content available';
+            }
+            
+            showSimplifySuccess(data) {
+                const alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Content Simplified!</strong> 
+                        Reduced from ${data.original_length} to ${data.simplified_length} characters.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 5 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-success');
+                        if (alert) alert.remove();
+                    }, 5000);
+                }
+            }
+            
+            showSimplifyError(errorMessage) {
+                const alertHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Simplification Failed:</strong> ${errorMessage}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 8 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-warning');
+                        if (alert) alert.remove();
+                    }, 8000);
+                }
             }
             
             showError(message) {

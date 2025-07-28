@@ -6,6 +6,7 @@ API endpoints for slide generation and management
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
+from pydantic import BaseModel
 
 from app.services.slide_generation_service import SlideGenerationService
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
@@ -15,6 +16,11 @@ router = APIRouter(prefix="/api/slides", tags=["slides"])
 
 # Rate limiter for slide generation (costly AI operations)
 rate_limiter = SlidingWindowRateLimiter(requests_per_minute=30, window_size_seconds=60)
+
+
+class SimplifySlideRequest(BaseModel):
+    """Request model for slide content simplification"""
+    current_content: str
 
 
 @router.post("/generate-first/{learner_session_id}", response_model=Dict[str, Any])
@@ -62,6 +68,66 @@ async def generate_first_slide(
         raise HTTPException(
             status_code=500,
             detail="Failed to generate slide content"
+        )
+
+
+@router.post("/simplify/{learner_session_id}", response_model=Dict[str, Any])
+async def simplify_slide_content(
+    learner_session_id: str,
+    request: SimplifySlideRequest
+) -> Dict[str, Any]:
+    """
+    Simplify the content of a slide for better accessibility
+    
+    Args:
+        learner_session_id: ID of the learner session
+        request: Request containing current slide content
+        
+    Returns:
+        Dict containing simplified slide content
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [SIMPLIFY] Simplifying content for session {learner_session_id}")
+        
+        # Apply rate limiting
+        if not await rate_limiter.is_allowed(f"slide_simplify_{learner_session_id}"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded for slide simplification"
+            )
+        
+        # Validate request
+        if not request.current_content or len(request.current_content.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Current content is required and must be at least 10 characters"
+            )
+        
+        # Initialize slide generation service
+        slide_service = SlideGenerationService()
+        
+        # Simplify slide content
+        result = await slide_service.simplify_slide_content(
+            learner_session_id=learner_session_id,
+            current_slide_content=request.current_content
+        )
+        
+        logger.info(f"✅ SLIDE API [SIMPLIFY] Content simplified for session {learner_session_id}")
+        return {
+            "success": True,
+            "data": result,
+            "message": "Slide content simplified successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ SLIDE API [SIMPLIFY_NOT_FOUND] {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [SIMPLIFY_ERROR] Failed to simplify slide content: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to simplify slide content"
         )
 
 

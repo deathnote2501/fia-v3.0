@@ -203,6 +203,175 @@ class SlideGenerationService:
             logger.error(f"❌ SLIDE GENERATION [AI] Failed to generate content: {str(e)}")
             raise VertexAIError(f"Slide content generation failed: {str(e)}", original_error=e)
     
+    async def simplify_slide_content(self, learner_session_id: str, current_slide_content: str) -> Dict[str, Any]:
+        """
+        Simplifier le contenu d'une slide existante selon le profil de l'apprenant
+        
+        Args:
+            learner_session_id: ID de la session apprenant
+            current_slide_content: Contenu markdown actuel de la slide
+            
+        Returns:
+            Dict contenant le contenu simplifié
+        """
+        start_time = time.time()
+        
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🎯 SLIDE SIMPLIFY [START] Simplifying slide for session {learner_session_id}")
+                
+                # Initialize repositories
+                learner_session_repo = LearnerSessionRepository(session)
+                
+                # Récupérer la session apprenant pour le profil
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Générer le contenu simplifié
+                logger.info(f"📝 SLIDE SIMPLIFY [AI] Calling VertexAI for content simplification...")
+                
+                simplified_content = await self._generate_simplified_content(
+                    current_content=current_slide_content,
+                    learner_profile=learner_session
+                )
+                
+                duration = time.time() - start_time
+                
+                result = {
+                    "simplified_content": simplified_content,
+                    "original_length": len(current_slide_content),
+                    "simplified_length": len(simplified_content),
+                    "processing_time": round(duration, 2),
+                    "learner_session_id": learner_session_id
+                }
+                
+                logger.info(f"✅ SLIDE SIMPLIFY [SUCCESS] Content simplified in {duration:.2f}s - {len(current_slide_content)} → {len(simplified_content)} chars")
+                return result
+                
+            except Exception as e:
+                await session.rollback()
+                duration = time.time() - start_time
+                logger.error(f"❌ SLIDE SIMPLIFY [ERROR] Failed after {duration:.2f}s: {str(e)}")
+                raise
+    
+    async def _generate_simplified_content(
+        self,
+        current_content: str,
+        learner_profile: Any
+    ) -> str:
+        """
+        Générer une version simplifiée du contenu avec VertexAI
+        
+        Args:
+            current_content: Contenu markdown actuel
+            learner_profile: Profil de l'apprenant (LearnerSession)
+            
+        Returns:
+            Contenu markdown simplifié
+        """
+        try:
+            # Construire le prompt de simplification
+            prompt = self._build_simplify_prompt(
+                current_content=current_content,
+                learner_profile=learner_profile
+            )
+            
+            # Configuration VertexAI pour simplification (même format JSON que la génération initiale)
+            generation_config = {
+                "temperature": 0.3,  # Température basse pour cohérence
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 2048,
+                "response_mime_type": "application/json"  # JSON comme la génération initiale
+            }
+            
+            logger.info(f"🚀 SLIDE SIMPLIFY [AI] Calling VertexAI for content simplification...")
+            
+            # Appeler VertexAI pour simplifier le contenu
+            raw_content = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            # Parser le JSON et extraire le contenu markdown (même processus que la génération initiale)
+            simplified_content = self._extract_content_from_json(raw_content)
+            
+            # Nettoyer et valider le contenu
+            cleaned_content = self._clean_markdown_content(simplified_content)
+            
+            logger.info(f"✅ SLIDE SIMPLIFY [AI] Content simplified - {len(cleaned_content)} characters")
+            return cleaned_content
+            
+        except Exception as e:
+            logger.error(f"❌ SLIDE SIMPLIFY [AI] Failed to simplify content: {str(e)}")
+            raise VertexAIError(f"Slide simplification failed: {str(e)}", original_error=e)
+    
+    def _build_simplify_prompt(
+        self,
+        current_content: str,
+        learner_profile: Any
+    ) -> str:
+        """
+        Construire le prompt pour simplifier le contenu d'une slide
+        
+        Args:
+            current_content: Contenu markdown actuel de la slide
+            learner_profile: Profil de l'apprenant (LearnerSession)
+            
+        Returns:
+            Prompt optimisé pour la simplification
+        """
+        # Extraire les informations du profil apprenant
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant", 
+            "style_apprentissage": learner_profile.learning_style or "visuel",
+            "poste": learner_profile.job_position or "non spécifié",
+            "secteur": learner_profile.activity_sector or "non spécifié",
+            "langue": learner_profile.language or "français"
+        }
+        
+        prompt = f"""Tu es un expert pédagogue spécialisé dans la simplification de contenu éducatif.
+
+MISSION :
+Simplifie le contenu de slide de formation ci-dessous pour le rendre plus accessible à l'apprenant selon son profil.
+
+CONTENU ACTUEL À SIMPLIFIER :
+{current_content}
+
+PROFIL APPRENANT :
+- Niveau d'expérience : {profile_info['niveau']}
+- Style d'apprentissage : {profile_info['style_apprentissage']}
+- Poste : {profile_info['poste']}
+- Secteur d'activité : {profile_info['secteur']}
+- Langue : {profile_info['langue']}
+
+RÈGLES DE SIMPLIFICATION :
+1. **Langage accessible** : Utilise un vocabulaire simple et clair adapté au niveau {profile_info['niveau']}
+2. **Structure claire** : Conserve la structure markdown mais simplifie la présentation
+3. **Concepts essentiels** : Concentre-toi sur les points les plus importants
+4. **Exemples concrets** : Remplace les concepts abstraits par des exemples pratiques du secteur {profile_info['secteur']}
+5. **Format {profile_info['style_apprentissage']}** : Adapte au style d'apprentissage privilégié
+6. **Phrases courtes** : Utilise des phrases courtes et directes
+7. **Points clés** : Mets en évidence les informations essentielles
+
+CONTRAINTES TECHNIQUES :
+- Réponds en format JSON avec la structure suivante :
+{{
+  "slide_content": "Le contenu markdown simplifié ici"
+}}
+- Le contenu dans slide_content doit être du markdown pur
+- Garde la même structure markdown (titres, listes, etc.) mais simplifie le texte
+- Réduis la complexité sans perdre l'information essentielle
+- Longueur cible : 50-70% du contenu original
+- Reste professionnel et pédagogique
+
+Génère maintenant la version simplifiée au format JSON :"""
+
+        logger.info(f"🎯 SLIDE SIMPLIFY [PROMPT] Built simplify prompt for level: {profile_info['niveau']}, style: {profile_info['style_apprentissage']}")
+        
+        return prompt
+    
     def _build_slide_prompt(
         self,
         slide_title: str,
