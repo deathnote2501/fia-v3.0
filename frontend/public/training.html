@@ -46,27 +46,309 @@
             border-radius: 0.5rem;
             overflow-x: auto;
         }
+        
+        /* Live Voice Button Styles - HIDDEN UNTIL VERTEX AI INTEGRATION */
+        #live-voice-btn {
+            display: none !important; /* Hide Live Voice button */
+            transition: all 0.3s ease;
+        }
+        
+        #live-voice-btn.btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        #live-voice-btn.btn-success {
+            background-color: #198754;
+            border-color: #198754;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+        }
+        
+        #live-status {
+            display: none !important; /* Hide Live Voice status text */
+            font-size: 0.75rem;
+            min-height: 1rem;
+        }
+        
+        /* Live session chat message styling */
+        .message[data-action-type="live-voice"] .message-content {
+            position: relative;
+        }
+        
+        .message[data-action-type="live-voice"] .message-content::before {
+            content: "🎙️";
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+        }
+        
+        .message[data-action-type="live-session"] .message-content {
+            border-left: 3px solid #198754;
+            padding-left: 8px;
+        }
+        
+        /* PowerPoint-style Layout - Flat design, no shadows */
+        .powerpoint-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            background: white;
+        }
+        
+        /* Chat Panel - 25% left */
+        .chat-panel {
+            width: 25%;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 1rem;
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        /* Chat Messages Area */
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: white;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+        }
+        
+        .message-content {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+        
+        /* AI messages - gris clair standard Bootstrap */
+        .ai-message .message-content {
+            background-color: #f8f9fa;
+            color: #495057;
+            margin-left: 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* User messages - fond bleu pâle comme btn-primary disabled */
+        .user-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .user-message .message-content {
+            background-color: #b3d7ff;
+            color: #004085;
+            margin-right: 0;
+            border: 1px solid #9fcdff;
+        }
+        
+        /* Chat Actions */
+        .chat-actions {
+            padding: 0.75rem 1rem;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        /* Chat Input */
+        .chat-input {
+            padding: 1rem;
+            background: white;
+        }
+        
+        .chat-status {
+            font-size: 0.75rem;
+            min-height: 1rem;
+        }
+        
+        /* Content Panel - 75% right */
+        .content-panel {
+            width: 75%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-header {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .learner-info {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        /* Progress Bar */
+        .progress-bar-container {
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.75rem 1.5rem;
+        }
+        
+        .progress-breadcrumb {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .progress-text {
+            font-weight: 500;
+        }
+        
+        .progress-text .current-module {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        
+        /* Slide Content Area (scrollable only) */
+        .slide-content-area {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background: white;
+        }
+        
+        /* Navigation Bar (fixed at bottom) */
+        .navigation-bar {
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .interaction-buttons {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Remove Bootstrap shadows for flat design, keep standard rounded corners */
+        .btn {
+            box-shadow: none !important;
+        }
+        
+        .card {
+            box-shadow: none !important;
+        }
+        
+        .form-control {
+            box-shadow: none !important;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-white">
     
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-mortarboard me-2"></i>FIA v3.0
-            </a>
-            <span class="navbar-text text-white-50">
-                <i class="bi bi-person-circle me-1"></i>
-                <span id="learner-email">Loading...</span>
-            </span>
+    <!-- PowerPoint-style Layout: 25% Chat + 75% Content -->
+    <div class="powerpoint-container">
+        <!-- Left Panel: Chat IA (25%) -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <i class="bi bi-chat-dots me-2"></i>AI Trainer
+            </div>
+            
+            <!-- Chat Messages Area (scrollable) -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome message -->
+                <div class="message ai-message">
+                    <div class="message-content">
+                        Welcome! I'm your AI trainer. I'm here to help you throughout your learning journey. Feel free to ask questions or request exercises and examples.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="chat-actions">
+                <div class="btn-group w-100" role="group" aria-label="Chat actions">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn">
+                        <i class="bi bi-chat-text me-1"></i>Comment
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn">
+                        <i class="bi bi-question-circle me-1"></i>Quiz
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn">
+                        <i class="bi bi-lightbulb me-1"></i>Examples
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn">
+                        <i class="bi bi-star me-1"></i>Key Points
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Input (fixed at bottom) -->
+            <div class="chat-input">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="chat-input" 
+                           placeholder="Ask your AI trainer..." maxlength="500">
+                    <button class="btn btn-primary" type="button" id="send-message-btn">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container my-4">
-        <div id="main-content">
-            <!-- Content will be loaded dynamically -->
+        
+        <!-- Right Panel: Content Area (75%) -->
+        <div class="content-panel">
+            <!-- Header with learner info -->
+            <div class="content-header">
+                <div class="learner-info">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span id="learner-email">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                <div id="progress-breadcrumb" class="progress-breadcrumb">
+                    <span class="progress-text">Training Plan</span>
+                </div>
+            </div>
+            
+            <!-- Slide Content Area (scrollable) -->
+            <div id="main-content" class="slide-content-area">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            
+            <!-- Navigation Bar (fixed at bottom) -->
+            <div class="navigation-bar">
+                <button id="new-previous-btn" class="btn btn-outline-secondary" disabled>
+                    <i class="bi bi-chevron-left me-1"></i>Previous
+                </button>
+                
+                <div class="interaction-buttons">
+                    <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-arrow-down-circle me-1"></i>Simplify
+                    </button>
+                    <button id="new-more-details-btn" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-up-circle me-1"></i>Deepen
+                    </button>
+                </div>
+                
+                <button id="new-next-btn" class="btn btn-outline-primary">
+                    Next<i class="bi bi-chevron-right ms-1"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -299,7 +581,7 @@
                 
                 this.container.innerHTML = `
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white">
                                     <h5 class="mb-0">
@@ -307,12 +589,6 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="alert alert-success">
-                                        <i class="bi bi-check-circle me-2"></i>
-                                        <strong>Success!</strong> ${planData.message}
-                                        <br><small class="text-muted">Method: ${metadata.generation_method} | 
-                                        Plan ID: ${metadata.database_integration?.plan_id || 'N/A'}</small>
-                                    </div>
                                     
                                     <div class="row mb-3">
                                         <div class="col-md-3">
@@ -364,75 +640,6 @@
                                             <summary class="text-muted">Debug Information</summary>
                                             <pre class="bg-light p-3 mt-2 small">${JSON.stringify(metadata, null, 2)}</pre>
                                         </details>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <!-- AI Assistant Chat -->
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-robot me-2"></i>AI Training Assistant
-                                    </h6>
-                                </div>
-                                <div class="card-body" style="height: 400px; overflow-y: auto;">
-                                    <div class="chat-messages">
-                                        <div class="message assistant mb-3">
-                                            <div class="d-flex align-items-start">
-                                                <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 14px;">
-                                                    AI
-                                                </div>
-                                                <div class="message-content">
-                                                    <div class="bg-light p-3 rounded">
-                                                        <p class="mb-0 small">Hello! I've just generated your personalized ${metadata.total_slides}-slide training plan with ${metadata.total_stages} stages. The plan was created using ${metadata.generation_method} and is now saved in our database. I'm here to help you throughout your learning journey!</p>
-                                                    </div>
-                                                    <small class="text-muted">Just now</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" placeholder="Type your question...">
-                                        <button class="btn btn-success" type="button">
-                                            <i class="bi bi-send"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Progress Panel -->
-                            <div class="card shadow-sm mt-3">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-graph-up me-2"></i>Your Progress
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="small">Overall Progress</span>
-                                        <span class="badge bg-primary">0%</span>
-                                    </div>
-                                    <div class="progress mb-3" style="height: 8px;">
-                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    
-                                    <div class="small text-muted">
-                                        <div class="d-flex justify-content-between">
-                                            <span>Slides completed:</span>
-                                            <span>0 / ${metadata.total_slides}</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span>Time spent:</span>
-                                            <span>0 min</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span>Current stage:</span>
-                                            <span>${trainingPlan.stages[0]?.stage_name || 'Discovery'}</span>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -535,7 +742,7 @@
             showSlideLoading() {
                 this.container.innerHTML = `
                     <div class="row">
-                        <div class="col-lg-9">
+                        <div class="col-lg-12">
                             <div class="card shadow-sm">
                                 <div class="card-body text-center py-5">
                                     <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
@@ -549,18 +756,6 @@
                                         <div class="progress-bar progress-bar-striped progress-bar-animated" 
                                              role="progressbar" style="width: 100%"></div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-3">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-robot me-2"></i>AI Assistant
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="small text-muted">AI assistant will be available once your first slide is ready.</p>
                                 </div>
                             </div>
                         </div>
@@ -626,8 +821,8 @@
                 
                 this.container.innerHTML = `
                     <div class="row">
-                        <!-- Main slide content (75% width) -->
-                        <div class="col-lg-9">
+                        <!-- Main slide content (full width) -->
+                        <div class="col-lg-12">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">
@@ -642,86 +837,6 @@
                                     <div id="slide-content" class="slide-content">
                                         ${this.markdownToHtml(content)}
                                     </div>
-                                    
-                                    <!-- Navigation buttons -->
-                                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                                        <button id="previous-btn" class="btn btn-outline-secondary">
-                                            <i class="bi bi-arrow-left me-1"></i>Previous
-                                        </button>
-                                        <div class="btn-group">
-                                            <button id="simplify-btn" class="btn btn-outline-primary">
-                                                <i class="bi bi-lightbulb me-1"></i>Simplify
-                                            </button>
-                                            <button id="more-details-btn" class="btn btn-outline-info">
-                                                <i class="bi bi-plus-circle me-1"></i>More Details
-                                            </button>
-                                        </div>
-                                        <button id="next-btn" class="btn btn-primary">
-                                            <i class="bi bi-arrow-right me-1"></i>Next
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Slide metadata -->
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    Generated: ${slideData.generated_at ? new Date(slideData.generated_at).toLocaleString() : 'Just now'} |
-                                    Slide ID: ${slideData.slide_id || 'N/A'}
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <!-- AI Chat sidebar (25% width) -->
-                        <div class="col-lg-3">
-                            <div class="card shadow-sm" style="height: 600px;">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-robot me-2"></i>AI Training Assistant
-                                    </h6>
-                                </div>
-                                <div class="card-body p-0" style="height: 500px; overflow-y: auto;" id="chat-messages">
-                                    <div class="p-3">
-                                        <div class="message assistant mb-3">
-                                            <div class="d-flex align-items-start">
-                                                <div class="avatar bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
-                                                    AI
-                                                </div>
-                                                <div class="message-content">
-                                                    <div class="bg-light p-2 rounded">
-                                                        <p class="mb-0 small">Welcome! I'm here to help you with this slide. Feel free to ask questions about the content or request clarifications.</p>
-                                                    </div>
-                                                    <small class="text-muted">Just now</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer p-2">
-                                    <!-- Contextual action buttons -->
-                                    <div class="mb-2">
-                                        <div class="btn-group w-100" role="group">
-                                            <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn" title="Comment this slide">
-                                                <i class="bi bi-chat-text me-1"></i>Comment
-                                            </button>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="quiz-btn" title="Generate quiz">
-                                                <i class="bi bi-question-circle me-1"></i>Quiz
-                                            </button>
-                                            <button type="button" class="btn btn-outline-info btn-sm" id="examples-btn" title="Show examples">
-                                                <i class="bi bi-lightbulb me-1"></i>Examples
-                                            </button>
-                                            <button type="button" class="btn btn-outline-warning btn-sm" id="key-points-btn" title="Key points to remember">
-                                                <i class="bi bi-star me-1"></i>Key Points
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <!-- Chat input -->
-                                    <div class="input-group input-group-sm">
-                                        <input type="text" class="form-control" placeholder="Ask about this slide..." id="chat-input">
-                                        <button class="btn btn-success" type="button" id="send-message-btn">
-                                            <i class="bi bi-send"></i>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -732,6 +847,8 @@
                 this.setupChatFunctionality();
                 this.setupContextualChatButtons();
                 this.setupSlideInteractionButtons();
+                this.setupNewNavigationButtons(); // Connect new navigation buttons
+                this.setupLiveVoiceFunctionality();
                 
                 // Update navigation button states
                 this.updateNavigationButtonStates();
@@ -941,11 +1058,8 @@
             
             addChatMessage(role, content, metadata = {}) {
                 const chatMessages = document.getElementById('chat-messages');
-                const timestamp = new Date().toLocaleTimeString();
                 
                 const isUser = role === 'user';
-                const avatarBg = isUser ? 'bg-primary' : 'bg-success';
-                const avatarText = isUser ? 'You' : 'AI';
                 const messageClass = isUser ? 'justify-content-end' : '';
                 const bubbleClass = isUser ? 'bg-primary text-white' : 'bg-light';
                 
@@ -967,12 +1081,9 @@
 
                 const messageHtml = `
                     <div class="p-3">
-                        <div class="message ${role} mb-3">
+                        <div class="message ${role} mb-3" ${metadata.action_type ? `data-action-type="${metadata.action_type}"` : ''}>
                             <div class="d-flex align-items-start ${messageClass}">
-                                ${!isUser ? `<div class="avatar ${avatarBg} text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
-                                    ${avatarText}
-                                </div>` : ''}
-                                <div class="message-content ${isUser ? 'me-2' : ''}">
+                                <div class="message-content">
                                     <div class="${bubbleClass} p-2 rounded">
                                         ${actionTypeBadge}
                                         <p class="mb-0 small">${content}</p>
@@ -989,11 +1100,7 @@
                                             </div>` : ''}
                                         ${metadata.error ? `<div class="mt-1"><span class="badge bg-danger">Error</span></div>` : ''}
                                     </div>
-                                    <small class="text-muted">${timestamp}</small>
                                 </div>
-                                ${isUser ? `<div class="avatar ${avatarBg} text-white rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 32px; height: 32px; font-size: 12px;">
-                                    ${avatarText}
-                                </div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1158,8 +1265,8 @@
             }
             
             updateNavigationButtonStates() {
-                const previousBtn = document.getElementById('previous-btn');
-                const nextBtn = document.getElementById('next-btn');
+                const newPreviousBtn = document.getElementById('new-previous-btn');
+                const newNextBtn = document.getElementById('new-next-btn');
                 
                 if (!this.currentSlide || !this.currentSlide.position) {
                     console.log('🔄 [NAVIGATION] No position data available, keeping buttons enabled');
@@ -1170,29 +1277,28 @@
                 console.log('🔄 [NAVIGATION] Updating button states:', position);
                 
                 // Update Previous button
-                if (previousBtn) {
+                if (newPreviousBtn) {
                     if (position.has_previous === false) {
-                        previousBtn.disabled = true;
-                        previousBtn.classList.add('opacity-50');
+                        newPreviousBtn.disabled = true;
+                        newPreviousBtn.classList.add('opacity-50');
                         console.log('🔄 [NAVIGATION] Previous button disabled - at beginning');
                     } else {
-                        previousBtn.disabled = false;
-                        previousBtn.classList.remove('opacity-50');
+                        newPreviousBtn.disabled = false;
+                        newPreviousBtn.classList.remove('opacity-50');
                         console.log('🔄 [NAVIGATION] Previous button enabled');
                     }
                 }
                 
                 // Update Next button
-                if (nextBtn) {
+                if (newNextBtn) {
                     if (position.has_next === false) {
-                        nextBtn.disabled = true;
-                        nextBtn.classList.add('opacity-50');
-                        nextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
-                        console.log('🔄 [NAVIGATION] Next button disabled - at end');
+                        newNextBtn.disabled = true;
+                        newNextBtn.classList.add('opacity-50');
+                        newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
                     } else {
-                        nextBtn.disabled = false;
-                        nextBtn.classList.remove('opacity-50');
-                        nextBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next';
+                        newNextBtn.disabled = false;
+                        newNextBtn.classList.remove('opacity-50');
+                        newNextBtn.innerHTML = 'Next<i class="bi bi-chevron-right ms-1"></i>';
                         console.log('🔄 [NAVIGATION] Next button enabled');
                     }
                 }
@@ -1204,42 +1310,41 @@
             }
             
             setupSlideInteractionButtons() {
-                const simplifyBtn = document.getElementById('simplify-btn');
-                const moreDetailsBtn = document.getElementById('more-details-btn');
-                const nextBtn = document.getElementById('next-btn');
-                const previousBtn = document.getElementById('previous-btn');
+                // Cette fonction ne fait plus rien car les anciens boutons ont été supprimés
+                // Tous les boutons sont maintenant gérés par setupNewNavigationButtons()
+                console.log('✅ [BUTTONS] setupSlideInteractionButtons - anciens boutons supprimés');
+            }
+            
+            setupNewNavigationButtons() {
+                // Connect new navigation buttons to same actions as old ones
+                const newSimplifyBtn = document.getElementById('new-simplify-btn');
+                const newMoreDetailsBtn = document.getElementById('new-more-details-btn');
+                const newNextBtn = document.getElementById('new-next-btn');
+                const newPreviousBtn = document.getElementById('new-previous-btn');
                 
-                if (simplifyBtn) {
-                    simplifyBtn.addEventListener('click', () => this.simplifySlideContent());
-                    console.log('✅ [BUTTONS] Simplify button event listener added');
-                } else {
-                    console.warn('⚠️ [BUTTONS] Simplify button not found');
+                if (newSimplifyBtn) {
+                    newSimplifyBtn.addEventListener('click', () => this.simplifySlideContent());
+                    console.log('✅ [NEW_BUTTONS] New simplify button connected');
                 }
                 
-                if (moreDetailsBtn) {
-                    moreDetailsBtn.addEventListener('click', () => this.moreDetailsSlideContent());
-                    console.log('✅ [BUTTONS] More Details button event listener added');
-                } else {
-                    console.warn('⚠️ [BUTTONS] More Details button not found');
+                if (newMoreDetailsBtn) {
+                    newMoreDetailsBtn.addEventListener('click', () => this.moreDetailsSlideContent());
+                    console.log('✅ [NEW_BUTTONS] New more details button connected');
                 }
                 
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', () => this.navigateToNextSlide());
-                    console.log('✅ [BUTTONS] Next button event listener added');
-                } else {
-                    console.warn('⚠️ [BUTTONS] Next button not found');
+                if (newNextBtn) {
+                    newNextBtn.addEventListener('click', () => this.navigateToNextSlide());
+                    console.log('✅ [NEW_BUTTONS] New next button connected');
                 }
                 
-                if (previousBtn) {
-                    previousBtn.addEventListener('click', () => this.navigateToPreviousSlide());
-                    console.log('✅ [BUTTONS] Previous button event listener added');
-                } else {
-                    console.warn('⚠️ [BUTTONS] Previous button not found');
+                if (newPreviousBtn) {
+                    newPreviousBtn.addEventListener('click', () => this.navigateToPreviousSlide());
+                    console.log('✅ [NEW_BUTTONS] New previous button connected');
                 }
             }
             
             async simplifySlideContent() {
-                const simplifyBtn = document.getElementById('simplify-btn');
+                const newSimplifyBtn = document.getElementById('new-simplify-btn');
                 const slideContentEl = document.getElementById('slide-content');
                 
                 if (!slideContentEl) {
@@ -1251,9 +1356,9 @@
                     console.log('🎯 [SIMPLIFY] Starting slide content simplification');
                     
                     // Désactiver le bouton pendant le traitement
-                    if (simplifyBtn) {
-                        simplifyBtn.disabled = true;
-                        simplifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Simplifying...';
+                    if (newSimplifyBtn) {
+                        newSimplifyBtn.disabled = true;
+                        newSimplifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Simplifying...';
                     }
                     
                     // Obtenir le contenu markdown actuel
@@ -1313,9 +1418,9 @@
                     
                 } finally {
                     // Réactiver le bouton
-                    if (simplifyBtn) {
-                        simplifyBtn.disabled = false;
-                        simplifyBtn.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Simplify';
+                    if (newSimplifyBtn) {
+                        newSimplifyBtn.disabled = false;
+                        newSimplifyBtn.innerHTML = '<i class="bi bi-arrow-down-circle me-1"></i>Simplify';
                     }
                 }
             }
@@ -1327,50 +1432,17 @@
             }
             
             showSimplifySuccess(data) {
-                const alertHtml = `
-                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-check-circle me-2"></i>
-                        <strong>Content Simplified!</strong> 
-                        Reduced from ${data.original_length} to ${data.simplified_length} characters.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 5 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-success');
-                        if (alert) alert.remove();
-                    }, 5000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.log('🎯 [SIMPLIFY] Content simplified successfully:', data);
             }
             
             showSimplifyError(errorMessage) {
-                const alertHtml = `
-                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Simplification Failed:</strong> ${errorMessage}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 8 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-warning');
-                        if (alert) alert.remove();
-                    }, 8000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.error('❌ [SIMPLIFY] Error:', errorMessage);
             }
             
             async moreDetailsSlideContent() {
-                const moreDetailsBtn = document.getElementById('more-details-btn');
+                const newMoreDetailsBtn = document.getElementById('new-more-details-btn');
                 const slideContentEl = document.getElementById('slide-content');
                 
                 if (!slideContentEl) {
@@ -1382,9 +1454,9 @@
                     console.log('🎯 [MORE_DETAILS] Starting slide content enhancement');
                     
                     // Désactiver le bouton pendant le traitement
-                    if (moreDetailsBtn) {
-                        moreDetailsBtn.disabled = true;
-                        moreDetailsBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adding Details...';
+                    if (newMoreDetailsBtn) {
+                        newMoreDetailsBtn.disabled = true;
+                        newMoreDetailsBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adding Details...';
                     }
                     
                     // Obtenir le contenu markdown actuel
@@ -1444,58 +1516,25 @@
                     
                 } finally {
                     // Réactiver le bouton
-                    if (moreDetailsBtn) {
-                        moreDetailsBtn.disabled = false;
-                        moreDetailsBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>More Details';
+                    if (newMoreDetailsBtn) {
+                        newMoreDetailsBtn.disabled = false;
+                        newMoreDetailsBtn.innerHTML = '<i class="bi bi-arrow-up-circle me-1"></i>Deepen';
                     }
                 }
             }
             
             showMoreDetailsSuccess(data) {
-                const alertHtml = `
-                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        <strong>Content Enhanced!</strong> 
-                        Expanded from ${data.original_length} to ${data.detailed_length} characters with more technical details.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 5 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-info');
-                        if (alert) alert.remove();
-                    }, 5000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.log('🎯 [MORE_DETAILS] Content enhanced successfully:', data);
             }
             
             showMoreDetailsError(errorMessage) {
-                const alertHtml = `
-                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Enhancement Failed:</strong> ${errorMessage}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 8 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-warning');
-                        if (alert) alert.remove();
-                    }, 8000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.error('❌ [MORE_DETAILS] Error:', errorMessage);
             }
             
             async navigateToNextSlide() {
-                const nextBtn = document.getElementById('next-btn');
+                const newNextBtn = document.getElementById('new-next-btn');
                 
                 if (!this.currentSlide) {
                     console.error('❌ [NAVIGATION] No current slide data available');
@@ -1507,9 +1546,9 @@
                     console.log('🎯 [NAVIGATION] Starting navigation to next slide');
                     
                     // Désactiver le bouton pendant le traitement
-                    if (nextBtn) {
-                        nextBtn.disabled = true;
-                        nextBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                    if (newNextBtn) {
+                        newNextBtn.disabled = true;
+                        newNextBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
                     }
                     
                     // Obtenir l'ID de la slide actuelle
@@ -1565,81 +1604,37 @@
                     
                 } finally {
                     // Réactiver le bouton
-                    if (nextBtn) {
-                        nextBtn.disabled = false;
-                        nextBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next';
+                    if (newNextBtn) {
+                        newNextBtn.disabled = false;
+                        newNextBtn.innerHTML = 'Next<i class="bi bi-chevron-right ms-1"></i>';
                     }
                 }
             }
             
             showNavigationSuccess(slideData) {
-                const alertHtml = `
-                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-arrow-right me-2"></i>
-                        <strong>Navigated Successfully!</strong> 
-                        Now showing: ${slideData.title || 'Next slide'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 3 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-success');
-                        if (alert) alert.remove();
-                    }, 3000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.log('🎯 [NAVIGATION] Navigation successful:', slideData.title || 'Next slide');
             }
             
             showNavigationComplete() {
-                const alertHtml = `
-                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-check-circle me-2"></i>
-                        <strong>Training Complete!</strong> 
-                        You have reached the end of this training session. Well done!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
+                // Alerts supprimés - garde seulement la logique des boutons
+                console.log('🎯 [NAVIGATION] Training complete!');
                 
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Disable the Next button
-                    const nextBtn = document.getElementById('next-btn');
-                    if (nextBtn) {
-                        nextBtn.disabled = true;
-                        nextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
-                    }
+                // Disable the Next button
+                const newNextBtn = document.getElementById('new-next-btn');
+                if (newNextBtn) {
+                    newNextBtn.disabled = true;
+                    newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
                 }
             }
             
             showNavigationError(errorMessage) {
-                const alertHtml = `
-                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Navigation Failed:</strong> ${errorMessage}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 8 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-warning');
-                        if (alert) alert.remove();
-                    }, 8000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.error('❌ [NAVIGATION] Error:', errorMessage);
             }
             
             async navigateToPreviousSlide() {
-                const previousBtn = document.getElementById('previous-btn');
+                const newPreviousBtn = document.getElementById('new-previous-btn');
                 
                 if (!this.currentSlide) {
                     console.error('❌ [NAVIGATION] No current slide data available');
@@ -1651,9 +1646,9 @@
                     console.log('🎯 [NAVIGATION] Starting navigation to previous slide');
                     
                     // Désactiver le bouton pendant le traitement
-                    if (previousBtn) {
-                        previousBtn.disabled = true;
-                        previousBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                    if (newPreviousBtn) {
+                        newPreviousBtn.disabled = true;
+                        newPreviousBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
                     }
                     
                     // Obtenir l'ID de la slide actuelle
@@ -1709,68 +1704,554 @@
                     
                 } finally {
                     // Réactiver le bouton
-                    if (previousBtn) {
-                        previousBtn.disabled = false;
-                        previousBtn.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Previous';
+                    if (newPreviousBtn) {
+                        newPreviousBtn.disabled = false;
+                        newPreviousBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i>Previous';
                     }
                 }
             }
             
             showPreviousNavigationSuccess(slideData) {
-                const alertHtml = `
-                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-arrow-left me-2"></i>
-                        <strong>Navigated Back!</strong> 
-                        Now showing: ${slideData.title || 'Previous slide'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
-                    
-                    // Supprimer l'alerte après 3 secondes
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-info');
-                        if (alert) alert.remove();
-                    }, 3000);
-                }
+                // Alerts supprimés - fonction désactivée
+                console.log('🎯 [NAVIGATION] Previous navigation successful:', slideData.title || 'Previous slide');
             }
             
             showNavigationBeginning() {
-                const alertHtml = `
-                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>At the Beginning!</strong> 
-                        You are already at the first slide of this training.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
+                // Alerts supprimés - garde seulement la logique des boutons
+                console.log('🎯 [NAVIGATION] At the beginning!');
                 
-                const slideContentEl = document.getElementById('slide-content');
-                if (slideContentEl) {
-                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                // Disable the Previous button
+                const newPreviousBtn = document.getElementById('new-previous-btn');
+                if (newPreviousBtn) {
+                    newPreviousBtn.disabled = true;
+                    newPreviousBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Beginning';
+                }
+                
+                // Réactiver le bouton après 5 secondes
+                setTimeout(() => {
+                    if (newPreviousBtn && this.currentSlide && (this.currentSlide.position?.has_previous !== false)) {
+                        newPreviousBtn.disabled = false;
+                        newPreviousBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i>Previous';
+                    }
+                }, 5000);
+            }
+            
+            // ============================================================================
+            // LIVE VOICE FUNCTIONALITY
+            // ============================================================================
+            
+            setupLiveVoiceFunctionality() {
+                const liveVoiceBtn = document.getElementById('live-voice-btn');
+                
+                if (liveVoiceBtn) {
+                    liveVoiceBtn.addEventListener('click', () => this.toggleLiveVoice());
+                    console.log('✅ [LIVE_VOICE] Live voice button event listener added');
+                } else {
+                    console.warn('⚠️ [LIVE_VOICE] Live voice button not found');
+                }
+                
+                // Initialize Live Voice state
+                this.liveVoiceState = {
+                    isActive: false,
+                    isConnecting: false,
+                    websocket: null,
+                    mediaRecorder: null,
+                    audioContext: null,
+                    microphone: null,
+                    audioChunks: []
+                };
+            }
+            
+            async toggleLiveVoice() {
+                console.log('🎙️ [LIVE_VOICE] Toggle live voice, current state:', this.liveVoiceState.isActive);
+                
+                if (this.liveVoiceState.isActive) {
+                    await this.stopLiveVoice();
+                } else {
+                    await this.startLiveVoice();
+                }
+            }
+            
+            async startLiveVoice() {
+                const liveBtn = document.getElementById('live-voice-btn');
+                const liveIcon = document.getElementById('live-voice-icon');
+                const liveText = document.getElementById('live-voice-text');
+                const liveStatus = document.getElementById('live-status');
+                
+                try {
+                    console.log('🚀 [LIVE_VOICE] Starting live voice session...');
                     
-                    // Disable the Previous button
-                    const previousBtn = document.getElementById('previous-btn');
-                    if (previousBtn) {
-                        previousBtn.disabled = true;
-                        previousBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Beginning';
+                    // Update UI to connecting state
+                    this.liveVoiceState.isConnecting = true;
+                    if (liveBtn) liveBtn.disabled = true;
+                    if (liveIcon) liveIcon.className = 'bi bi-hourglass-split me-1';
+                    if (liveText) liveText.textContent = 'Connecting...';
+                    if (liveStatus) liveStatus.textContent = 'Connecting to Live API...';
+                    
+                    // Request microphone access
+                    console.log('🎤 [LIVE_VOICE] Requesting microphone access...');
+                    
+                    // Check if we're in a secure context for microphone access
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('Microphone access not available. Please use HTTPS or localhost.');
                     }
                     
-                    // Supprimer l'alerte après 5 secondes et réactiver le bouton
-                    setTimeout(() => {
-                        const alert = document.querySelector('.alert-info');
-                        if (alert) alert.remove();
-                        
-                        // Réactiver le bouton après l'alerte
-                        if (previousBtn && this.currentSlide && (this.currentSlide.position?.has_previous !== false)) {
-                            previousBtn.disabled = false;
-                            previousBtn.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Previous';
-                        }
-                    }, 5000);
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            sampleRate: 16000,
+                            channelCount: 1,
+                            echoCancellation: true,
+                            noiseSuppression: true
+                        } 
+                    });
+                    
+                    console.log('✅ [LIVE_VOICE] Microphone access granted');
+                    
+                    // Initialize Audio Context
+                    this.liveVoiceState.audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                    this.liveVoiceState.microphone = this.liveVoiceState.audioContext.createMediaStreamSource(stream);
+                    
+                    // Connect to WebSocket
+                    await this.connectLiveWebSocket();
+                    
+                    // Setup MediaRecorder for audio capture
+                    this.setupAudioRecording(stream);
+                    
+                    // Update state
+                    this.liveVoiceState.isActive = true;
+                    this.liveVoiceState.isConnecting = false;
+                    
+                    // Update UI to active state
+                    if (liveBtn) {
+                        liveBtn.disabled = false;
+                        liveBtn.className = 'btn btn-success w-100 btn-sm';
+                    }
+                    if (liveIcon) liveIcon.className = 'bi bi-mic-fill me-1';
+                    if (liveText) liveText.textContent = 'Live Voice Active';
+                    if (liveStatus) liveStatus.textContent = 'Speak now - AI is listening';
+                    
+                    console.log('✅ [LIVE_VOICE] Live voice session started successfully');
+                    
+                } catch (error) {
+                    console.error('❌ [LIVE_VOICE] Error starting live voice:', error);
+                    
+                    // Reset state
+                    this.liveVoiceState.isConnecting = false;
+                    this.liveVoiceState.isActive = false;
+                    
+                    // Reset UI
+                    if (liveBtn) {
+                        liveBtn.disabled = false;
+                        liveBtn.className = 'btn btn-danger w-100 btn-sm';
+                    }
+                    if (liveIcon) liveIcon.className = 'bi bi-mic me-1';
+                    if (liveText) liveText.textContent = 'Start Live Voice';
+                    if (liveStatus) liveStatus.textContent = `Error: ${error.message}`;
+                    
+                    // Show error in chat
+                    this.addChatMessage('assistant', 
+                        `I couldn't start the live voice session. Error: ${error.message}. Please check your microphone permissions and try again.`,
+                        { error: true }
+                    );
                 }
+            }
+            
+            async connectLiveWebSocket() {
+                return new Promise((resolve, reject) => {
+                    console.log('🔗 [LIVE_VOICE] Connecting to WebSocket...');
+                    
+                    // Pour localhost, utiliser toujours ws:// même si la page est en http://
+                    const wsProtocol = (window.location.protocol === 'https:' && !window.location.hostname.includes('localhost')) ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${window.location.host}/ws/live/${this.learnerSession.id}`;
+                    
+                    console.log('🔗 [LIVE_VOICE] Protocol detection:', {
+                        'window.location.protocol': window.location.protocol,
+                        'window.location.hostname': window.location.hostname,
+                        'wsProtocol': wsProtocol,
+                        'wsUrl': wsUrl
+                    });
+                    
+                    console.log('🔗 [LIVE_VOICE] WebSocket URL:', wsUrl);
+                    
+                    this.liveVoiceState.websocket = new WebSocket(wsUrl);
+                    
+                    this.liveVoiceState.websocket.onopen = (event) => {
+                        console.log('✅ [LIVE_VOICE] WebSocket connected');
+                        resolve();
+                    };
+                    
+                    this.liveVoiceState.websocket.onmessage = (event) => {
+                        this.handleLiveWebSocketMessage(event);
+                    };
+                    
+                    this.liveVoiceState.websocket.onerror = (error) => {
+                        console.error('❌ [LIVE_VOICE] WebSocket error:', error);
+                        reject(new Error('WebSocket connection failed'));
+                    };
+                    
+                    this.liveVoiceState.websocket.onclose = (event) => {
+                        console.log('🔌 [LIVE_VOICE] WebSocket closed:', event.code, event.reason);
+                        if (this.liveVoiceState.isActive) {
+                            this.handleLiveDisconnection();
+                        }
+                    };
+                });
+            }
+            
+            setupAudioRecording(stream) {
+                console.log('🎵 [LIVE_VOICE] Setting up audio recording...');
+                
+                // Create MediaRecorder with best supported format
+                let options = { mimeType: 'audio/webm;codecs=opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'audio/ogg;codecs=opus' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options = { mimeType: 'audio/webm' };
+                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                            options = {}; // Use default
+                        }
+                    }
+                }
+                
+                console.log('🎵 [LIVE_VOICE] Using MediaRecorder format:', options.mimeType || 'default');
+                this.liveVoiceState.mediaRecorder = new MediaRecorder(stream, options);
+                this.liveVoiceState.currentMimeType = options.mimeType || 'audio/webm';
+                
+                this.liveVoiceState.audioChunks = [];
+                
+                this.liveVoiceState.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        console.log('🎵 [LIVE_VOICE] Audio chunk received:', event.data.size, 'bytes');
+                        this.liveVoiceState.audioChunks.push(event.data);
+                        this.processAudioChunk(event.data);
+                    }
+                };
+                
+                this.liveVoiceState.mediaRecorder.onstop = () => {
+                    console.log('🎵 [LIVE_VOICE] MediaRecorder stopped');
+                };
+                
+                // Start recording in chunks (send every 1 second)
+                this.liveVoiceState.mediaRecorder.start(1000);
+                console.log('✅ [LIVE_VOICE] Audio recording started');
+            }
+            
+            async processAudioChunk(audioBlob) {
+                try {
+                    console.log('🎵 [LIVE_VOICE] Processing audio chunk:', audioBlob.size, 'bytes');
+                    
+                    // Convert blob to ArrayBuffer
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const base64Audio = this.arrayBufferToBase64(arrayBuffer);
+                    
+                    // Send audio via WebSocket
+                    if (this.liveVoiceState.websocket && this.liveVoiceState.websocket.readyState === WebSocket.OPEN) {
+                        const message = {
+                            type: 'audio',
+                            data: base64Audio,
+                            mime_type: this.liveVoiceState.currentMimeType || 'audio/webm'
+                        };
+                        
+                        this.liveVoiceState.websocket.send(JSON.stringify(message));
+                        console.log('📤 [LIVE_VOICE] Audio chunk sent via WebSocket');
+                    } else {
+                        console.warn('⚠️ [LIVE_VOICE] WebSocket not ready, skipping audio chunk');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [LIVE_VOICE] Error processing audio chunk:', error);
+                }
+            }
+            
+            arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            }
+            
+            base64ToArrayBuffer(base64) {
+                const binaryString = atob(base64);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            }
+            
+            handleLiveWebSocketMessage(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    console.log('📥 [LIVE_VOICE] WebSocket message received:', message.type);
+                    
+                    switch (message.type) {
+                        case 'session_started':
+                            console.log('✅ [LIVE_VOICE] Live session started:', message.live_session_id);
+                            this.addChatMessage('assistant', 
+                                'Live voice session started! I can now hear you speaking.',
+                                { action_type: 'live-session' }
+                            );
+                            break;
+                            
+                        case 'audio_response':
+                            console.log('🔊 [LIVE_VOICE] Audio response received');
+                            // Only process if we have actual content or if not throttled
+                            if (message.metadata && message.metadata.throttled) {
+                                console.log('⏸️ [LIVE_VOICE] Response throttled, skipping...');
+                                break;
+                            }
+                            
+                            // Check for text-only mode (mock responses)
+                            const isTextOnly = message.metadata && message.metadata.text_only;
+                            const hasText = message.metadata && message.metadata.text_transcript;
+                            const hasAudio = message.data && message.data.length > 0;
+                            
+                            if (isTextOnly && hasText) {
+                                console.log('📝 [LIVE_VOICE] Text-only response received (mock mode)');
+                                this.addChatMessage('assistant', 
+                                    message.metadata.text_transcript,
+                                    { action_type: 'live-voice', mock: true }
+                                );
+                            } else if (hasAudio || hasText) {
+                                this.playAudioResponse(message.data, message.metadata);
+                            } else {
+                                console.log('🔇 [LIVE_VOICE] Empty response, skipping...');
+                            }
+                            break;
+                            
+                        case 'error':
+                            console.error('❌ [LIVE_VOICE] WebSocket error:', message.message);
+                            this.addChatMessage('assistant', 
+                                `Live voice error: ${message.message}`,
+                                { error: true }
+                            );
+                            break;
+                            
+                        case 'pong':
+                            console.log('🏓 [LIVE_VOICE] Pong received');
+                            break;
+                            
+                        default:
+                            console.log('❓ [LIVE_VOICE] Unknown message type:', message.type);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [LIVE_VOICE] Error parsing WebSocket message:', error);
+                }
+            }
+            
+            async playAudioResponse(base64Audio, metadata) {
+                try {
+                    console.log('🔊 [LIVE_VOICE] Playing audio response...');
+                    console.log('🔊 [LIVE_VOICE] Audio data length:', base64Audio ? base64Audio.length : 'null');
+                    console.log('🔊 [LIVE_VOICE] Metadata:', metadata);
+                    
+                    // Check if this is mock mode
+                    const isMockMode = metadata && metadata.processing_metadata && metadata.processing_metadata.mock === true;
+                    
+                    if (isMockMode) {
+                        console.log('🎭 [LIVE_VOICE] Mock mode detected - skipping audio playback');
+                        
+                        // In mock mode, just show the text transcript
+                        if (metadata && metadata.text_transcript) {
+                            this.addChatMessage('assistant', 
+                                metadata.text_transcript,
+                                { action_type: 'live-voice', mock: true }
+                            );
+                        }
+                        
+                        // Play a simple confirmation sound instead of trying to decode mock audio
+                        this.playMockAudioConfirmation();
+                        return;
+                    }
+                    
+                    // Check if we have valid audio data
+                    if (!base64Audio || base64Audio.length === 0) {
+                        console.warn('⚠️ [LIVE_VOICE] No audio data received');
+                        // If we have text and it's mock mode, show it normally (not as error)
+                        if (metadata && metadata.text_transcript) {
+                            const isTextOnlyMode = metadata.text_only || metadata.mock;
+                            if (isTextOnlyMode) {
+                                this.addChatMessage('assistant', 
+                                    metadata.text_transcript,
+                                    { action_type: 'live-voice', mock: true }
+                                );
+                            } else {
+                                this.addChatMessage('assistant', 
+                                    `[No audio data] ${metadata.text_transcript}`,
+                                    { error: true }
+                                );
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // Real audio mode - try to decode and play actual audio
+                    const audioBuffer = this.base64ToArrayBuffer(base64Audio);
+                    
+                    // Create audio context if needed
+                    if (!this.liveVoiceState.audioContext) {
+                        this.liveVoiceState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    // Try to decode and play audio with fallback
+                    try {
+                        const decodedAudio = await this.liveVoiceState.audioContext.decodeAudioData(audioBuffer.slice(0));
+                        const source = this.liveVoiceState.audioContext.createBufferSource();
+                        source.buffer = decodedAudio;
+                        source.connect(this.liveVoiceState.audioContext.destination);
+                        source.start();
+                        
+                        console.log('✅ [LIVE_VOICE] Audio response playing');
+                    } catch (decodeError) {
+                        console.warn('⚠️ [LIVE_VOICE] WebAudio decode failed, trying HTML5 audio:', decodeError);
+                        
+                        // Fallback to HTML5 Audio
+                        const audioBlob = new Blob([audioBuffer], { type: 'audio/ogg' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        
+                        audio.onended = () => URL.revokeObjectURL(audioUrl);
+                        audio.onerror = (audioError) => {
+                            console.error('❌ [LIVE_VOICE] HTML5 audio also failed:', audioError);
+                            // Don't throw error, just fallback to text
+                            console.log('🔄 [LIVE_VOICE] Falling back to text-only response');
+                        };
+                        
+                        await audio.play();
+                        console.log('✅ [LIVE_VOICE] HTML5 audio playing');
+                    }
+                    
+                    // Add transcript to chat if available
+                    if (metadata && metadata.text_transcript) {
+                        this.addChatMessage('assistant', 
+                            metadata.text_transcript,
+                            { action_type: 'live-voice' }
+                        );
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [LIVE_VOICE] Error playing audio response:', error);
+                    
+                    // Fallback: show text response if audio fails
+                    if (metadata && metadata.text_transcript) {
+                        this.addChatMessage('assistant', 
+                            metadata.text_transcript, // Remove error prefix since it's expected
+                            { action_type: 'live-voice' }
+                        );
+                    } else {
+                        this.addChatMessage('assistant', 
+                            'Audio response received but could not be played.',
+                            { action_type: 'live-voice' }
+                        );
+                    }
+                }
+            }
+            
+            playMockAudioConfirmation() {
+                try {
+                    console.log('🎭 [LIVE_VOICE] Playing mock audio confirmation beep');
+                    
+                    // Create audio context if needed
+                    if (!this.liveVoiceState.audioContext) {
+                        this.liveVoiceState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    // Generate a simple confirmation beep (1000Hz for 200ms)
+                    const audioCtx = this.liveVoiceState.audioContext;
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.frequency.value = 1000; // 1kHz beep
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Low volume
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); // Fade out
+                    
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.2); // 200ms beep
+                    
+                    console.log('✅ [LIVE_VOICE] Mock confirmation beep played');
+                    
+                } catch (error) {
+                    console.warn('⚠️ [LIVE_VOICE] Could not play mock confirmation beep:', error);
+                    // Not a critical error, continue silently
+                }
+            }
+            
+            async stopLiveVoice() {
+                console.log('🛑 [LIVE_VOICE] Stopping live voice session...');
+                
+                const liveBtn = document.getElementById('live-voice-btn');
+                const liveIcon = document.getElementById('live-voice-icon');
+                const liveText = document.getElementById('live-voice-text');
+                const liveStatus = document.getElementById('live-status');
+                
+                try {
+                    // Stop MediaRecorder
+                    if (this.liveVoiceState.mediaRecorder && this.liveVoiceState.mediaRecorder.state !== 'inactive') {
+                        this.liveVoiceState.mediaRecorder.stop();
+                    }
+                    
+                    // Close WebSocket
+                    if (this.liveVoiceState.websocket) {
+                        this.liveVoiceState.websocket.send(JSON.stringify({ type: 'close' }));
+                        this.liveVoiceState.websocket.close();
+                        this.liveVoiceState.websocket = null;
+                    }
+                    
+                    // Stop microphone
+                    if (this.liveVoiceState.microphone && this.liveVoiceState.microphone.mediaStream) {
+                        this.liveVoiceState.microphone.mediaStream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    // Close audio context
+                    if (this.liveVoiceState.audioContext) {
+                        await this.liveVoiceState.audioContext.close();
+                        this.liveVoiceState.audioContext = null;
+                    }
+                    
+                    // Reset state
+                    this.liveVoiceState.isActive = false;
+                    this.liveVoiceState.isConnecting = false;
+                    this.liveVoiceState.mediaRecorder = null;
+                    this.liveVoiceState.microphone = null;
+                    this.liveVoiceState.audioChunks = [];
+                    
+                    // Reset UI
+                    if (liveBtn) {
+                        liveBtn.disabled = false;
+                        liveBtn.className = 'btn btn-danger w-100 btn-sm';
+                    }
+                    if (liveIcon) liveIcon.className = 'bi bi-mic me-1';
+                    if (liveText) liveText.textContent = 'Start Live Voice';
+                    if (liveStatus) liveStatus.textContent = 'Click to talk with AI trainer';
+                    
+                    console.log('✅ [LIVE_VOICE] Live voice session stopped successfully');
+                    
+                    this.addChatMessage('assistant', 
+                        'Live voice session ended. Click the Live Voice button to start a new session.',
+                        { action_type: 'live-session' }
+                    );
+                    
+                } catch (error) {
+                    console.error('❌ [LIVE_VOICE] Error stopping live voice:', error);
+                }
+            }
+            
+            handleLiveDisconnection() {
+                console.log('🔌 [LIVE_VOICE] Handling live disconnection...');
+                
+                // Force stop live voice
+                this.stopLiveVoice();
+                
+                this.addChatMessage('assistant', 
+                    'Live voice session was disconnected unexpectedly. You can start a new session anytime.',
+                    { error: true }
+                );
             }
             
             showError(message) {

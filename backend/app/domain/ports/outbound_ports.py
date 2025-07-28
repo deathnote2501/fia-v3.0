@@ -221,3 +221,35 @@ class ContextCacheServicePort(ABC):
     ) -> bool:
         """Delete cached content"""
         pass
+
+
+class LiveConversationServicePort(ABC):
+    """Port for Live API conversation service"""
+    
+    @abstractmethod
+    async def create_live_session(
+        self,
+        slide_context: Dict[str, Any],
+        learner_profile: Dict[str, Any],
+        learner_session_id: UUID
+    ) -> str:
+        """Create a Live API session and return session ID"""
+        pass
+    
+    @abstractmethod
+    async def handle_live_conversation(
+        self,
+        session_id: str,
+        audio_input: bytes,
+        mime_type: str = "audio/pcm;rate=16000"
+    ) -> Dict[str, Any]:
+        """Handle audio conversation and return response"""
+        pass
+    
+    @abstractmethod
+    async def close_live_session(
+        self,
+        session_id: str
+    ) -> bool:
+        """Close Live API session"""
+        pass

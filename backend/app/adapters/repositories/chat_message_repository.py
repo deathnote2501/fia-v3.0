@@ -3,8 +3,9 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.domain.entities import ChatMessage
+from app.domain.entities.chat_message import ChatMessage
 from app.domain.ports.repositories import ChatMessageRepositoryPort
+from app.infrastructure.models.chat_message_model import ChatMessageModel
 
 
 class ChatMessageRepository(ChatMessageRepositoryPort):
@@ -13,46 +14,74 @@ class ChatMessageRepository(ChatMessageRepositoryPort):
         self.session = session
     
     async def create(self, chat_message: ChatMessage) -> ChatMessage:
-        self.session.add(chat_message)
+        message_model = self._entity_to_model(chat_message)
+        self.session.add(message_model)
         await self.session.commit()
-        await self.session.refresh(chat_message)
-        return chat_message
+        await self.session.refresh(message_model)
+        return self._model_to_entity(message_model)
     
     async def get_by_id(self, message_id: UUID) -> Optional[ChatMessage]:
         result = await self.session.execute(
-            select(ChatMessage).where(ChatMessage.id == message_id)
+            select(ChatMessageModel).where(ChatMessageModel.id == message_id)
         )
-        return result.scalar_one_or_none()
+        message_model = result.scalar_one_or_none()
+        if message_model:
+            return self._model_to_entity(message_model)
+        return None
     
     async def get_by_learner_session_id(self, learner_session_id: UUID) -> List[ChatMessage]:
         result = await self.session.execute(
-            select(ChatMessage).where(ChatMessage.learner_session_id == learner_session_id)
-            .order_by(ChatMessage.created_at)
+            select(ChatMessageModel).where(ChatMessageModel.learner_session_id == learner_session_id)
+            .order_by(ChatMessageModel.created_at)
         )
-        return list(result.scalars().all())
+        message_models = result.scalars().all()
+        return [self._model_to_entity(model) for model in message_models]
     
     async def get_by_learner_session_and_slide(
         self, learner_session_id: UUID, slide_number: Optional[int] = None
     ) -> List[ChatMessage]:
-        query = select(ChatMessage).where(
-            ChatMessage.learner_session_id == learner_session_id
+        query = select(ChatMessageModel).where(
+            ChatMessageModel.learner_session_id == learner_session_id
         )
         
-        if slide_number is not None:
-            query = query.where(ChatMessage.slide_number == slide_number)
+        # Note: slide_number doesn't exist in DB, ignore filter for now
+        # if slide_number is not None:
+        #     query = query.where(ChatMessageModel.slide_number == slide_number)
         
-        query = query.order_by(ChatMessage.created_at)
+        query = query.order_by(ChatMessageModel.created_at)
         
         result = await self.session.execute(query)
-        return list(result.scalars().all())
+        message_models = result.scalars().all()
+        return [self._model_to_entity(model) for model in message_models]
     
     async def delete(self, message_id: UUID) -> bool:
         result = await self.session.execute(
-            select(ChatMessage).where(ChatMessage.id == message_id)
+            select(ChatMessageModel).where(ChatMessageModel.id == message_id)
         )
-        chat_message = result.scalar_one_or_none()
-        if chat_message:
-            await self.session.delete(chat_message)
+        message_model = result.scalar_one_or_none()
+        if message_model:
+            await self.session.delete(message_model)
             await self.session.commit()
             return True
         return False
+
+    def _entity_to_model(self, chat_message: ChatMessage) -> ChatMessageModel:
+        """Convert domain entity to SQLAlchemy model"""
+        return ChatMessageModel(
+            id=chat_message.id,
+            learner_session_id=chat_message.learner_session_id,
+            message=chat_message.content,  # Map content to message
+            message_type=chat_message.sender_type,  # Mapping sender_type to message_type
+            created_at=chat_message.created_at
+        )
+    
+    def _model_to_entity(self, model: ChatMessageModel) -> ChatMessage:
+        """Convert SQLAlchemy model to domain entity"""
+        return ChatMessage(
+            id=model.id,
+            learner_session_id=model.learner_session_id,
+            slide_number=1,  # Default value since not in DB
+            sender_type=model.message_type,  # Mapping message_type to sender_type
+            content=model.message or model.response or "",  # Use message or response
+            created_at=model.created_at
+        )

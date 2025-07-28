@@ -3,7 +3,7 @@ FIA v3.0 - Chat Message SQLAlchemy Model
 Infrastructure layer model for chat_messages table
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -19,9 +19,10 @@ class ChatMessageModel(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     learner_session_id = Column(UUID(as_uuid=True), ForeignKey("learner_sessions.id"), nullable=False)
-    slide_number = Column(Integer)
+    message = Column(Text)  # Actual column name in DB
+    response = Column(Text)  # Additional column in DB
     message_type = Column(String)  # 'question', 'answer'
-    content = Column(String, nullable=False)
+    ai_context = Column(Text)  # Additional column in DB
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

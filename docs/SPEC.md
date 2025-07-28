@@ -36,6 +36,11 @@ Etape
 - L'apprenant clique alors sur le bouton demarrer pour commencer sa formation (cela genere le premier slide et l'affiche à l'apprenant).
 - L'apprenant peut aller sur la slide suivante (cela génère la slide) ou revenir en arrière sur les slides deja generée. On ne regénère pas une slide existante dans la BD.
 - L'apprenant peut poser des quesions au formateur ia via le chat qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
+- IA analyse chaque conversation pour enrichir automatiquement le profil de l'apprenant et personnaliser les slides futures
+- Interactions Apprenants (en cours d'implémentation) :
+  - Chat avec formateur IA intégré (avec boutons : exercices, exemples, "le plus important")-
+  - Boutons d'interaction avec les slides : simplifier et approfondir-
+  - Quiz ou question avez-vous bien compris slide, sous module, module, etapes > Chat formateur-
 
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
@@ -47,16 +52,9 @@ Etape
 - Intelligence Artificielle - Génération de Contenu
 - Structure Pédagogique Adaptative
 
-### ✅ Nouvellement Implémenté
-- **Enrichissement Progressif du Profil Apprenant** : IA analyse chaque conversation pour enrichir automatiquement le profil de l'apprenant et personnaliser les slides futures
-
 ### Pas encore implémenté
-- Interactions Apprenants (en cours d'implémentation) :
-  - Chat avec formateur IA intégré (avec boutons : exercices, exemples, "le plus important")-
-  - Boutons d'interaction avec les slides : simplifier et approfondir-
-  - Quiz ou question avez-vous bien compris slide, sous module, module, etapes > Chat formateur-
-  - Monitoring et Administration
-- Live API (pas encore implémenté)
+- Monitoring et Administration
+- Live API (implémenté mais non fonctionnel)
 
 ---------------------------------------------------------------------------------------------------------------
 
