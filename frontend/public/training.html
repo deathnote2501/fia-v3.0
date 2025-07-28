@@ -179,6 +179,42 @@
             min-height: 1rem;
         }
         
+        /* Typing Animation for AI thinking */
+        .typing-animation {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #6c757d;
+            border-radius: 50%;
+            animation: typing 1.5s infinite;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+        
         /* Content Panel - 75% right */
         .content-panel {
             width: 75%;
@@ -979,6 +1015,9 @@
                         this.addChatMessage('user', message);
                         chatInput.value = '';
                         
+                        // Afficher l'animation de réflexion de l'IA
+                        this.showTypingAnimation();
+                        
                         try {
                             // Préparer la requête chat
                             const chatRequest = {
@@ -1024,6 +1063,9 @@
                             const chatResponse = await response.json();
                             console.log('✅ [CHAT] Success response:', chatResponse);
                             
+                            // Supprimer l'animation de réflexion
+                            this.hideTypingAnimation();
+                            
                             // Ajouter la réponse de l'IA au chat
                             this.addChatMessage('assistant', chatResponse.response, {
                                 confidence: chatResponse.confidence_score,
@@ -1033,6 +1075,10 @@
                             
                         } catch (error) {
                             console.error('❌ [CHAT] Error:', error);
+                            
+                            // Supprimer l'animation de réflexion en cas d'erreur
+                            this.hideTypingAnimation();
+                            
                             this.addChatMessage('assistant', 
                                 `I'm sorry, I encountered an error. Please try again. (${error.message})`,
                                 { error: true }
@@ -1112,6 +1158,41 @@
                 console.log('💬 [CHAT] Message added:', { role, content: content.substring(0, 50) + '...', metadata });
             }
             
+            showTypingAnimation() {
+                const chatMessages = document.getElementById('chat-messages');
+                
+                const typingHtml = `
+                    <div class="p-3" id="typing-indicator">
+                        <div class="message assistant mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="message-content">
+                                    <div class="bg-light p-2 rounded">
+                                        <div class="typing-animation">
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.insertAdjacentHTML('beforeend', typingHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                console.log('💭 [CHAT] Typing animation shown');
+            }
+            
+            hideTypingAnimation() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                    console.log('💭 [CHAT] Typing animation hidden');
+                }
+            }
+            
             getChatHistory() {
                 // Récupérer l'historique des messages du DOM
                 const messages = [];
@@ -1178,6 +1259,9 @@
                 // Disable all contextual buttons during processing
                 this.setContextualButtonsEnabled(false, actionType);
                 
+                // Afficher l'animation de réflexion de l'IA
+                this.showTypingAnimation();
+                
                 try {
                     // Prepare request payload
                     const requestPayload = {
@@ -1209,6 +1293,9 @@
                     const chatResponse = await response.json();
                     console.log(`✅ [CONTEXTUAL_CHAT] ${actionType} success response:`, chatResponse);
                     
+                    // Supprimer l'animation de réflexion
+                    this.hideTypingAnimation();
+                    
                     // Add AI response to chat with appropriate metadata
                     this.addChatMessage('assistant', chatResponse.response, {
                         confidence: chatResponse.confidence_score,
@@ -1219,6 +1306,9 @@
                     
                 } catch (error) {
                     console.error(`❌ [CONTEXTUAL_CHAT] ${actionType} error:`, error);
+                    
+                    // Supprimer l'animation de réflexion en cas d'erreur
+                    this.hideTypingAnimation();
                     
                     // Add error message to chat
                     let errorMessage = `I'm sorry, I encountered an error while processing your ${actionType} request. Please try again.`;
