@@ -47,7 +47,7 @@ class ConversationService:
                 {
                     "role": msg.role,
                     "content": msg.content,
-                    "timestamp": msg.timestamp.isoformat(),
+                    "timestamp": msg.timestamp if isinstance(msg.timestamp, str) else msg.timestamp.isoformat() if msg.timestamp else "",
                     "metadata": msg.metadata or {}
                 }
                 for msg in chat_request.context.conversation_history

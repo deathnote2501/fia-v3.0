@@ -13,7 +13,7 @@ class ConversationMessage(BaseModel):
     """Schema for a single conversation message"""
     role: Literal["user", "assistant", "system"]
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: Optional[str] = None  # Accept string timestamp from frontend
     metadata: Optional[Dict[str, Any]] = None
 
 

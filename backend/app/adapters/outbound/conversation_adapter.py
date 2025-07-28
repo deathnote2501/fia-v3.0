@@ -1,32 +1,25 @@
 """
 FIA v3.0 - Conversation Outbound Adapter
-Implementation of AI conversation service using Gemini 2.0 Flash
+Implementation of AI conversation service using Vertex AI
 """
 
 import json
 import logging
 from typing import Dict, Any, List
 
-import google.generativeai as genai
-from google.generativeai.types import GenerateContentConfig
-
 from app.domain.ports.outbound_ports import ConversationServicePort
-from app.infrastructure.settings import settings
+from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 from app.infrastructure.rate_limiter import gemini_rate_limiter
 
 logger = logging.getLogger(__name__)
 
 
 class ConversationAdapter(ConversationServicePort):
-    """Outbound adapter for AI conversation service using Gemini"""
+    """Outbound adapter for AI conversation service using Vertex AI"""
     
     def __init__(self):
-        self.client = genai.Client(
-            vertexai=True,
-            project=settings.google_cloud_project,
-            location=settings.google_cloud_region
-        )
-        self.model_name = settings.gemini_model_name
+        self.vertex_adapter = VertexAIAdapter()
+        logger.info("🤖 CONVERSATION [ADAPTER] Initialized with Vertex AI")
         
     async def chat_with_learner(
         self,
@@ -35,7 +28,7 @@ class ConversationAdapter(ConversationServicePort):
         training_context: str,
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Handle learner chat interactions using Gemini AI"""
+        """Handle learner chat interactions using Vertex AI"""
         try:
             # Apply rate limiting before API call
             await gemini_rate_limiter.acquire()
@@ -44,22 +37,34 @@ class ConversationAdapter(ConversationServicePort):
                 message, conversation_history, training_context, learner_profile
             )
             
-            config = GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=self._get_chat_response_schema(),
-                temperature=0.7  # Higher temperature for more conversational responses
+            # Use Vertex AI with structured JSON output
+            generation_config = {
+                "temperature": 0.7,  # Higher temperature for more conversational responses
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 2048,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
             )
             
-            response = await self.client.models.generate_content_async(
-                model=self.model_name,
-                contents=prompt,
-                config=config
-            )
-            
-            logger.info(f"Generated chat response for learner conversation")
+            logger.info(f"🤖 CONVERSATION [CHAT] Generated chat response for learner")
             
             # Parse JSON response
-            response_data = json.loads(response.text)
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [CHAT] Invalid JSON response: {str(e)}")
+                # Return fallback structured response
+                response_data = {
+                    "response": "I understand your question. Let me help you with that.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Ask a more specific question"],
+                    "related_concepts": []
+                }
             
             return {
                 "response": response_data.get("response", "I understand your question. Let me help you with that."),
@@ -67,14 +72,14 @@ class ConversationAdapter(ConversationServicePort):
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
                 "metadata": {
-                    "model_used": self.model_name,
-                    "tokens_used": getattr(response.usage_metadata, 'total_token_count', 0),
-                    "generation_time": response_data.get("generation_time_ms", 0)
+                    "model_used": "gemini-2.0-flash-exp",
+                    "generation_time": response_data.get("generation_time_ms", 0),
+                    "adapter": "vertex_ai"
                 }
             }
             
         except Exception as e:
-            logger.error(f"Failed to generate chat response: {str(e)}")
+            logger.error(f"❌ CONVERSATION [CHAT] Failed to generate chat response: {str(e)}")
             # Return fallback response
             return {
                 "response": "I'm here to help you with your training. Could you please rephrase your question?",
@@ -96,22 +101,23 @@ class ConversationAdapter(ConversationServicePort):
             
             prompt = self._build_hint_prompt(current_slide, learner_question, learner_profile)
             
-            config = GenerateContentConfig(
-                temperature=0.5,
-                max_output_tokens=200  # Keep hints concise
+            generation_config = {
+                "temperature": 0.5,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 200  # Keep hints concise
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
             )
             
-            response = await self.client.models.generate_content_async(
-                model=self.model_name,
-                contents=prompt,
-                config=config
-            )
-            
-            logger.info(f"Generated contextual hint for learner question")
-            return response.text.strip()
+            logger.info(f"🤖 CONVERSATION [HINT] Generated contextual hint for learner question")
+            return response_text.strip()
             
         except Exception as e:
-            logger.error(f"Failed to generate hint: {str(e)}")
+            logger.error(f"❌ CONVERSATION [HINT] Failed to generate hint: {str(e)}")
             return "Try reviewing the key concepts on this slide and take your time to understand each point."
     
     async def explain_concept(
@@ -126,22 +132,23 @@ class ConversationAdapter(ConversationServicePort):
             
             prompt = self._build_explanation_prompt(concept, training_context, learner_profile)
             
-            config = GenerateContentConfig(
-                temperature=0.3,  # Lower temperature for more accurate explanations
-                max_output_tokens=300
+            generation_config = {
+                "temperature": 0.3,  # Lower temperature for more accurate explanations
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 300
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
             )
             
-            response = await self.client.models.generate_content_async(
-                model=self.model_name,
-                contents=prompt,
-                config=config
-            )
-            
-            logger.info(f"Generated explanation for concept: {concept}")
-            return response.text.strip()
+            logger.info(f"🤖 CONVERSATION [EXPLAIN] Generated explanation for concept: {concept}")
+            return response_text.strip()
             
         except Exception as e:
-            logger.error(f"Failed to explain concept: {str(e)}")
+            logger.error(f"❌ CONVERSATION [EXPLAIN] Failed to explain concept: {str(e)}")
             return f"I'd be happy to explain {concept}. This is an important concept in your training that builds on the fundamentals you've already learned."
     
     def _build_conversation_prompt(

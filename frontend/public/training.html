@@ -817,24 +817,167 @@
             setupChatFunctionality() {
                 const chatInput = document.getElementById('chat-input');
                 const sendButton = document.getElementById('send-message-btn');
+                const chatMessages = document.getElementById('chat-messages');
                 
-                if (chatInput && sendButton) {
-                    const sendMessage = () => {
+                if (chatInput && sendButton && chatMessages) {
+                    const sendMessage = async () => {
                         const message = chatInput.value.trim();
-                        if (message) {
-                            console.log('💬 Sending chat message:', message);
-                            // TODO: Implement chat functionality
-                            chatInput.value = '';
+                        if (!message) return;
+                        
+                        console.log('💬 [CHAT] Sending message:', message);
+                        
+                        // Désactiver l'input et le bouton pendant l'envoi
+                        chatInput.disabled = true;
+                        sendButton.disabled = true;
+                        sendButton.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+                        
+                        // Ajouter le message de l'utilisateur au chat
+                        this.addChatMessage('user', message);
+                        chatInput.value = '';
+                        
+                        try {
+                            // Préparer la requête chat
+                            const chatRequest = {
+                                message: message,
+                                context: {
+                                    training_id: this.sessionData.training_session.training_id,
+                                    learner_session_id: this.learnerSession.id,
+                                    current_slide_id: null, // TODO: Add current slide ID when available
+                                    training_content: "Current slide content", // TODO: Get actual current slide content
+                                    learner_profile: {
+                                        experience_level: this.learnerSession.experience_level,
+                                        learning_style: this.learnerSession.learning_style,
+                                        job_position: this.learnerSession.job_position,
+                                        activity_sector: this.learnerSession.activity_sector,
+                                        country: this.learnerSession.country,
+                                        language: this.learnerSession.language
+                                    },
+                                    conversation_history: this.getChatHistory()
+                                },
+                                conversation_type: "general"
+                            };
+                            
+                            console.log('📤 [CHAT] Request payload:', chatRequest);
+                            
+                            // Appeler l'API chat
+                            const response = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(chatRequest)
+                            });
+                            
+                            console.log('📥 [CHAT] Response status:', response.status);
+                            console.log('📥 [CHAT] Response headers:', [...response.headers.entries()]);
+                            
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                console.error('❌ [CHAT] Error response:', errorData);
+                                throw new Error(errorData.detail || 'Chat service temporarily unavailable');
+                            }
+                            
+                            const chatResponse = await response.json();
+                            console.log('✅ [CHAT] Success response:', chatResponse);
+                            
+                            // Ajouter la réponse de l'IA au chat
+                            this.addChatMessage('assistant', chatResponse.response, {
+                                confidence: chatResponse.confidence_score,
+                                suggested_actions: chatResponse.suggested_actions,
+                                related_concepts: chatResponse.related_concepts
+                            });
+                            
+                        } catch (error) {
+                            console.error('❌ [CHAT] Error:', error);
+                            this.addChatMessage('assistant', 
+                                `I'm sorry, I encountered an error. Please try again. (${error.message})`,
+                                { error: true }
+                            );
+                        } finally {
+                            // Réactiver l'input et le bouton
+                            chatInput.disabled = false;
+                            sendButton.disabled = false;
+                            sendButton.innerHTML = '<i class="bi bi-send"></i>';
+                            chatInput.focus();
                         }
                     };
                     
                     sendButton.addEventListener('click', sendMessage);
                     chatInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
                             sendMessage();
                         }
                     });
                 }
+            }
+            
+            addChatMessage(role, content, metadata = {}) {
+                const chatMessages = document.getElementById('chat-messages');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                const isUser = role === 'user';
+                const avatarBg = isUser ? 'bg-primary' : 'bg-success';
+                const avatarText = isUser ? 'You' : 'AI';
+                const messageClass = isUser ? 'justify-content-end' : '';
+                const bubbleClass = isUser ? 'bg-primary text-white' : 'bg-light';
+                
+                const messageHtml = `
+                    <div class="p-3">
+                        <div class="message ${role} mb-3">
+                            <div class="d-flex align-items-start ${messageClass}">
+                                ${!isUser ? `<div class="avatar ${avatarBg} text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                    ${avatarText}
+                                </div>` : ''}
+                                <div class="message-content ${isUser ? 'me-2' : ''}">
+                                    <div class="${bubbleClass} p-2 rounded">
+                                        <p class="mb-0 small">${content}</p>
+                                        ${metadata.confidence ? `<div class="mt-1"><span class="badge bg-secondary">Confidence: ${Math.round(metadata.confidence * 100)}%</span></div>` : ''}
+                                        ${metadata.suggested_actions && metadata.suggested_actions.length > 0 ? 
+                                            `<div class="mt-2">
+                                                <small class="text-muted">Suggestions:</small><br>
+                                                ${metadata.suggested_actions.map(action => `<span class="badge bg-info me-1">${action}</span>`).join('')}
+                                            </div>` : ''}
+                                        ${metadata.error ? `<div class="mt-1"><span class="badge bg-danger">Error</span></div>` : ''}
+                                    </div>
+                                    <small class="text-muted">${timestamp}</small>
+                                </div>
+                                ${isUser ? `<div class="avatar ${avatarBg} text-white rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                    ${avatarText}
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                console.log('💬 [CHAT] Message added:', { role, content: content.substring(0, 50) + '...', metadata });
+            }
+            
+            getChatHistory() {
+                // Récupérer l'historique des messages du DOM
+                const messages = [];
+                const messageElements = document.querySelectorAll('#chat-messages .message');
+                
+                messageElements.forEach(element => {
+                    const role = element.classList.contains('assistant') ? 'assistant' : 'user';
+                    const content = element.querySelector('.message-content p')?.textContent || '';
+                    const timestamp = element.querySelector('small')?.textContent || new Date().toISOString();
+                    
+                    if (content.trim()) {
+                        messages.push({
+                            role: role,
+                            content: content,
+                            timestamp: timestamp,
+                            metadata: {}
+                        });
+                    }
+                });
+                
+                console.log('📝 [CHAT] Chat history retrieved:', messages.length, 'messages');
+                return messages.slice(-10); // Garder seulement les 10 derniers messages pour le contexte
             }
             
             showError(message) {

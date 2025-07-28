@@ -48,8 +48,8 @@ Etape
 - Structure Pédagogique Adaptative
 
 ### Pas encore implémenté
-- Interactions Apprenants (pas encore implémenté) :
-  - Génération des slides individuelles en markdown affiché avec Marked.js
+- Interactions Apprenants (en cours d'implémentation) :
+  - Génération des slides individuelles en markdown affiché avec Marked.js-
   - Chat avec formateur IA intégré
   - Boutons d'interaction : simplifier, approfondir, exercices, exemples, "le plus important"
   - Monitoring et Administration

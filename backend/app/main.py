@@ -18,6 +18,7 @@ from app.adapters.inbound.rate_limit_controller import router as rate_limit_rout
 from app.adapters.inbound.security_test_controller import router as security_test_router
 from app.adapters.inbound.dashboard_controller import router as dashboard_router
 from app.adapters.inbound.slide_controller import router as slide_router
+from app.adapters.inbound.conversation_controller import router as conversation_router
 
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
@@ -99,6 +100,9 @@ app.include_router(dashboard_router)
 
 # Include slide router
 app.include_router(slide_router)
+
+# Include conversation router
+app.include_router(conversation_router)
 
 # Include unified plan generation router if available
 if PLAN_GENERATION_AVAILABLE:

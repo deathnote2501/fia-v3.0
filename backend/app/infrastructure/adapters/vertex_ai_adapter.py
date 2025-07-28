@@ -205,7 +205,14 @@ class VertexAIAdapter:
                 "response_mime_type": "application/json"  # Pas de response_schema complexe
             }
             
+            # LOG DÉTAILLÉ INPUT
             logger.info(f"🚀 VERTEX AI [GENERATE] Starting content generation with Structured Output...")
+            logger.info(f"🔍 VERTEX AI [INPUT] Generation config: {json.dumps(config, indent=2)}")
+            logger.info(f"🔍 VERTEX AI [INPUT] Prompt type: {type(prompt)}")
+            logger.info(f"🔍 VERTEX AI [INPUT] Prompt length: {len(str(prompt))} characters")
+            logger.info(f"🔍 VERTEX AI [INPUT] === DÉBUT PROMPT COMPLET ===")
+            logger.info(f"🔍 VERTEX AI [INPUT] {str(prompt)}")
+            logger.info(f"🔍 VERTEX AI [INPUT] === FIN PROMPT COMPLET ===")
             
             # Generate content (synchronous call wrapped in asyncio.to_thread)
             response = await asyncio.to_thread(
@@ -217,11 +224,20 @@ class VertexAIAdapter:
             duration = time.time() - start_time
             result = response.text
             
-            # DETAILED LOGGING pour débugger le problème JSON
-            logger.info(f"🔍 VERTEX AI [RAW_RESPONSE] Full response object: {response}")
-            logger.info(f"🔍 VERTEX AI [RAW_TEXT] Full response text ({len(result)} chars): {repr(result)}")
-            logger.info(f"🔍 VERTEX AI [FIRST_100] First 100 chars: {repr(result[:100])}")
-            logger.info(f"🔍 VERTEX AI [LAST_100] Last 100 chars: {repr(result[-100:])}")
+            # LOG DÉTAILLÉ OUTPUT
+            logger.info(f"🔍 VERTEX AI [OUTPUT] Response object type: {type(response)}")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] Response object attributes: {dir(response)}")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] Response text type: {type(result)}")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] Response text length: {len(result) if result else 0} characters")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] === DÉBUT RÉPONSE VERTEX AI COMPLÈTE ===")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] {result}")
+            logger.info(f"🔍 VERTEX AI [OUTPUT] === FIN RÉPONSE VERTEX AI COMPLÈTE ===")
+            
+            # Vérifier si on a des métadonnées d'usage
+            if hasattr(response, 'usage_metadata'):
+                logger.info(f"🔍 VERTEX AI [METADATA] Usage metadata: {response.usage_metadata}")
+            
+            # Plus de duplication de logs, continuer avec le nettoyage
             
             # NETTOYER LA RÉPONSE comme dans l'ancien service
             if result:
