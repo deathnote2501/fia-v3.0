@@ -698,6 +698,24 @@
                                     </div>
                                 </div>
                                 <div class="card-footer p-2">
+                                    <!-- Contextual action buttons -->
+                                    <div class="mb-2">
+                                        <div class="btn-group w-100" role="group">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn" title="Comment this slide">
+                                                <i class="bi bi-chat-text me-1"></i>Comment
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="quiz-btn" title="Generate quiz">
+                                                <i class="bi bi-question-circle me-1"></i>Quiz
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info btn-sm" id="examples-btn" title="Show examples">
+                                                <i class="bi bi-lightbulb me-1"></i>Examples
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning btn-sm" id="key-points-btn" title="Key points to remember">
+                                                <i class="bi bi-star me-1"></i>Key Points
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- Chat input -->
                                     <div class="input-group input-group-sm">
                                         <input type="text" class="form-control" placeholder="Ask about this slide..." id="chat-input">
                                         <button class="btn btn-success" type="button" id="send-message-btn">
@@ -712,6 +730,7 @@
                 
                 // Ajouter event listeners pour le chat
                 this.setupChatFunctionality();
+                this.setupContextualChatButtons();
                 this.setupSlideInteractionButtons();
                 
                 // Update navigation button states
@@ -930,6 +949,22 @@
                 const messageClass = isUser ? 'justify-content-end' : '';
                 const bubbleClass = isUser ? 'bg-primary text-white' : 'bg-light';
                 
+                // Add action type badge for contextual actions
+                let actionTypeBadge = '';
+                if (metadata.action_type) {
+                    const badgeConfig = {
+                        'comment': { class: 'bg-primary', icon: 'bi-chat-text', text: 'Comment' },
+                        'quiz': { class: 'bg-secondary', icon: 'bi-question-circle', text: 'Quiz' },
+                        'examples': { class: 'bg-info', icon: 'bi-lightbulb', text: 'Examples' },
+                        'key-points': { class: 'bg-warning text-dark', icon: 'bi-star', text: 'Key Points' }
+                    };
+                    
+                    const config = badgeConfig[metadata.action_type];
+                    if (config) {
+                        actionTypeBadge = `<div class="mt-1 mb-2"><span class="badge ${config.class}"><i class="${config.icon} me-1"></i>${config.text}</span></div>`;
+                    }
+                }
+
                 const messageHtml = `
                     <div class="p-3">
                         <div class="message ${role} mb-3">
@@ -939,12 +974,18 @@
                                 </div>` : ''}
                                 <div class="message-content ${isUser ? 'me-2' : ''}">
                                     <div class="${bubbleClass} p-2 rounded">
+                                        ${actionTypeBadge}
                                         <p class="mb-0 small">${content}</p>
                                         ${metadata.confidence ? `<div class="mt-1"><span class="badge bg-secondary">Confidence: ${Math.round(metadata.confidence * 100)}%</span></div>` : ''}
                                         ${metadata.suggested_actions && metadata.suggested_actions.length > 0 ? 
                                             `<div class="mt-2">
                                                 <small class="text-muted">Suggestions:</small><br>
                                                 ${metadata.suggested_actions.map(action => `<span class="badge bg-info me-1">${action}</span>`).join('')}
+                                            </div>` : ''}
+                                        ${metadata.related_concepts && metadata.related_concepts.length > 0 ? 
+                                            `<div class="mt-2">
+                                                <small class="text-muted">Related:</small><br>
+                                                ${metadata.related_concepts.map(concept => `<span class="badge bg-success me-1">${concept}</span>`).join('')}
                                             </div>` : ''}
                                         ${metadata.error ? `<div class="mt-1"><span class="badge bg-danger">Error</span></div>` : ''}
                                     </div>
@@ -986,6 +1027,134 @@
                 
                 console.log('📝 [CHAT] Chat history retrieved:', messages.length, 'messages');
                 return messages.slice(-10); // Garder seulement les 10 derniers messages pour le contexte
+            }
+            
+            setupContextualChatButtons() {
+                const commentBtn = document.getElementById('comment-btn');
+                const quizBtn = document.getElementById('quiz-btn');
+                const examplesBtn = document.getElementById('examples-btn');
+                const keyPointsBtn = document.getElementById('key-points-btn');
+                
+                if (commentBtn) {
+                    commentBtn.addEventListener('click', () => this.handleContextualAction('comment'));
+                    console.log('✅ [CONTEXTUAL_CHAT] Comment button event listener added');
+                }
+                
+                if (quizBtn) {
+                    quizBtn.addEventListener('click', () => this.handleContextualAction('quiz'));
+                    console.log('✅ [CONTEXTUAL_CHAT] Quiz button event listener added');
+                }
+                
+                if (examplesBtn) {
+                    examplesBtn.addEventListener('click', () => this.handleContextualAction('examples'));
+                    console.log('✅ [CONTEXTUAL_CHAT] Examples button event listener added');
+                }
+                
+                if (keyPointsBtn) {
+                    keyPointsBtn.addEventListener('click', () => this.handleContextualAction('key-points'));
+                    console.log('✅ [CONTEXTUAL_CHAT] Key Points button event listener added');
+                }
+            }
+            
+            async handleContextualAction(actionType) {
+                console.log(`💬 [CONTEXTUAL_CHAT] Handling ${actionType} action`);
+                
+                if (!this.currentSlideContent || !this.currentSlide) {
+                    console.error('❌ [CONTEXTUAL_CHAT] No current slide content available');
+                    this.addChatMessage('assistant', 
+                        'I need slide content to provide this information. Please wait for the slide to load.',
+                        { error: true }
+                    );
+                    return;
+                }
+                
+                // Disable all contextual buttons during processing
+                this.setContextualButtonsEnabled(false, actionType);
+                
+                try {
+                    // Prepare request payload
+                    const requestPayload = {
+                        learner_session_id: this.learnerSession.id,
+                        slide_content: this.currentSlideContent,
+                        slide_title: this.currentSlide.title || 'Current Slide'
+                    };
+                    
+                    console.log(`📤 [CONTEXTUAL_CHAT] ${actionType} request payload:`, requestPayload);
+                    
+                    // Call the appropriate API endpoint
+                    const apiEndpoint = `/api/chat/${actionType}`;
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestPayload)
+                    });
+                    
+                    console.log(`📥 [CONTEXTUAL_CHAT] ${actionType} response status:`, response.status);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error(`❌ [CONTEXTUAL_CHAT] ${actionType} error response:`, errorData);
+                        throw new Error(errorData.detail || `${actionType} service temporarily unavailable`);
+                    }
+                    
+                    const chatResponse = await response.json();
+                    console.log(`✅ [CONTEXTUAL_CHAT] ${actionType} success response:`, chatResponse);
+                    
+                    // Add AI response to chat with appropriate metadata
+                    this.addChatMessage('assistant', chatResponse.response, {
+                        confidence: chatResponse.confidence_score,
+                        suggested_actions: chatResponse.suggested_actions,
+                        related_concepts: chatResponse.related_concepts,
+                        action_type: actionType
+                    });
+                    
+                } catch (error) {
+                    console.error(`❌ [CONTEXTUAL_CHAT] ${actionType} error:`, error);
+                    
+                    // Add error message to chat
+                    let errorMessage = `I'm sorry, I encountered an error while processing your ${actionType} request. Please try again.`;
+                    if (actionType === 'comment') errorMessage = 'I cannot comment on this slide right now. Please try again later.';
+                    else if (actionType === 'quiz') errorMessage = 'I cannot generate a quiz right now. Please try again later.';
+                    else if (actionType === 'examples') errorMessage = 'I cannot provide examples right now. Please try again later.';
+                    else if (actionType === 'key-points') errorMessage = 'I cannot extract key points right now. Please try again later.';
+                    
+                    this.addChatMessage('assistant', `${errorMessage} (${error.message})`, { error: true });
+                    
+                } finally {
+                    // Re-enable contextual buttons
+                    this.setContextualButtonsEnabled(true);
+                }
+            }
+            
+            setContextualButtonsEnabled(enabled, activeActionType = null) {
+                const buttons = {
+                    'comment': document.getElementById('comment-btn'),
+                    'quiz': document.getElementById('quiz-btn'),
+                    'examples': document.getElementById('examples-btn'),
+                    'key-points': document.getElementById('key-points-btn')
+                };
+                
+                Object.entries(buttons).forEach(([actionType, button]) => {
+                    if (button) {
+                        if (enabled) {
+                            button.disabled = false;
+                            // Restore original content
+                            if (actionType === 'comment') button.innerHTML = '<i class="bi bi-chat-text me-1"></i>Comment';
+                            else if (actionType === 'quiz') button.innerHTML = '<i class="bi bi-question-circle me-1"></i>Quiz';
+                            else if (actionType === 'examples') button.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Examples';
+                            else if (actionType === 'key-points') button.innerHTML = '<i class="bi bi-star me-1"></i>Key Points';
+                        } else {
+                            if (actionType === activeActionType) {
+                                button.disabled = true;
+                                button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                            } else {
+                                button.disabled = true;
+                            }
+                        }
+                    }
+                });
             }
             
             updateNavigationButtonStates() {

@@ -263,6 +263,391 @@ INSTRUCTIONS:
 
 Provide a clear explanation:"""
     
+    async def comment_slide(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate AI trainer's comment about the current slide"""
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self._build_slide_comment_prompt(slide_content, slide_title, learner_profile)
+            
+            generation_config = {
+                "temperature": 0.6,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1024,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [COMMENT] Generated slide comment")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [COMMENT] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "Here's my analysis of this slide: The content covers important concepts that are relevant to your learning objectives.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Review the main points", "Ask questions if needed"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "This slide provides valuable learning content."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "slide_comment",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [COMMENT] Failed to generate comment: {str(e)}")
+            return {
+                "response": "This slide contains important information for your learning journey. Take time to understand each concept presented.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Review the content carefully"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
+    
+    async def generate_quiz(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate a quiz based on the current slide to evaluate comprehension"""
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self._build_quiz_prompt(slide_content, slide_title, learner_profile)
+            
+            generation_config = {
+                "temperature": 0.4,  # Lower temperature for more structured quiz
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1500,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [QUIZ] Generated quiz for slide comprehension")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [QUIZ] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "Let me test your understanding: What are the main concepts covered in this slide? Can you explain them in your own words?",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Think about the key points", "Try to explain in your own words"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Let me test your understanding of this slide."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "quiz_generation",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [QUIZ] Failed to generate quiz: {str(e)}")
+            return {
+                "response": "Let me test your understanding: What are the most important points from this slide? Try explaining them in your own words.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Review the content", "Think about key concepts"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
+    
+    async def provide_examples(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Provide practical examples to illustrate the slide content"""
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self._build_examples_prompt(slide_content, slide_title, learner_profile)
+            
+            generation_config = {
+                "temperature": 0.7,  # Higher temperature for creative examples
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1200,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [EXAMPLES] Generated practical examples")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [EXAMPLES] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "Here are some practical examples to illustrate these concepts: Consider how these ideas apply in real-world situations relevant to your work.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Think of your own examples", "Apply to your work context"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Let me provide some practical examples to illustrate these concepts."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "examples_generation",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [EXAMPLES] Failed to provide examples: {str(e)}")
+            return {
+                "response": "Let me give you some examples: Think about how these concepts apply in your daily work or professional context.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Consider real-world applications", "Think of similar situations"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
+    
+    async def extract_key_points(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Extract the 1-3 most important points to remember from the slide"""
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self._build_key_points_prompt(slide_content, slide_title, learner_profile)
+            
+            generation_config = {
+                "temperature": 0.3,  # Lower temperature for focused key points
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 800,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [KEY_POINTS] Generated key points to remember")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [KEY_POINTS] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "If you remember just one thing from this slide, focus on the main concept that connects to your learning objectives.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Focus on the main concept", "Connect to previous learning"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Here are the most important points to remember from this slide."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "key_points_extraction",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [KEY_POINTS] Failed to extract key points: {str(e)}")
+            return {
+                "response": "The most important takeaway from this slide is understanding the core concept and how it applies to your learning goals.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Focus on core concepts", "Review main ideas"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
+    
+    def _build_slide_comment_prompt(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> str:
+        """Build prompt for slide commentary"""
+        return f"""You are an expert AI trainer providing commentary on a training slide.
+
+SLIDE TITLE: {slide_title}
+SLIDE CONTENT: {slide_content[:1500]}...
+
+LEARNER PROFILE:
+- Experience Level: {learner_profile.get('experience_level', 'beginner')}
+- Learning Style: {learner_profile.get('learning_style', 'visual')}
+- Job Position: {learner_profile.get('job_position', 'professional')}
+- Activity Sector: {learner_profile.get('activity_sector', 'general')}
+- Language: {learner_profile.get('language', 'en')}
+
+INSTRUCTIONS:
+- Provide insightful commentary about this slide's content
+- Explain why this content is important for the learner
+- Highlight connections to their professional context
+- Adapt your language to their experience level
+- Be encouraging and educational
+- Respond in {learner_profile.get('language', 'English')}
+
+Respond in JSON format with this exact structure:
+{{
+  "response": "Your insightful commentary about this slide",
+  "confidence_score": 0.85,
+  "suggested_actions": ["Action 1", "Action 2"],
+  "related_concepts": ["Concept 1", "Concept 2"],
+  "generation_time_ms": 1200
+}}"""
+    
+    def _build_quiz_prompt(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> str:
+        """Build prompt for quiz generation"""
+        return f"""You are an expert AI trainer creating a comprehension quiz for a training slide.
+
+SLIDE TITLE: {slide_title}
+SLIDE CONTENT: {slide_content[:1500]}...
+
+LEARNER PROFILE:
+- Experience Level: {learner_profile.get('experience_level', 'beginner')}
+- Learning Style: {learner_profile.get('learning_style', 'visual')}
+- Job Position: {learner_profile.get('job_position', 'professional')}
+- Activity Sector: {learner_profile.get('activity_sector', 'general')}
+- Language: {learner_profile.get('language', 'en')}
+
+INSTRUCTIONS:
+- Generate 2-3 quiz questions to evaluate understanding of this slide
+- Adapt difficulty to their experience level: {learner_profile.get('experience_level', 'beginner')}
+- Include both conceptual and practical application questions
+- Make questions relevant to their job: {learner_profile.get('job_position', 'professional')}
+- Be clear and encouraging in your approach
+- Respond in {learner_profile.get('language', 'English')}
+
+Respond in JSON format with this exact structure:
+{{
+  "response": "Here's a quiz to test your understanding: [Your 2-3 questions with encouraging tone]",
+  "confidence_score": 0.85,
+  "suggested_actions": ["Think through each question", "Apply concepts to your work"],
+  "related_concepts": ["Related concept 1", "Related concept 2"],
+  "generation_time_ms": 1200
+}}"""
+    
+    def _build_examples_prompt(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> str:
+        """Build prompt for examples generation"""
+        return f"""You are an expert AI trainer providing practical examples to illustrate training content.
+
+SLIDE TITLE: {slide_title}
+SLIDE CONTENT: {slide_content[:1500]}...
+
+LEARNER PROFILE:
+- Experience Level: {learner_profile.get('experience_level', 'beginner')}
+- Learning Style: {learner_profile.get('learning_style', 'visual')}
+- Job Position: {learner_profile.get('job_position', 'professional')}
+- Activity Sector: {learner_profile.get('activity_sector', 'general')}
+- Language: {learner_profile.get('language', 'en')}
+
+INSTRUCTIONS:
+- Provide 2-3 concrete, practical examples that illustrate the slide concepts
+- Make examples relevant to their job: {learner_profile.get('job_position', 'professional')}
+- Adapt examples to their sector: {learner_profile.get('activity_sector', 'general')}
+- Consider their experience level: {learner_profile.get('experience_level', 'beginner')}
+- Use their preferred learning style: {learner_profile.get('learning_style', 'visual')}
+- Be specific and actionable
+- Respond in {learner_profile.get('language', 'English')}
+
+Respond in JSON format with this exact structure:
+{{
+  "response": "Here are practical examples to illustrate these concepts: [Your 2-3 specific examples]",
+  "confidence_score": 0.85,
+  "suggested_actions": ["Try applying these examples", "Think of similar situations in your work"],
+  "related_concepts": ["Related concept 1", "Related concept 2"],
+  "generation_time_ms": 1200
+}}"""
+    
+    def _build_key_points_prompt(
+        self,
+        slide_content: str,
+        slide_title: str,
+        learner_profile: Dict[str, Any]
+    ) -> str:
+        """Build prompt for key points extraction"""
+        return f"""You are an expert AI trainer identifying the most crucial points from a training slide.
+
+SLIDE TITLE: {slide_title}
+SLIDE CONTENT: {slide_content[:1500]}...
+
+LEARNER PROFILE:
+- Experience Level: {learner_profile.get('experience_level', 'beginner')}
+- Learning Style: {learner_profile.get('learning_style', 'visual')}
+- Job Position: {learner_profile.get('job_position', 'professional')}
+- Activity Sector: {learner_profile.get('activity_sector', 'general')}
+- Language: {learner_profile.get('language', 'en')}
+
+INSTRUCTIONS:
+- Identify the 1-3 MOST IMPORTANT points to remember from this slide
+- Focus on what's essential for their job: {learner_profile.get('job_position', 'professional')}
+- Prioritize based on their experience level: {learner_profile.get('experience_level', 'beginner')}
+- Make it memorable and actionable
+- Explain WHY these points are the most important
+- Respond in {learner_profile.get('language', 'English')}
+
+Respond in JSON format with this exact structure:
+{{
+  "response": "If you remember only 1-3 things from this slide, focus on: [Your prioritized key points with explanations]",
+  "confidence_score": 0.90,
+  "suggested_actions": ["Remember these key points", "Apply them in practice"],
+  "related_concepts": ["Core concept 1", "Core concept 2"],
+  "generation_time_ms": 1200
+}}"""
+
     def _get_chat_response_schema(self) -> Dict[str, Any]:
         """Get JSON schema for chat response"""
         return {
