@@ -11,6 +11,42 @@
     
     <!-- Custom styles -->
     <link href="../src/styles/main.css" rel="stylesheet">
+    
+    <style>
+        /* KISS: Simple markdown styling */
+        .slide-content h1, .slide-content h2, .slide-content h3 {
+            color: #0d6efd;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .slide-content h1 { font-size: 1.75rem; }
+        .slide-content h2 { font-size: 1.5rem; }
+        .slide-content h3 { font-size: 1.25rem; }
+        .slide-content ul, .slide-content ol {
+            margin-bottom: 1rem;
+        }
+        .slide-content li {
+            margin-bottom: 0.5rem;
+        }
+        .slide-content blockquote {
+            background: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .slide-content code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+        .slide-content pre {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body class="bg-light">
     
@@ -36,6 +72,9 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Marked.js for markdown parsing (KISS solution) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
     
     <script>
         class TrainingApp {
@@ -422,12 +461,14 @@
             
             async generateAndDisplayFirstSlide() {
                 try {
-                    console.log('🎯 Generating first slide for session:', this.learnerSession.id);
+                    console.log('🎯 [API] === DÉBUT GÉNÉRATION PREMIÈRE SLIDE ===');
+                    console.log('🎯 [API] Session ID:', this.learnerSession.id);
                     
                     // Afficher loading pendant génération
                     this.showSlideLoading();
                     
                     // Appeler l'API pour générer la première slide
+                    console.log('🔄 [API] Appel API /api/slides/generate-first/${this.learnerSession.id}');
                     const response = await fetch(`/api/slides/generate-first/${this.learnerSession.id}`, {
                         method: 'POST',
                         headers: {
@@ -435,19 +476,57 @@
                         }
                     });
                     
+                    console.log('📡 [API] RESPONSE STATUS:', response.status);
+                    console.log('📡 [API] RESPONSE OK:', response.ok);
+                    console.log('📡 [API] RESPONSE HEADERS:', [...response.headers.entries()]);
+                    
                     if (!response.ok) {
+                        console.log('❌ [API] RESPONSE NOT OK - Récupération erreur...');
                         const errorData = await response.json();
+                        console.log('❌ [API] ERROR DATA:', errorData);
                         throw new Error(errorData.detail || 'Failed to generate first slide');
                     }
                     
+                    console.log('🔄 [API] Parsing JSON response...');
                     const slideData = await response.json();
-                    console.log('✅ First slide generated:', slideData);
+                    console.log('✅ [API] SLIDE DATA REÇUE (COMPLET):', slideData);
+                    console.log('✅ [API] SLIDE DATA TYPE:', typeof slideData);
+                    console.log('✅ [API] SLIDE DATA KEYS:', Object.keys(slideData));
                     
-                    // Afficher la slide
-                    this.displaySlideContent(slideData.data);
+                    if (slideData.data) {
+                        console.log('🔍 [API] slideData.data TYPE:', typeof slideData.data);
+                        console.log('🔍 [API] slideData.data KEYS:', Object.keys(slideData.data));
+                        console.log('🔍 [API] slideData.data COMPLET:', slideData.data);
+                        
+                        if (slideData.data.title) {
+                            console.log('📋 [API] TITRE DÉTECTÉ:', slideData.data.title);
+                        }
+                        if (slideData.data.slide_content) {
+                            console.log('📋 [API] SLIDE_CONTENT DÉTECTÉ (longueur):', slideData.data.slide_content.length);
+                            console.log('📋 [API] SLIDE_CONTENT PREVIEW:', slideData.data.slide_content.substring(0, 150) + '...');
+                        }
+                        if (slideData.data.content) {
+                            console.log('📋 [API] CONTENT DÉTECTÉ (longueur):', slideData.data.content.length);
+                            console.log('📋 [API] CONTENT PREVIEW:', slideData.data.content.substring(0, 150) + '...');
+                        }
+                    } else {
+                        console.log('⚠️ [API] PAS DE slideData.data - Structure différente?');
+                        console.log('🔍 [API] Analyse structure alternative...');
+                        if (slideData.title) {
+                            console.log('📋 [API] TITRE DIRECT:', slideData.title);
+                        }
+                        if (slideData.slide_content) {
+                            console.log('📋 [API] SLIDE_CONTENT DIRECT:', slideData.slide_content.substring(0, 150) + '...');
+                        }
+                    }
+                    
+                    console.log('🎨 [API] === PASSAGE À DISPLAYSLIDE ===');
+                    // Afficher la slide - passer les bonnes données
+                    this.displaySlideContent(slideData.data || slideData);
                     
                 } catch (error) {
-                    console.error('❌ Error generating first slide:', error);
+                    console.error('❌ [API] ERROR generateAndDisplayFirstSlide:', error);
+                    console.error('❌ [API] ERROR STACK:', error.stack);
                     throw error;
                 }
             }
@@ -489,7 +568,54 @@
             }
             
             displaySlideContent(slideData) {
-                console.log('🎨 Displaying slide content:', slideData);
+                console.log('🎨 [DISPLAY] === DÉBUT ANALYSE DES DONNÉES ===');
+                console.log('🎨 [DISPLAY] slideData TYPE:', typeof slideData);
+                console.log('🎨 [DISPLAY] slideData COMPLET:', slideData);
+                console.log('🎨 [DISPLAY] slideData.title:', slideData.title);
+                console.log('🎨 [DISPLAY] slideData.slide_content:', slideData.slide_content);
+                console.log('🎨 [DISPLAY] slideData.content:', slideData.content);
+                console.log('🎨 [DISPLAY] slideData.slide:', slideData.slide);
+                
+                // KISS: Extract content directly from the data structure
+                // slideData peut contenir slide_content (format JSON), content, ou slide.content
+                let title, content;
+                
+                if (slideData.title && slideData.slide_content) {
+                    // Structure avec slide_content (format JSON de l'API)
+                    console.log('🎯 [DISPLAY] BRANCHE 1: title + slide_content détectés');
+                    title = slideData.title;
+                    content = slideData.slide_content;
+                    console.log('🎯 [DISPLAY] BRANCHE 1: title =', title);
+                    console.log('🎯 [DISPLAY] BRANCHE 1: content =', content);
+                } else if (slideData.title && slideData.content) {
+                    // Structure directe
+                    console.log('🎯 [DISPLAY] BRANCHE 2: title + content détectés');
+                    title = slideData.title;
+                    content = slideData.content;
+                    console.log('🎯 [DISPLAY] BRANCHE 2: title =', title);
+                    console.log('🎯 [DISPLAY] BRANCHE 2: content =', content);
+                } else if (slideData.slide) {
+                    // Structure avec "slide" wrapper
+                    console.log('🎯 [DISPLAY] BRANCHE 3: slide wrapper détecté');
+                    title = slideData.slide.title;
+                    content = slideData.slide.content || slideData.slide.slide_content;
+                    console.log('🎯 [DISPLAY] BRANCHE 3: title =', title);
+                    console.log('🎯 [DISPLAY] BRANCHE 3: content =', content);
+                } else {
+                    // Fallback
+                    console.log('🎯 [DISPLAY] BRANCHE 4: FALLBACK utilisé');
+                    title = 'Formation Content';
+                    content = slideData.slide_content || slideData.content || JSON.stringify(slideData);
+                    console.log('🎯 [DISPLAY] BRANCHE 4: title =', title);
+                    console.log('🎯 [DISPLAY] BRANCHE 4: content =', content);
+                }
+                
+                console.log('📝 [DISPLAY] EXTRACTION FINALE:');
+                console.log('📝 [DISPLAY] title FINAL =', title);
+                console.log('📝 [DISPLAY] content FINAL (type):', typeof content);
+                console.log('📝 [DISPLAY] content FINAL (longueur):', content ? content.length : 'NULL');
+                console.log('📝 [DISPLAY] content FINAL (preview):', content ? content.substring(0, 100) + '...' : 'NULL');
+                console.log('🎨 [DISPLAY] === AVANT PASSAGE À MARKDOWN ===');
                 
                 this.container.innerHTML = `
                     <div class="row">
@@ -498,16 +624,16 @@
                             <div class="card shadow-sm">
                                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">
-                                        <i class="bi bi-file-slides me-2"></i>${slideData.title}
+                                        <i class="bi bi-file-slides me-2"></i>${title}
                                     </h5>
                                     <div>
-                                        <span class="badge bg-light text-dark">Slide ${slideData.order_in_submodule}</span>
+                                        <span class="badge bg-light text-dark">Slide ${slideData.order_in_submodule || 1}</span>
                                     </div>
                                 </div>
                                 <div class="card-body">
                                     <!-- Slide content in markdown format -->
                                     <div id="slide-content" class="slide-content">
-                                        ${this.markdownToHtml(slideData.content)}
+                                        ${this.markdownToHtml(content)}
                                     </div>
                                     
                                     <!-- Navigation buttons -->
@@ -537,7 +663,7 @@
                             <div class="mt-3">
                                 <small class="text-muted">
                                     Generated: ${slideData.generated_at ? new Date(slideData.generated_at).toLocaleString() : 'Just now'} |
-                                    Slide ID: ${slideData.slide_id}
+                                    Slide ID: ${slideData.slide_id || 'N/A'}
                                 </small>
                             </div>
                         </div>
@@ -585,29 +711,107 @@
             }
             
             markdownToHtml(markdown) {
-                if (!markdown) return '<p>Content is being generated...</p>';
+                console.log('📖📖📖 [MARKDOWN] ============== DÉBUT TRAITEMENT MARKDOWN ==============');
+                console.log('📖📖📖 [MARKDOWN] markdown TYPE:', typeof markdown);
+                console.log('📖📖📖 [MARKDOWN] markdown NULL/UNDEFINED?', markdown == null);
+                console.log('📖📖📖 [MARKDOWN] markdown LONGUEUR:', markdown ? markdown.length : 'N/A');
+                console.log('📖📖📖 [MARKDOWN] markdown IS STRING?:', typeof markdown === 'string');
+                console.log('📖📖📖 [MARKDOWN] markdown PREVIEW (300 chars):');
+                console.log('📖📖📖 [MARKDOWN] ---START PREVIEW---');
+                console.log(markdown ? markdown.substring(0, 300) : 'NULL');
+                console.log('📖📖📖 [MARKDOWN] ---END PREVIEW---');
+                console.log('📖📖📖 [MARKDOWN] marked DISPONIBLE?:', typeof marked !== 'undefined');
+                console.log('📖📖📖 [MARKDOWN] marked.parse DISPONIBLE?:', typeof marked?.parse === 'function');
                 
-                // Simple markdown to HTML conversion
-                let html = markdown
-                    // Headers
-                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')  
-                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                    // Bold
-                    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-                    // Italic
-                    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-                    // Lists
-                    .replace(/^\- (.*$)/gim, '<li>$1</li>')
-                    // Blockquotes
-                    .replace(/^> (.*$)/gim, '<blockquote class="blockquote">$1</blockquote>')
-                    // Line breaks
-                    .replace(/\n/gim, '<br>');
+                // Analyse détaillée du contenu
+                if (markdown) {
+                    console.log('🔍🔍🔍 [MARKDOWN] ANALYSE DÉTAILLÉE DU CONTENU:');
+                    console.log('🔍🔍🔍 [MARKDOWN] Contient des # (titres)?', markdown.includes('#'));
+                    console.log('🔍🔍🔍 [MARKDOWN] Contient des * (listes)?', markdown.includes('*'));
+                    console.log('🔍🔍🔍 [MARKDOWN] Contient des | (tableaux)?', markdown.includes('|'));
+                    console.log('🔍🔍🔍 [MARKDOWN] Contient des \\n (sauts de ligne)?', markdown.includes('\n'));
+                    console.log('🔍🔍🔍 [MARKDOWN] Nombre de sauts de ligne:', (markdown.match(/\n/g) || []).length);
+                    
+                    // Afficher les premières et dernières lignes
+                    const lines = markdown.split('\n');
+                    console.log('🔍🔍🔍 [MARKDOWN] Nombre total de lignes:', lines.length);
+                    console.log('🔍🔍🔍 [MARKDOWN] Premières 5 lignes:');
+                    lines.slice(0, 5).forEach((line, index) => {
+                        console.log(`🔍🔍🔍 [MARKDOWN] Ligne ${index + 1}: "${line}"`);
+                    });
+                    
+                    if (lines.length > 10) {
+                        console.log('🔍🔍🔍 [MARKDOWN] ... (lignes intermédiaires cachées) ...');
+                        console.log('🔍🔍🔍 [MARKDOWN] Dernières 3 lignes:');
+                        lines.slice(-3).forEach((line, index) => {
+                            console.log(`🔍🔍🔍 [MARKDOWN] Ligne ${lines.length - 3 + index + 1}: "${line}"`);
+                        });
+                    }
+                }
                 
-                // Wrap lists in ul tags
-                html = html.replace(/(<li>.*<\/li>)/gim, '<ul class="list-unstyled">$1</ul>');
+                if (!markdown) {
+                    console.log('⚠️⚠️⚠️ [MARKDOWN] CONTENU VIDE - Retour message par défaut');
+                    const defaultHtml = '<p>Content is being generated...</p>';
+                    console.log('🔄🔄🔄 [MARKDOWN] DEFAULT HTML:', defaultHtml);
+                    return defaultHtml;
+                }
                 
-                return html;
+                try {
+                    console.log('🔄🔄🔄 [MARKDOWN] DÉBUT PARSING avec marked.parse...');
+                    console.log('🔄🔄🔄 [MARKDOWN] Input exact pour marked.parse:');
+                    console.log('🔄🔄🔄 [MARKDOWN] ---START INPUT---');
+                    console.log(markdown.substring(0, 500));
+                    console.log('🔄🔄🔄 [MARKDOWN] ---END INPUT---');
+                    
+                    // KISS: Use marked.js for proper markdown parsing
+                    const htmlResult = marked.parse(markdown);
+                    
+                    console.log('✅✅✅ [MARKDOWN] PARSING RÉUSSI!');
+                    console.log('📝📝📝 [MARKDOWN] HTML RÉSULTAT TYPE:', typeof htmlResult);
+                    console.log('📝📝📝 [MARKDOWN] HTML RÉSULTAT LONGUEUR:', htmlResult ? htmlResult.length : 'N/A');
+                    console.log('📝📝📝 [MARKDOWN] HTML RÉSULTAT IS STRING?:', typeof htmlResult === 'string');
+                    console.log('📝📝📝 [MARKDOWN] HTML RÉSULTAT PREVIEW (400 chars):');
+                    console.log('📝📝📝 [MARKDOWN] ---START HTML RESULT---');
+                    console.log(htmlResult ? htmlResult.substring(0, 400) + '...' : 'NULL');
+                    console.log('📝📝📝 [MARKDOWN] ---END HTML RESULT---');
+                    
+                    // Analyser le HTML généré
+                    if (htmlResult) {
+                        console.log('🔍🔍🔍 [MARKDOWN] ANALYSE HTML GÉNÉRÉ:');
+                        console.log('🔍🔍🔍 [MARKDOWN] Contient <h1>?', htmlResult.includes('<h1>'));
+                        console.log('🔍🔍🔍 [MARKDOWN] Contient <h2>?', htmlResult.includes('<h2>'));
+                        console.log('🔍🔍🔍 [MARKDOWN] Contient <ul>?', htmlResult.includes('<ul>'));
+                        console.log('🔍🔍🔍 [MARKDOWN] Contient <table>?', htmlResult.includes('<table>'));
+                        console.log('🔍🔍🔍 [MARKDOWN] Contient <p>?', htmlResult.includes('<p>'));
+                        
+                        // Compter les balises
+                        const h1Count = (htmlResult.match(/<h1>/g) || []).length;
+                        const h2Count = (htmlResult.match(/<h2>/g) || []).length;
+                        const tableCount = (htmlResult.match(/<table>/g) || []).length;
+                        const pCount = (htmlResult.match(/<p>/g) || []).length;
+                        
+                        console.log('🔍🔍🔍 [MARKDOWN] Nombre de <h1>:', h1Count);
+                        console.log('🔍🔍🔍 [MARKDOWN] Nombre de <h2>:', h2Count);
+                        console.log('🔍🔍🔍 [MARKDOWN] Nombre de <table>:', tableCount);
+                        console.log('🔍🔍🔍 [MARKDOWN] Nombre de <p>:', pCount);
+                    }
+                    
+                    console.log('📖📖📖 [MARKDOWN] ============== FIN TRAITEMENT MARKDOWN SUCCÈS ==============');
+                    return htmlResult;
+                    
+                } catch (error) {
+                    console.error('❌❌❌ [MARKDOWN] ERREUR PARSING:', error);
+                    console.error('❌❌❌ [MARKDOWN] ERROR MESSAGE:', error.message);
+                    console.error('❌❌❌ [MARKDOWN] ERROR STACK:', error.stack);
+                    console.log('🔄🔄🔄 [MARKDOWN] FALLBACK: Conversion simple \\n -> <br>');
+                    
+                    // Fallback to plain text with line breaks
+                    const fallbackResult = markdown.replace(/\n/g, '<br>');
+                    console.log('📝📝📝 [MARKDOWN] FALLBACK RÉSULTAT LONGUEUR:', fallbackResult.length);
+                    console.log('📝📝📝 [MARKDOWN] FALLBACK RÉSULTAT PREVIEW (300 chars):', fallbackResult.substring(0, 300) + '...');
+                    console.log('📖📖📖 [MARKDOWN] ============== FIN TRAITEMENT MARKDOWN FALLBACK ==============');
+                    return fallbackResult;
+                }
             }
             
             setupChatFunctionality() {

@@ -49,7 +49,7 @@ Etape
 
 ### Pas encore implémenté
 - Interactions Apprenants (pas encore implémenté) :
-  - Génération des slides individuelles
+  - Génération des slides individuelles en markdown affiché avec Marked.js
   - Chat avec formateur IA intégré
   - Boutons d'interaction : simplifier, approfondir, exercices, exemples, "le plus important"
   - Monitoring et Administration
@@ -58,7 +58,7 @@ Etape
 ---------------------------------------------------------------------------------------------------------------
 
 # Guide des Bonnes Pratiques à respecter pour le développement
-
+Marked.js
 ## 🏗️ Architecture et Organisation
 ### Principes Fondamentaux
 - **Principe KISS** : Toujours choisir la solution la plus simple et directe
