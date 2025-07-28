@@ -649,7 +649,7 @@
                                             <button id="simplify-btn" class="btn btn-outline-primary">
                                                 <i class="bi bi-lightbulb me-1"></i>Simplify
                                             </button>
-                                            <button class="btn btn-outline-info">
+                                            <button id="more-details-btn" class="btn btn-outline-info">
                                                 <i class="bi bi-plus-circle me-1"></i>More Details
                                             </button>
                                             <button class="btn btn-outline-success">
@@ -987,12 +987,20 @@
             
             setupSlideInteractionButtons() {
                 const simplifyBtn = document.getElementById('simplify-btn');
+                const moreDetailsBtn = document.getElementById('more-details-btn');
                 
                 if (simplifyBtn) {
                     simplifyBtn.addEventListener('click', () => this.simplifySlideContent());
                     console.log('✅ [BUTTONS] Simplify button event listener added');
                 } else {
                     console.warn('⚠️ [BUTTONS] Simplify button not found');
+                }
+                
+                if (moreDetailsBtn) {
+                    moreDetailsBtn.addEventListener('click', () => this.moreDetailsSlideContent());
+                    console.log('✅ [BUTTONS] More Details button event listener added');
+                } else {
+                    console.warn('⚠️ [BUTTONS] More Details button not found');
                 }
             }
             
@@ -1111,6 +1119,131 @@
                     <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Simplification Failed:</strong> ${errorMessage}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 8 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-warning');
+                        if (alert) alert.remove();
+                    }, 8000);
+                }
+            }
+            
+            async moreDetailsSlideContent() {
+                const moreDetailsBtn = document.getElementById('more-details-btn');
+                const slideContentEl = document.getElementById('slide-content');
+                
+                if (!slideContentEl) {
+                    console.error('❌ [MORE_DETAILS] Slide content element not found');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [MORE_DETAILS] Starting slide content enhancement');
+                    
+                    // Désactiver le bouton pendant le traitement
+                    if (moreDetailsBtn) {
+                        moreDetailsBtn.disabled = true;
+                        moreDetailsBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adding Details...';
+                    }
+                    
+                    // Obtenir le contenu markdown actuel
+                    const currentMarkdown = this.getCurrentSlideMarkdown();
+                    if (!currentMarkdown) {
+                        console.error('❌ [MORE_DETAILS] No current slide content to enhance');
+                        return;
+                    }
+                    
+                    console.log('📝 [MORE_DETAILS] Current content length:', currentMarkdown.length);
+                    console.log('📝 [MORE_DETAILS] Current content preview:', currentMarkdown.substring(0, 100) + '...');
+                    
+                    // Appeler l'API d'approfondissement
+                    const response = await fetch(`/api/slides/more-details/${this.learnerSession.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            current_content: currentMarkdown
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ [MORE_DETAILS] API response received:', result);
+                    
+                    if (result.success && result.data.detailed_content) {
+                        // Remplacer le contenu de la slide avec la version approfondie
+                        const detailedContent = result.data.detailed_content;
+                        console.log('📝 [MORE_DETAILS] Enhanced content length:', detailedContent.length);
+                        console.log('📝 [MORE_DETAILS] Enhanced content preview:', detailedContent.substring(0, 100) + '...');
+                        
+                        // Mettre à jour l'affichage
+                        slideContentEl.innerHTML = this.markdownToHtml(detailedContent);
+                        
+                        // Sauvegarder le nouveau contenu pour usage futur
+                        this.currentSlideContent = detailedContent;
+                        
+                        console.log('✅ [MORE_DETAILS] Slide content enhanced successfully');
+                        
+                        // Afficher un message de succès temporaire
+                        this.showMoreDetailsSuccess(result.data);
+                        
+                    } else {
+                        throw new Error('Invalid API response structure');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [MORE_DETAILS] Error enhancing slide content:', error);
+                    
+                    // Afficher une erreur à l'utilisateur
+                    this.showMoreDetailsError(error.message);
+                    
+                } finally {
+                    // Réactiver le bouton
+                    if (moreDetailsBtn) {
+                        moreDetailsBtn.disabled = false;
+                        moreDetailsBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>More Details';
+                    }
+                }
+            }
+            
+            showMoreDetailsSuccess(data) {
+                const alertHtml = `
+                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        <strong>Content Enhanced!</strong> 
+                        Expanded from ${data.original_length} to ${data.detailed_length} characters with more technical details.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 5 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-info');
+                        if (alert) alert.remove();
+                    }, 5000);
+                }
+            }
+            
+            showMoreDetailsError(errorMessage) {
+                const alertHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Enhancement Failed:</strong> ${errorMessage}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 `;

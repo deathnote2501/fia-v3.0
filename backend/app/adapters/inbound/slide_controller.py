@@ -23,6 +23,11 @@ class SimplifySlideRequest(BaseModel):
     current_content: str
 
 
+class MoreDetailsSlideRequest(BaseModel):
+    """Request model for slide content enhancement with more details"""
+    current_content: str
+
+
 @router.post("/generate-first/{learner_session_id}", response_model=Dict[str, Any])
 async def generate_first_slide(
     learner_session_id: str
@@ -128,6 +133,66 @@ async def simplify_slide_content(
         raise HTTPException(
             status_code=500,
             detail="Failed to simplify slide content"
+        )
+
+
+@router.post("/more-details/{learner_session_id}", response_model=Dict[str, Any])
+async def more_details_slide_content(
+    learner_session_id: str,
+    request: MoreDetailsSlideRequest
+) -> Dict[str, Any]:
+    """
+    Add more technical details to the content of a slide for deeper understanding
+    
+    Args:
+        learner_session_id: ID of the learner session
+        request: Request containing current slide content
+        
+    Returns:
+        Dict containing enhanced slide content with more details
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [MORE_DETAILS] Enhancing content for session {learner_session_id}")
+        
+        # Apply rate limiting
+        if not await rate_limiter.is_allowed(f"slide_more_details_{learner_session_id}"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded for slide enhancement"
+            )
+        
+        # Validate request
+        if not request.current_content or len(request.current_content.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Current content is required and must be at least 10 characters"
+            )
+        
+        # Initialize slide generation service
+        slide_service = SlideGenerationService()
+        
+        # Enhance slide content with more details
+        result = await slide_service.more_details_slide_content(
+            learner_session_id=learner_session_id,
+            current_slide_content=request.current_content
+        )
+        
+        logger.info(f"✅ SLIDE API [MORE_DETAILS] Content enhanced for session {learner_session_id}")
+        return {
+            "success": True,
+            "data": result,
+            "message": "Slide content enhanced with more details successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ SLIDE API [MORE_DETAILS_NOT_FOUND] {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [MORE_DETAILS_ERROR] Failed to enhance slide content: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to enhance slide content with more details"
         )
 
 

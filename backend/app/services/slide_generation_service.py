@@ -255,6 +255,58 @@ class SlideGenerationService:
                 logger.error(f"❌ SLIDE SIMPLIFY [ERROR] Failed after {duration:.2f}s: {str(e)}")
                 raise
     
+    async def more_details_slide_content(self, learner_session_id: str, current_slide_content: str) -> Dict[str, Any]:
+        """
+        Approfondir le contenu d'une slide existante selon le profil de l'apprenant
+        
+        Args:
+            learner_session_id: ID de la session apprenant
+            current_slide_content: Contenu markdown actuel de la slide
+            
+        Returns:
+            Dict contenant le contenu approfondi
+        """
+        start_time = time.time()
+        
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🎯 SLIDE MORE_DETAILS [START] Adding more details for session {learner_session_id}")
+                
+                # Initialize repositories
+                learner_session_repo = LearnerSessionRepository(session)
+                
+                # Récupérer la session apprenant pour le profil
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Générer le contenu approfondi
+                logger.info(f"📝 SLIDE MORE_DETAILS [AI] Calling VertexAI for content enhancement...")
+                
+                detailed_content = await self._generate_more_details_content(
+                    current_content=current_slide_content,
+                    learner_profile=learner_session
+                )
+                
+                duration = time.time() - start_time
+                
+                result = {
+                    "detailed_content": detailed_content,
+                    "original_length": len(current_slide_content),
+                    "detailed_length": len(detailed_content),
+                    "processing_time": round(duration, 2),
+                    "learner_session_id": learner_session_id
+                }
+                
+                logger.info(f"✅ SLIDE MORE_DETAILS [SUCCESS] Content enhanced in {duration:.2f}s - {len(current_slide_content)} → {len(detailed_content)} chars")
+                return result
+                
+            except Exception as e:
+                await session.rollback()
+                duration = time.time() - start_time
+                logger.error(f"❌ SLIDE MORE_DETAILS [ERROR] Failed after {duration:.2f}s: {str(e)}")
+                raise
+    
     async def _generate_simplified_content(
         self,
         current_content: str,
@@ -306,6 +358,58 @@ class SlideGenerationService:
         except Exception as e:
             logger.error(f"❌ SLIDE SIMPLIFY [AI] Failed to simplify content: {str(e)}")
             raise VertexAIError(f"Slide simplification failed: {str(e)}", original_error=e)
+    
+    async def _generate_more_details_content(
+        self,
+        current_content: str,
+        learner_profile: Any
+    ) -> str:
+        """
+        Générer une version approfondie du contenu avec VertexAI
+        
+        Args:
+            current_content: Contenu markdown actuel
+            learner_profile: Profil de l'apprenant (LearnerSession)
+            
+        Returns:
+            Contenu markdown approfondi
+        """
+        try:
+            # Construire le prompt d'approfondissement
+            prompt = self._build_more_details_prompt(
+                current_content=current_content,
+                learner_profile=learner_profile
+            )
+            
+            # Configuration VertexAI pour approfondissement (même format JSON que les autres)
+            generation_config = {
+                "temperature": 0.5,  # Température modérée pour créativité contrôlée
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 3072,  # Plus de tokens pour plus de détails
+                "response_mime_type": "application/json"  # JSON comme les autres méthodes
+            }
+            
+            logger.info(f"🚀 SLIDE MORE_DETAILS [AI] Calling VertexAI for content enhancement...")
+            
+            # Appeler VertexAI pour approfondir le contenu
+            raw_content = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            # Parser le JSON et extraire le contenu markdown (même processus que les autres)
+            detailed_content = self._extract_content_from_json(raw_content)
+            
+            # Nettoyer et valider le contenu
+            cleaned_content = self._clean_markdown_content(detailed_content)
+            
+            logger.info(f"✅ SLIDE MORE_DETAILS [AI] Content enhanced - {len(cleaned_content)} characters")
+            return cleaned_content
+            
+        except Exception as e:
+            logger.error(f"❌ SLIDE MORE_DETAILS [AI] Failed to enhance content: {str(e)}")
+            raise VertexAIError(f"Slide content enhancement failed: {str(e)}", original_error=e)
     
     def _build_simplify_prompt(
         self,
@@ -369,6 +473,71 @@ CONTRAINTES TECHNIQUES :
 Génère maintenant la version simplifiée au format JSON :"""
 
         logger.info(f"🎯 SLIDE SIMPLIFY [PROMPT] Built simplify prompt for level: {profile_info['niveau']}, style: {profile_info['style_apprentissage']}")
+        
+        return prompt
+    
+    def _build_more_details_prompt(
+        self,
+        current_content: str,
+        learner_profile: Any
+    ) -> str:
+        """
+        Construire le prompt pour approfondir le contenu d'une slide
+        
+        Args:
+            current_content: Contenu markdown actuel de la slide
+            learner_profile: Profil de l'apprenant (LearnerSession)
+            
+        Returns:
+            Prompt optimisé pour l'approfondissement
+        """
+        # Extraire les informations du profil apprenant
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant", 
+            "style_apprentissage": learner_profile.learning_style or "visuel",
+            "poste": learner_profile.job_position or "non spécifié",
+            "secteur": learner_profile.activity_sector or "non spécifié",
+            "langue": learner_profile.language or "français"
+        }
+        
+        prompt = f"""Tu es un expert pédagogue spécialisé dans l'approfondissement de contenu éducatif.
+
+MISSION :
+Approfondis le contenu de slide de formation ci-dessous pour le rendre plus détaillé et technique selon le profil de l'apprenant.
+
+CONTENU ACTUEL À APPROFONDIR :
+{current_content}
+
+PROFIL APPRENANT :
+- Niveau d'expérience : {profile_info['niveau']}
+- Style d'apprentissage : {profile_info['style_apprentissage']}
+- Poste : {profile_info['poste']}
+- Secteur d'activité : {profile_info['secteur']}
+- Langue : {profile_info['langue']}
+
+RÈGLES D'APPROFONDISSEMENT :
+1. **Vocabulaire technique** : Utilise des termes métier et concepts avancés adaptés au niveau {profile_info['niveau']}
+2. **Détails techniques** : Ajoute des explications techniques, processus, mécanismes
+3. **Concepts avancés** : Introduis des notions plus complexes et spécialisées
+4. **Exemples techniques** : Inclus des exemples détaillés et cas d'usage du secteur {profile_info['secteur']}
+5. **Format {profile_info['style_apprentissage']}** : Adapte au style d'apprentissage privilégié
+6. **Approfondissements** : Ajoute des sections avec plus de détails, références, liens
+7. **Précisions métier** : Inclus des spécificités techniques du domaine
+
+CONTRAINTES TECHNIQUES :
+- Réponds en format JSON avec la structure suivante :
+{{
+  "slide_content": "Le contenu markdown approfondi ici"
+}}
+- Le contenu dans slide_content doit être du markdown pur
+- Garde la même structure markdown (titres, listes, etc.) mais ajoute du contenu
+- Ajoute 30-50% de contenu supplémentaire avec plus de détails
+- Utilise un niveau de langage plus technique et précis
+- Reste professionnel et pédagogique mais plus avancé
+
+Génère maintenant la version approfondie au format JSON :"""
+
+        logger.info(f"🎯 SLIDE MORE_DETAILS [PROMPT] Built enhancement prompt for level: {profile_info['niveau']}, style: {profile_info['style_apprentissage']}")
         
         return prompt
     
