@@ -117,3 +117,75 @@ class TrainingSlideRepository:
             )
         )
         return list(result.scalars().all())
+    
+    async def get_next_slide(self, current_slide_id: UUID, training_plan_id: UUID) -> Optional[TrainingSlideModel]:
+        """Get the next slide after the current one in the training plan"""
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        # Get all slides ordered
+        all_slides = await self.get_slides_by_training_plan(training_plan_id)
+        
+        # Find current slide index
+        current_index = None
+        for i, slide in enumerate(all_slides):
+            if slide.id == current_slide_id:
+                current_index = i
+                break
+        
+        # Return next slide if exists
+        if current_index is not None and current_index + 1 < len(all_slides):
+            return all_slides[current_index + 1]
+        
+        return None
+    
+    async def get_previous_slide(self, current_slide_id: UUID, training_plan_id: UUID) -> Optional[TrainingSlideModel]:
+        """Get the previous slide before the current one in the training plan"""
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        # Get all slides ordered
+        all_slides = await self.get_slides_by_training_plan(training_plan_id)
+        
+        # Find current slide index
+        current_index = None
+        for i, slide in enumerate(all_slides):
+            if slide.id == current_slide_id:
+                current_index = i
+                break
+        
+        # Return previous slide if exists
+        if current_index is not None and current_index > 0:
+            return all_slides[current_index - 1]
+        
+        return None
+    
+    async def get_slide_position(self, slide_id: UUID, training_plan_id: UUID) -> dict:
+        """Get position information for a slide within the training plan"""
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        # Get all slides ordered
+        all_slides = await self.get_slides_by_training_plan(training_plan_id)
+        
+        # Find current slide index
+        current_index = None
+        for i, slide in enumerate(all_slides):
+            if slide.id == slide_id:
+                current_index = i
+                break
+        
+        if current_index is not None:
+            return {
+                "current_position": current_index + 1,
+                "total_slides": len(all_slides),
+                "has_previous": current_index > 0,
+                "has_next": current_index + 1 < len(all_slides)
+            }
+        
+        return {
+            "current_position": 0,
+            "total_slides": len(all_slides),
+            "has_previous": False,
+            "has_next": False
+        }

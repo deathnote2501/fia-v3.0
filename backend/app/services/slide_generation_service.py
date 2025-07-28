@@ -813,6 +813,168 @@ Génère maintenant le contenu de la slide :"""
             logger.error(f"❌❌❌ SLIDE GENERATION [FIX] ERREUR INATTENDUE: {e}")
             return corrupted_content
     
+    async def get_next_slide_content(self, current_slide_id: str, learner_session_id: str) -> Dict[str, Any]:
+        """
+        Obtenir le contenu de la slide suivante (génération ou récupération)
+        
+        Args:
+            current_slide_id: ID de la slide actuelle
+            learner_session_id: ID de la session apprenant
+            
+        Returns:
+            Dict contenant les informations de la slide suivante
+        """
+        start_time = time.time()
+        
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🎯 SLIDE NAVIGATION [NEXT] Getting next slide after {current_slide_id}")
+                
+                # Initialize repositories
+                learner_session_repo = LearnerSessionRepository(session)
+                learner_plan_repo = LearnerTrainingPlanRepository(session)
+                slide_repo = TrainingSlideRepository()
+                slide_repo.set_session(session)
+                
+                # Récupérer la session apprenant
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Récupérer le plan de formation
+                training_plan = await learner_plan_repo.get_latest_by_learner_session_id(learner_session_id)
+                if not training_plan:
+                    raise ValueError(f"Training plan not found for session: {learner_session_id}")
+                
+                # Obtenir la slide suivante (convertir string en UUID)
+                from uuid import UUID
+                current_slide_uuid = UUID(current_slide_id)
+                next_slide = await slide_repo.get_next_slide(current_slide_uuid, training_plan.id)
+                if not next_slide:
+                    return {
+                        "has_next": False,
+                        "message": "You have reached the end of the training"
+                    }
+                
+                # Si la slide n'a pas de contenu, le générer
+                if not next_slide.content:
+                    logger.info(f"📝 SLIDE NAVIGATION [NEXT] Generating content for slide: {next_slide.title}")
+                    
+                    slide_content = await self._generate_slide_content(
+                        slide_title=next_slide.title,
+                        learner_profile=learner_session,
+                        training_plan=training_plan,
+                        slide_position="middle"  # Toutes les slides suivantes sont "middle"
+                    )
+                    
+                    # Sauvegarder le contenu généré
+                    await slide_repo.update_content(next_slide.id, slide_content)
+                    next_slide.content = slide_content
+                    next_slide.generated_at = datetime.now(timezone.utc)
+                
+                # Obtenir les informations de position
+                position_info = await slide_repo.get_slide_position(next_slide.id, training_plan.id)
+                
+                duration = time.time() - start_time
+                
+                result = {
+                    "slide_id": str(next_slide.id),
+                    "title": next_slide.title,
+                    "content": next_slide.content,
+                    "order_in_submodule": next_slide.order_in_submodule,
+                    "generated_at": next_slide.generated_at.isoformat() if next_slide.generated_at else None,
+                    "navigation_duration": round(duration, 2),
+                    "position": position_info,
+                    "has_next": position_info["has_next"],
+                    "has_previous": position_info["has_previous"]
+                }
+                
+                logger.info(f"✅ SLIDE NAVIGATION [NEXT] Next slide retrieved/generated in {duration:.2f}s")
+                return result
+                
+            except Exception as e:
+                await session.rollback()
+                duration = time.time() - start_time
+                logger.error(f"❌ SLIDE NAVIGATION [NEXT] Failed after {duration:.2f}s: {str(e)}")
+                raise
+    
+    async def get_previous_slide_content(self, current_slide_id: str, learner_session_id: str) -> Dict[str, Any]:
+        """
+        Obtenir le contenu de la slide précédente (toujours en récupération)
+        
+        Args:
+            current_slide_id: ID de la slide actuelle
+            learner_session_id: ID de la session apprenant
+            
+        Returns:
+            Dict contenant les informations de la slide précédente
+        """
+        start_time = time.time()
+        
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🎯 SLIDE NAVIGATION [PREV] Getting previous slide before {current_slide_id}")
+                
+                # Initialize repositories
+                learner_session_repo = LearnerSessionRepository(session)
+                learner_plan_repo = LearnerTrainingPlanRepository(session)
+                slide_repo = TrainingSlideRepository()
+                slide_repo.set_session(session)
+                
+                # Récupérer la session apprenant
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Récupérer le plan de formation
+                training_plan = await learner_plan_repo.get_latest_by_learner_session_id(learner_session_id)
+                if not training_plan:
+                    raise ValueError(f"Training plan not found for session: {learner_session_id}")
+                
+                # Obtenir la slide précédente (convertir string en UUID)
+                from uuid import UUID
+                current_slide_uuid = UUID(current_slide_id)
+                previous_slide = await slide_repo.get_previous_slide(current_slide_uuid, training_plan.id)
+                if not previous_slide:
+                    return {
+                        "has_previous": False,
+                        "message": "You are at the beginning of the training"
+                    }
+                
+                # Les slides précédentes doivent déjà avoir du contenu
+                if not previous_slide.content:
+                    logger.warning(f"⚠️ SLIDE NAVIGATION [PREV] Previous slide has no content: {previous_slide.id}")
+                    return {
+                        "has_previous": False,
+                        "message": "Previous slide content not available"
+                    }
+                
+                # Obtenir les informations de position
+                position_info = await slide_repo.get_slide_position(previous_slide.id, training_plan.id)
+                
+                duration = time.time() - start_time
+                
+                result = {
+                    "slide_id": str(previous_slide.id),
+                    "title": previous_slide.title,
+                    "content": previous_slide.content,
+                    "order_in_submodule": previous_slide.order_in_submodule,
+                    "generated_at": previous_slide.generated_at.isoformat() if previous_slide.generated_at else None,
+                    "navigation_duration": round(duration, 2),
+                    "position": position_info,
+                    "has_next": position_info["has_next"],
+                    "has_previous": position_info["has_previous"]
+                }
+                
+                logger.info(f"✅ SLIDE NAVIGATION [PREV] Previous slide retrieved in {duration:.2f}s")
+                return result
+                
+            except Exception as e:
+                await session.rollback()
+                duration = time.time() - start_time
+                logger.error(f"❌ SLIDE NAVIGATION [PREV] Failed after {duration:.2f}s: {str(e)}")
+                raise
+    
     def get_stats(self) -> Dict[str, Any]:
         """Obtenir les statistiques du service"""
         return {

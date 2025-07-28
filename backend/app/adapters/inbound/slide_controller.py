@@ -196,6 +196,123 @@ async def more_details_slide_content(
         )
 
 
+@router.post("/next/{learner_session_id}/{current_slide_id}", response_model=Dict[str, Any])
+async def get_next_slide(
+    learner_session_id: str,
+    current_slide_id: str
+) -> Dict[str, Any]:
+    """
+    Navigate to the next slide in the training sequence
+    
+    Args:
+        learner_session_id: ID of the learner session
+        current_slide_id: ID of the current slide
+        
+    Returns:
+        Dict containing next slide information and content
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [NEXT] Getting next slide after {current_slide_id} for session {learner_session_id}")
+        
+        # Apply rate limiting for slide generation
+        if not await rate_limiter.is_allowed(f"slide_navigation_{learner_session_id}"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded for slide navigation"
+            )
+        
+        # Initialize slide generation service
+        slide_service = SlideGenerationService()
+        
+        # Get next slide content
+        result = await slide_service.get_next_slide_content(
+            current_slide_id=current_slide_id,
+            learner_session_id=learner_session_id
+        )
+        
+        # Check if we reached the end
+        if not result.get("has_next", True) and "message" in result:
+            logger.info(f"📍 SLIDE API [NEXT] End of training reached for session {learner_session_id}")
+            return {
+                "success": False,
+                "data": result,
+                "message": result["message"]
+            }
+        
+        logger.info(f"✅ SLIDE API [NEXT] Next slide retrieved for session {learner_session_id}")
+        return {
+            "success": True,
+            "data": result,
+            "message": "Next slide retrieved successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ SLIDE API [NEXT_NOT_FOUND] {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [NEXT_ERROR] Failed to get next slide: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get next slide"
+        )
+
+
+@router.post("/previous/{learner_session_id}/{current_slide_id}", response_model=Dict[str, Any])
+async def get_previous_slide(
+    learner_session_id: str,
+    current_slide_id: str
+) -> Dict[str, Any]:
+    """
+    Navigate to the previous slide in the training sequence
+    
+    Args:
+        learner_session_id: ID of the learner session
+        current_slide_id: ID of the current slide
+        
+    Returns:
+        Dict containing previous slide information and content
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [PREV] Getting previous slide before {current_slide_id} for session {learner_session_id}")
+        
+        # Initialize slide generation service (no rate limiting for going back)
+        slide_service = SlideGenerationService()
+        
+        # Get previous slide content
+        result = await slide_service.get_previous_slide_content(
+            current_slide_id=current_slide_id,
+            learner_session_id=learner_session_id
+        )
+        
+        # Check if we reached the beginning
+        if not result.get("has_previous", True) and "message" in result:
+            logger.info(f"📍 SLIDE API [PREV] Beginning of training reached for session {learner_session_id}")
+            return {
+                "success": False,
+                "data": result,
+                "message": result["message"]
+            }
+        
+        logger.info(f"✅ SLIDE API [PREV] Previous slide retrieved for session {learner_session_id}")
+        return {
+            "success": True,
+            "data": result,
+            "message": "Previous slide retrieved successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ SLIDE API [PREV_NOT_FOUND] {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [PREV_ERROR] Failed to get previous slide: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get previous slide"
+        )
+
+
 @router.get("/session/{learner_session_id}/current")
 async def get_current_slide(learner_session_id: str) -> Dict[str, Any]:
     """

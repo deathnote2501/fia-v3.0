@@ -83,6 +83,7 @@
                 this.token = this.getTokenFromURL();
                 this.sessionData = null;
                 this.learnerSession = null;
+                this.currentSlide = null; // Track current slide for navigation
                 
                 if (!this.token) {
                     this.showError('No session token provided');
@@ -568,6 +569,8 @@
             }
             
             displaySlideContent(slideData) {
+                // Store current slide data for navigation
+                this.currentSlide = slideData;
                 console.log('🎨 [DISPLAY] === DÉBUT ANALYSE DES DONNÉES ===');
                 console.log('🎨 [DISPLAY] slideData TYPE:', typeof slideData);
                 console.log('🎨 [DISPLAY] slideData COMPLET:', slideData);
@@ -652,11 +655,8 @@
                                             <button id="more-details-btn" class="btn btn-outline-info">
                                                 <i class="bi bi-plus-circle me-1"></i>More Details
                                             </button>
-                                            <button class="btn btn-outline-success">
-                                                <i class="bi bi-pencil me-1"></i>Examples
-                                            </button>
                                         </div>
-                                        <button class="btn btn-primary">
+                                        <button id="next-btn" class="btn btn-primary">
                                             <i class="bi bi-arrow-right me-1"></i>Next
                                         </button>
                                     </div>
@@ -988,6 +988,7 @@
             setupSlideInteractionButtons() {
                 const simplifyBtn = document.getElementById('simplify-btn');
                 const moreDetailsBtn = document.getElementById('more-details-btn');
+                const nextBtn = document.getElementById('next-btn');
                 
                 if (simplifyBtn) {
                     simplifyBtn.addEventListener('click', () => this.simplifySlideContent());
@@ -1001,6 +1002,13 @@
                     console.log('✅ [BUTTONS] More Details button event listener added');
                 } else {
                     console.warn('⚠️ [BUTTONS] More Details button not found');
+                }
+                
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => this.navigateToNextSlide());
+                    console.log('✅ [BUTTONS] Next button event listener added');
+                } else {
+                    console.warn('⚠️ [BUTTONS] Next button not found');
                 }
             }
             
@@ -1244,6 +1252,150 @@
                     <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Enhancement Failed:</strong> ${errorMessage}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 8 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-warning');
+                        if (alert) alert.remove();
+                    }, 8000);
+                }
+            }
+            
+            async navigateToNextSlide() {
+                const nextBtn = document.getElementById('next-btn');
+                
+                if (!this.currentSlide) {
+                    console.error('❌ [NAVIGATION] No current slide data available');
+                    this.showNavigationError('No current slide information available');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [NAVIGATION] Starting navigation to next slide');
+                    
+                    // Désactiver le bouton pendant le traitement
+                    if (nextBtn) {
+                        nextBtn.disabled = true;
+                        nextBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                    }
+                    
+                    // Obtenir l'ID de la slide actuelle
+                    const currentSlideId = this.currentSlide.slide_id || this.currentSlide.id;
+                    if (!currentSlideId) {
+                        console.error('❌ [NAVIGATION] No current slide ID found');
+                        this.showNavigationError('Could not determine current slide');
+                        return;
+                    }
+                    
+                    console.log('📝 [NAVIGATION] Current slide ID:', currentSlideId);
+                    console.log('📝 [NAVIGATION] Learner session ID:', this.learnerSession.id);
+                    
+                    // Appeler l'API de navigation
+                    const response = await fetch(`/api/slides/next/${this.learnerSession.id}/${currentSlideId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    console.log('📥 [NAVIGATION] Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('❌ [NAVIGATION] Error response:', errorData);
+                        
+                        // Check if we've reached the end
+                        if (response.status === 404 || errorData.message?.includes('end')) {
+                            this.showNavigationComplete();
+                            return;
+                        }
+                        
+                        throw new Error(errorData.detail || 'Failed to navigate to next slide');
+                    }
+                    
+                    const navigationResult = await response.json();
+                    console.log('✅ [NAVIGATION] Success response:', navigationResult);
+                    
+                    // Check if there's no next slide
+                    if (!navigationResult.success || !navigationResult.data.has_next) {
+                        this.showNavigationComplete();
+                        return;
+                    }
+                    
+                    // Display the next slide
+                    this.displaySlideContent(navigationResult.data);
+                    this.showNavigationSuccess(navigationResult.data);
+                    
+                } catch (error) {
+                    console.error('❌ [NAVIGATION] Error:', error);
+                    this.showNavigationError(error.message);
+                    
+                } finally {
+                    // Réactiver le bouton
+                    if (nextBtn) {
+                        nextBtn.disabled = false;
+                        nextBtn.innerHTML = '<i class="bi bi-arrow-right me-1"></i>Next';
+                    }
+                }
+            }
+            
+            showNavigationSuccess(slideData) {
+                const alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-arrow-right me-2"></i>
+                        <strong>Navigated Successfully!</strong> 
+                        Now showing: ${slideData.title || 'Next slide'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Supprimer l'alerte après 3 secondes
+                    setTimeout(() => {
+                        const alert = document.querySelector('.alert-success');
+                        if (alert) alert.remove();
+                    }, 3000);
+                }
+            }
+            
+            showNavigationComplete() {
+                const alertHtml = `
+                    <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Training Complete!</strong> 
+                        You have reached the end of this training session. Well done!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    slideContentEl.insertAdjacentHTML('afterend', alertHtml);
+                    
+                    // Disable the Next button
+                    const nextBtn = document.getElementById('next-btn');
+                    if (nextBtn) {
+                        nextBtn.disabled = true;
+                        nextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
+                    }
+                }
+            }
+            
+            showNavigationError(errorMessage) {
+                const alertHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Navigation Failed:</strong> ${errorMessage}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 `;
