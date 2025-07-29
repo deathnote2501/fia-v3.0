@@ -3,7 +3,7 @@ FIA v3.0 - Learner Session SQLAlchemy Model
 Infrastructure layer model for learner_sessions table
 """
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -29,6 +29,9 @@ class LearnerSessionModel(Base):
     enriched_profile = Column(JSONB)  # Enriched learner profile data
     current_slide_number = Column(Integer, default=1)
     total_time_spent = Column(Integer, default=0)  # in seconds
+    # New fields for profile refactoring
+    objectives = Column(Text)  # Learner's expectations/objectives
+    training_duration = Column(String(20))  # Duration: 2h, 4h, 6h, 1 jour, 1.5 jour, 2 jours, 3 jours
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     last_activity_at = Column(DateTime(timezone=True), server_default=func.now())
 

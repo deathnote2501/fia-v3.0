@@ -16,17 +16,21 @@ class LearnerSession:
         training_session_id: UUID,
         email: str,
         experience_level: str,
-        learning_style: str,
-        job_position: str,
-        activity_sector: str,
-        country: str,
+        # Legacy fields - now optional for backward compatibility
+        learning_style: Optional[str] = None,
+        job_position: Optional[str] = None,
+        activity_sector: Optional[str] = None,
+        country: Optional[str] = None,
         language: str = 'fr',
         learner_session_id: Optional[UUID] = None,
         enriched_profile: Optional[Dict[str, Any]] = None,
         current_slide_number: int = 1,
         total_time_spent: int = 0,
         started_at: Optional[datetime] = None,
-        last_activity_at: Optional[datetime] = None
+        last_activity_at: Optional[datetime] = None,
+        # New fields for profile refactoring
+        objectives: Optional[str] = None,
+        training_duration: Optional[str] = None
     ):
         self.id = learner_session_id or uuid4()
         self.training_session_id = training_session_id
@@ -42,6 +46,9 @@ class LearnerSession:
         self.total_time_spent = total_time_spent
         self.started_at = started_at or datetime.utcnow()
         self.last_activity_at = last_activity_at or datetime.utcnow()
+        # New fields for profile refactoring
+        self.objectives = objectives
+        self.training_duration = training_duration
         
         # Validate business rules
         self._validate()
@@ -51,20 +58,33 @@ class LearnerSession:
         if not self.email or '@' not in self.email:
             raise ValueError("Valid email is required")
         
-        if self.experience_level not in ['beginner', 'intermediate', 'advanced']:
+        # Validate experience level (keep for compatibility)
+        if self.experience_level and self.experience_level not in ['beginner', 'intermediate', 'advanced']:
             raise ValueError("Experience level must be 'beginner', 'intermediate', or 'advanced'")
         
-        if self.learning_style not in ['visual', 'auditory', 'kinesthetic', 'reading']:
+        # Validate learning style (keep for compatibility, but make optional)
+        if self.learning_style and self.learning_style not in ['visual', 'auditory', 'kinesthetic', 'reading']:
             raise ValueError("Learning style must be 'visual', 'auditory', 'kinesthetic', or 'reading'")
         
-        if not self.job_position.strip():
-            raise ValueError("Job position is required")
+        # Validate job position (keep for compatibility, but make optional)
+        if self.job_position and not self.job_position.strip():
+            raise ValueError("Job position cannot be empty if provided")
         
-        if not self.activity_sector.strip():
-            raise ValueError("Activity sector is required")
+        # Validate activity sector (keep for compatibility, but make optional)
+        if self.activity_sector and not self.activity_sector.strip():
+            raise ValueError("Activity sector cannot be empty if provided")
         
-        if not self.country.strip():
-            raise ValueError("Country is required")
+        # Validate country (keep for compatibility, but make optional)
+        if self.country and not self.country.strip():
+            raise ValueError("Country cannot be empty if provided")
+        
+        # Validate training duration (new field)
+        if self.training_duration and self.training_duration not in ['2h', '4h', '6h', '1 jour', '1.5 jour', '2 jours', '3 jours']:
+            raise ValueError("Training duration must be one of: 2h, 4h, 6h, 1 jour, 1.5 jour, 2 jours, 3 jours")
+        
+        # Validate objectives (new field - no specific validation, just check if string when provided)
+        if self.objectives is not None and not isinstance(self.objectives, str):
+            raise ValueError("Objectives must be a string")
         
         if self.total_time_spent < 0:
             raise ValueError("Total time spent cannot be negative")
@@ -79,7 +99,9 @@ class LearnerSession:
         job_position: Optional[str] = None,
         activity_sector: Optional[str] = None,
         country: Optional[str] = None,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        objectives: Optional[str] = None,
+        training_duration: Optional[str] = None
     ) -> None:
         """Update learner profile information"""
         if experience_level is not None:
@@ -94,6 +116,10 @@ class LearnerSession:
             self.country = country
         if language is not None:
             self.language = language
+        if objectives is not None:
+            self.objectives = objectives
+        if training_duration is not None:
+            self.training_duration = training_duration
         
         self.last_activity_at = datetime.utcnow()
         self._validate()
@@ -132,6 +158,8 @@ class LearnerSession:
             "activity_sector": self.activity_sector,
             "country": self.country,
             "language": self.language,
+            "objectives": self.objectives,
+            "training_duration": self.training_duration,
             "progress": {
                 "current_slide": self.current_slide_number,
                 "total_time_spent": self.total_time_spent,
@@ -155,5 +183,7 @@ class LearnerSession:
             "learning_style": self.learning_style,
             "job_position": self.job_position,
             "activity_sector": self.activity_sector,
-            "language": self.language
+            "language": self.language,
+            "objectives": self.objectives,
+            "training_duration": self.training_duration
         }

@@ -617,13 +617,16 @@ class SlideGenerationService:
         Returns:
             Prompt optimisé pour la simplification
         """
-        # Extraire les informations du profil apprenant
+        # Extraire les informations du profil apprenant (nouvelle structure)
         profile_info = {
-            "niveau": learner_profile.experience_level or "débutant", 
+            "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            "langue": learner_profile.language or "français",
+            # Legacy fields for backward compatibility
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
-            "secteur": learner_profile.activity_sector or "non spécifié",
-            "langue": learner_profile.language or "français"
+            "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
         prompt = f"""Tu es un expert pédagogue spécialisé dans la simplification de contenu éducatif.
@@ -636,16 +639,17 @@ CONTENU ACTUEL À SIMPLIFIER :
 
 PROFIL APPRENANT :
 - Niveau d'expérience : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur d'activité : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs de formation : {profile_info['objectifs']}  
+- Durée souhaitée : {profile_info['duree']}
 - Langue : {profile_info['langue']}
+- Style d'apprentissage (legacy) : {profile_info['style_apprentissage']}
 
 RÈGLES DE SIMPLIFICATION :
 1. **Langage accessible** : Utilise un vocabulaire simple et clair adapté au niveau {profile_info['niveau']}
 2. **Structure claire** : Conserve la structure markdown mais simplifie la présentation
 3. **Concepts essentiels** : Concentre-toi sur les points les plus importants
-4. **Exemples concrets** : Remplace les concepts abstraits par des exemples pratiques du secteur {profile_info['secteur']}
+4. **Exemples concrets** : Remplace les concepts abstraits par des exemples pratiques adaptés au contexte {profile_info['poste_et_secteur']}
 5. **Format {profile_info['style_apprentissage']}** : Adapte au style d'apprentissage privilégié
 6. **Phrases courtes** : Utilise des phrases courtes et directes
 7. **Points clés** : Mets en évidence les informations essentielles
@@ -682,13 +686,16 @@ Génère maintenant la version simplifiée au format JSON :"""
         Returns:
             Prompt optimisé pour l'approfondissement
         """
-        # Extraire les informations du profil apprenant
+        # Extraire les informations du profil apprenant (nouvelle structure)
         profile_info = {
-            "niveau": learner_profile.experience_level or "débutant", 
+            "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            "langue": learner_profile.language or "français",
+            # Legacy fields for backward compatibility
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
-            "secteur": learner_profile.activity_sector or "non spécifié",
-            "langue": learner_profile.language or "français"
+            "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
         prompt = f"""Tu es un expert pédagogue spécialisé dans l'approfondissement de contenu éducatif.
@@ -701,16 +708,17 @@ CONTENU ACTUEL À APPROFONDIR :
 
 PROFIL APPRENANT :
 - Niveau d'expérience : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur d'activité : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs de formation : {profile_info['objectifs']}  
+- Durée souhaitée : {profile_info['duree']}
 - Langue : {profile_info['langue']}
+- Style d'apprentissage (legacy) : {profile_info['style_apprentissage']}
 
 RÈGLES D'APPROFONDISSEMENT :
 1. **Vocabulaire technique** : Utilise des termes métier et concepts avancés adaptés au niveau {profile_info['niveau']}
 2. **Détails techniques** : Ajoute des explications techniques, processus, mécanismes
 3. **Concepts avancés** : Introduis des notions plus complexes et spécialisées
-4. **Exemples techniques** : Inclus des exemples détaillés et cas d'usage du secteur {profile_info['secteur']}
+4. **Exemples techniques** : Inclus des exemples détaillés et cas d'usage adaptés au contexte {profile_info['poste_et_secteur']}
 5. **Format {profile_info['style_apprentissage']}** : Adapte au style d'apprentissage privilégié
 6. **Approfondissements** : Ajoute des sections avec plus de détails, références, liens
 7. **Précisions métier** : Inclus des spécificités techniques du domaine
@@ -741,13 +749,16 @@ Génère maintenant la version approfondie au format JSON :"""
     ) -> str:
         """Construire le prompt personnalisé pour générer le contenu de la slide"""
         
-        # Extraire les informations du profil apprenant de base
+        # Extraire les informations du profil apprenant de base (nouvelle structure)
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            "langue": learner_profile.language or "français",
+            # Legacy fields for backward compatibility
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
-            "secteur": learner_profile.activity_sector or "non spécifié",
-            "langue": learner_profile.language or "français"
+            "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
         # Récupérer le profil enrichi s'il existe
@@ -796,10 +807,11 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau d'expérience : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur d'activité : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs de formation : {profile_info['objectifs']}  
+- Durée souhaitée : {profile_info['duree']}
 - Langue : {profile_info['langue']}
+- Style d'apprentissage (legacy) : {profile_info['style_apprentissage']}
 {enriched_profile_context}
 
 INSTRUCTIONS :
@@ -866,13 +878,16 @@ Génère maintenant le contenu de la slide :"""
     def _build_plan_slide_prompt(self, slide_title: str, learner_profile: Any, training_plan: Any) -> str:
         """Construire le prompt pour une slide de type plan"""
         
-        # Extraire les informations du profil apprenant
+        # Extraire les informations du profil apprenant (nouvelle structure)
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            "langue": learner_profile.language or "français",
+            # Legacy fields for backward compatibility  
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
-            "secteur": learner_profile.activity_sector or "non spécifié",
-            "langue": learner_profile.language or "français"
+            "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
         # Récupérer le profil enrichi s'il existe
@@ -896,9 +911,10 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
+- Durée : {profile_info['duree']}
+- Style (legacy) : {profile_info['style_apprentissage']}
 - Langue : {profile_info['langue']}
 {enriched_context}
 
@@ -909,7 +925,7 @@ CONSIGNES POUR SLIDE DE PLAN :
 1. Crée une vue d'ensemble engageante et complète de la formation
 2. Commence par une introduction personnalisée au profil apprenant
 3. Structure markdown hiérarchique :
-   - # Titre principal de la formation (adapté au secteur {profile_info['secteur']})
+   - # Titre principal de la formation (adapté au contexte {profile_info['poste_et_secteur']})
    - ## 👋 Bienvenue dans votre formation personnalisée
    - ## 📋 Plan de la formation
    - ### Étape 1: [Titre] → Modules → Objectifs principaux
@@ -917,7 +933,7 @@ CONSIGNES POUR SLIDE DE PLAN :
    - (etc. pour toutes les étapes)
    - ## 🎯 Ce que vous allez apprendre
    - ## ⏱️ Durée estimée et recommandations
-4. Adapte le vocabulaire au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+4. Adapte le vocabulaire au niveau {profile_info['niveau']} et contexte {profile_info['poste_et_secteur']}
 5. Style {profile_info['style_apprentissage']} : privilégie les éléments visuels/pratiques/théoriques selon le style
 6. Ton motivant et professionnel
 
@@ -980,8 +996,11 @@ Génère maintenant le contenu de la slide de plan au format JSON avec le markdo
         
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            # Legacy fields for backward compatibility  
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
             "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
@@ -1006,9 +1025,10 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
+- Durée : {profile_info['duree']}
+- Style (legacy) : {profile_info['style_apprentissage']}
 {enriched_context}
 
 CONTEXTE DE L'ÉTAPE :
@@ -1023,10 +1043,10 @@ CONSIGNES POUR SLIDE D'ÉTAPE :
    - ## 🚀 Objectifs d'apprentissage spécifiques
    - ## ⏱️ Ce qui vous attend (durée et approche)
    - ## 💡 Conseil pour réussir cette étape
-3. Adapte le vocabulaire au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+3. Adapte le vocabulaire au niveau {profile_info['niveau']} et contexte {profile_info['poste_et_secteur']}
 4. Style {profile_info['style_apprentissage']} : privilégie les éléments adaptés au style
 5. Ton motivant et bienveillant qui donne envie de continuer
-6. Personnalise selon le poste {profile_info['poste']}
+6. Personnalise selon le contexte professionnel {profile_info['poste_et_secteur']}
 
 CONTRAINTES STRICTES :
 - Tu dois répondre avec un JSON qui contient le contenu markdown dans le champ "slide_content"
@@ -1089,8 +1109,11 @@ Génère maintenant le contenu de la slide d'étape au format JSON avec le markd
         
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            "duree": getattr(learner_profile, 'training_duration', None) or "4h",
+            # Legacy fields for backward compatibility  
             "style_apprentissage": learner_profile.learning_style or "visuel",
-            "poste": learner_profile.job_position or "non spécifié",
             "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
@@ -1115,9 +1138,10 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau : {profile_info['niveau']}
-- Style d'apprentissage : {profile_info['style_apprentissage']}
-- Poste : {profile_info['poste']}
-- Secteur : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
+- Durée : {profile_info['duree']}
+- Style (legacy) : {profile_info['style_apprentissage']}
 {enriched_context}
 
 CONTEXTE DU MODULE :
@@ -1130,19 +1154,19 @@ CONSIGNES POUR SLIDE DE MODULE :
    - ## 🎯 Objectif principal de ce module
    - ## 📚 Ce que vous allez découvrir (sous-modules)
    - ## 🛠️ Compétences pratiques à acquérir
-   - ## 💼 Applications dans votre métier de {profile_info['poste']}
+   - ## 💼 Applications dans votre contexte professionnel : {profile_info['poste_et_secteur']}
    - ## ⚡ Points clés à retenir
    - ## ⏭️ Comment aborder ce module
-3. Adapte spécifiquement au secteur {profile_info['secteur']} avec exemples concrets
+3. Adapte spécifiquement au contexte {profile_info['poste_et_secteur']} avec exemples concrets
 4. Style {profile_info['style_apprentissage']} : privilégie l'approche la plus adaptée
 5. Ton professionnel mais accessible, avec focus sur l'application pratique
-6. Connecte avec les besoins métier du poste {profile_info['poste']}
+6. Connecte avec les besoins métier du contexte professionnel {profile_info['poste_et_secteur']}
 
 CONTRAINTES :
 - Réponds UNIQUEMENT avec le contenu markdown pur (pas de JSON)
 - Longueur : 250-400 mots
 - Reste très concret et applicable
-- Utilise des exemples du secteur {profile_info['secteur']}
+- Utilise des exemples adaptés au contexte {profile_info['poste_et_secteur']}
 - Termine par une accroche vers le premier sous-module
 
 Génère maintenant le contenu de la slide de module :"""
@@ -1197,6 +1221,9 @@ Génère maintenant le contenu de la slide de module :"""
         
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            # Legacy field for backward compatibility
             "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
@@ -1208,7 +1235,8 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau : {profile_info['niveau']}
-- Secteur : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
 
 CONSIGNES POUR SLIDE DE QUIZ :
 1. Crée une évaluation interactive des connaissances acquises
@@ -1220,7 +1248,7 @@ CONSIGNES POUR SLIDE DE QUIZ :
    - etc. (5 questions au total)
    - ## Comment utiliser le chat pour répondre
 3. 5 questions variées : QCM, questions ouvertes, cas pratiques
-4. Adapté au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+4. Adapté au niveau {profile_info['niveau']} et contexte {profile_info['poste_et_secteur']}
 5. Instructions claires pour utiliser le chat IA pour les réponses
 6. Longueur : 300-500 mots
 
@@ -1275,6 +1303,9 @@ Génère maintenant le contenu de la slide de quiz :"""
         
         profile_info = {
             "niveau": learner_profile.experience_level or "débutant",
+            "poste_et_secteur": getattr(learner_profile, 'job_position', None) or "non spécifié",
+            "objectifs": getattr(learner_profile, 'objectives', None) or "développer ses compétences",
+            # Legacy field for backward compatibility
             "secteur": learner_profile.activity_sector or "non spécifié"
         }
         
@@ -1329,7 +1360,8 @@ CONTEXTE :
 
 PROFIL APPRENANT :
 - Niveau : {profile_info['niveau']}
-- Secteur : {profile_info['secteur']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
 
 {previous_content}
 
@@ -1348,7 +1380,7 @@ CONSIGNES POUR SLIDE DE QUIZ :
    - ## ✅ Ce que vous allez apprendre
 3. 5 questions variées adaptées au niveau {profile_info['niveau']}
 4. Questions basées spécifiquement sur le contenu précédent fourni
-5. Adapté au secteur {profile_info['secteur']} avec exemples concrets
+5. Adapté au contexte {profile_info['poste_et_secteur']} avec exemples concrets
 6. Instructions claires pour utiliser le chat IA pour obtenir des corrections
 7. Longueur : 400-600 mots
 

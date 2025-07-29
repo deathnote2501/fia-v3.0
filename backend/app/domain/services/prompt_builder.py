@@ -35,12 +35,58 @@ class PromptBuilder:
         }
     }
     
-    # Learning style adaptations
+    # Learning style adaptations (legacy support)
     STYLE_ADAPTATIONS = {
         'visual': 'diagrammes, schémas, infographies et supports visuels',
         'auditory': 'discussions, présentations orales et explications audio',
         'kinesthetic': 'exercices pratiques, manipulations et activités hands-on',
         'reading': 'textes détaillés, documentation et ressources écrites'
+    }
+    
+    # Training duration adaptations (new structure)
+    DURATION_ADAPTATIONS = {
+        '2h': {
+            'modules_per_stage': '1-2 modules',
+            'slides_per_module': '2-4 slides',
+            'total_concept_depth': 'concepts essentiels uniquement',
+            'pace': 'rapide et concentré'
+        },
+        '4h': {
+            'modules_per_stage': '2-3 modules',
+            'slides_per_module': '3-6 slides',
+            'total_concept_depth': 'concepts principaux avec exemples',
+            'pace': 'modéré avec pratique'
+        },
+        '6h': {
+            'modules_per_stage': '2-4 modules',
+            'slides_per_module': '4-8 slides',
+            'total_concept_depth': 'concepts détaillés avec cas pratiques',
+            'pace': 'approfondi avec exercices'
+        },
+        '1 jour': {
+            'modules_per_stage': '3-4 modules',
+            'slides_per_module': '5-8 slides',
+            'total_concept_depth': 'exploration complète avec multiples exemples',
+            'pace': 'méthodique avec temps de réflexion'
+        },
+        '1.5 jour': {
+            'modules_per_stage': '3-5 modules',
+            'slides_per_module': '6-10 slides',
+            'total_concept_depth': 'maîtrise approfondie avec projets pratiques',
+            'pace': 'progressif avec mise en application'
+        },
+        '2 jours': {
+            'modules_per_stage': '4-6 modules',
+            'slides_per_module': '8-12 slides',
+            'total_concept_depth': 'expertise complète avec études de cas avancées',
+            'pace': 'complet avec projets et évaluations'
+        },
+        '3 jours': {
+            'modules_per_stage': '5-8 modules',
+            'slides_per_module': '10-15 slides',
+            'total_concept_depth': 'formation experte avec certification',
+            'pace': 'intensif avec projets complexes et mentorat'
+        }
     }
     
     # Required training plan stages (fixed structure)
@@ -77,14 +123,18 @@ class PromptBuilder:
         logger.info("🎯 PROMPT [BUILDER] initialized")
     
     def extract_learner_profile(self, learner_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and normalize learner profile data"""
+        """Extract and normalize learner profile data - Updated for new profile structure"""
         return {
             'experience_level': learner_data.get('experience_level', 'beginner'),
+            'job_and_sector': learner_data.get('job_and_sector') or learner_data.get('job_position', 'professionnel'),
+            'objectives': learner_data.get('objectives', 'développer mes compétences'),
+            'training_duration': learner_data.get('training_duration', '4h'),
+            'language': learner_data.get('language', 'fr'),
+            # Legacy fields for backward compatibility
             'learning_style': learner_data.get('learning_style', 'visual'),
-            'job_position': learner_data.get('job_position', 'professionnel'),
-            'activity_sector': learner_data.get('activity_sector', 'général'),
-            'country': learner_data.get('country', 'France'),
-            'language': learner_data.get('language', 'fr')
+            'job_position': learner_data.get('job_position'),
+            'activity_sector': learner_data.get('activity_sector'),
+            'country': learner_data.get('country')
         }
     
     def get_level_config(self, experience_level: str) -> Dict[str, str]:
@@ -95,10 +145,17 @@ class PromptBuilder:
         )
     
     def get_style_preference(self, learning_style: str) -> str:
-        """Get content style preference based on learning style"""
+        """Get content style preference based on learning style (legacy support)"""
         return self.STYLE_ADAPTATIONS.get(
             learning_style, 
             self.STYLE_ADAPTATIONS['visual']
+        )
+    
+    def get_duration_config(self, training_duration: str) -> Dict[str, str]:
+        """Get configuration based on training duration"""
+        return self.DURATION_ADAPTATIONS.get(
+            training_duration,
+            self.DURATION_ADAPTATIONS['4h']  # Default to 4h
         )
     
     def build_example_structure(self) -> Dict[str, Any]:
@@ -172,15 +229,18 @@ class PromptBuilder:
         Returns:
             Optimized prompt for personalized plan generation
         """
-        # Extract profile information
+        # Extract profile information (updated for new structure)
         level = learner_profile.get('experience_level', 'beginner')
+        job_and_sector = learner_profile.get('job_and_sector', 'professionnel')
+        objectives = learner_profile.get('objectives', 'développer mes compétences')
+        training_duration = learner_profile.get('training_duration', '4h')
+        
+        # Legacy fields for compatibility
         style = learner_profile.get('learning_style', 'visual')
-        job = learner_profile.get('job_position', 'professionnel')
-        sector = learner_profile.get('activity_sector', 'général')
-        country = learner_profile.get('country', 'France')
         
         # Get adaptations
         level_config = self.get_level_config(level)
+        duration_config = self.get_duration_config(training_duration)
         style_preference = self.get_style_preference(style)
         
         # Build example structure
@@ -191,20 +251,23 @@ class PromptBuilder:
 
 PROFIL DE L'APPRENANT:
 - Niveau d'expérience: {level}
-- Style d'apprentissage: {style}
-- Poste occupé: {job}
-- Secteur d'activité: {sector}
-- Pays: {country}
+- Poste et secteur: {job_and_sector}
+- Objectifs de formation: {objectives}
+- Durée souhaitée: {training_duration}
+- Style d'apprentissage (legacy): {style}
 
 CONTENU DU DOCUMENT DE FORMATION:
 {document_content}
 
-CONSIGNES DE PERSONNALISATION:
+CONSIGNES DE PERSONNALISATION BASÉES SUR LA DURÉE ({training_duration}):
 1. Adapte la complexité: {level_config['complexity']}
-2. Rythme de progression: {level_config['pace']}
-3. Nombre de slides: {level_config['slides_per_concept']}
-4. Type de contenu privilégié: {style_preference}
-5. Exemples à utiliser: {level_config['examples']} du secteur {sector}
+2. Structure par étape: {duration_config['modules_per_stage']}
+3. Slides par module: {duration_config['slides_per_module']}
+4. Profondeur des concepts: {duration_config['total_concept_depth']}
+5. Rythme de progression: {duration_config['pace']}
+6. Type de contenu privilégié: {style_preference}
+7. Exemples à utiliser: {level_config['examples']} adaptés au contexte {job_and_sector}
+8. Objectifs à atteindre: {objectives}
 
 STRUCTURE OBLIGATOIRE - EXACTEMENT 5 ÉTAPES:
 Étape 1: "Mise en contexte" - Introduction, enjeux et objectifs
@@ -233,13 +296,15 @@ CONTRAINTES STRICTES:
   * 1 slide "quiz" après chaque sous-module (quiz_slide)
   * 1 slide "quiz" après chaque module (module_quiz_slide)
   * 1 slide "quiz" après chaque étape (stage_quiz_slide)
-- Adapte le contenu au profil {level}/{style}/{sector}
-- Utilise des exemples concrets du secteur {sector}
-- Privilégie le style d'apprentissage {style}
+- Adapte le contenu au profil {level}/{training_duration}/{job_and_sector}
+- Utilise des exemples concrets adaptés au contexte {job_and_sector}
+- Privilégie le style d'apprentissage {style} (legacy)
+- RESPECTE IMPÉRATIVEMENT la durée {training_duration} avec {duration_config['modules_per_stage']} et {duration_config['slides_per_module']}
+- INTÈGRE les objectifs de l'apprenant: {objectives}
 
 GÉNÈRE MAINTENANT le plan de formation personnalisé en JSON strictement conforme au schéma."""
         
-        logger.info(f"🎯 PROMPT [BUILT] Level: {level}, Style: {style}, Sector: {sector}")
+        logger.info(f"🎯 PROMPT [BUILT] Level: {level}, Duration: {training_duration}, Context: {job_and_sector}")
         
         return prompt
     
@@ -257,8 +322,11 @@ GÉNÈRE MAINTENANT le plan de formation personnalisé en JSON strictement confo
             Prompt for slide content generation
         """
         level = learner_profile.get('experience_level', 'beginner')
+        job_and_sector = learner_profile.get('job_and_sector', 'professionnel')
+        objectives = learner_profile.get('objectives', 'développer mes compétences')
+        
+        # Legacy support
         style = learner_profile.get('learning_style', 'visual')
-        sector = learner_profile.get('activity_sector', 'général')
         
         style_preference = self.get_style_preference(style)
         level_config = self.get_level_config(level)
@@ -273,19 +341,21 @@ CONTEXTE:
 
 PROFIL APPRENANT:
 - Niveau: {level}
-- Style: {style} 
-- Secteur: {sector}
+- Contexte professionnel: {job_and_sector}
+- Objectifs: {objectives}
+- Style (legacy): {style}
 
 CONSIGNES:
 1. Contenu adapté au niveau {level}: {level_config['complexity']}
 2. Style privilégié: {style_preference}
-3. Exemples du secteur {sector}
+3. Exemples adaptés au contexte {job_and_sector}
 4. Contenu engageant et interactif
+5. Aligné avec les objectifs: {objectives}
 
 Créé le contenu de cette slide en format structuré avec:
 - Introduction du concept
 - Explication principale
-- Exemple concret du secteur {sector}
+- Exemple concret adapté au contexte {job_and_sector}
 - Point clé à retenir
 - Question ou exercice d'engagement
 

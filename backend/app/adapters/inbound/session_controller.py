@@ -276,7 +276,10 @@ async def validate_session_token(
                 "language": learner_session.language,
                 "current_slide_number": learner_session.current_slide_number,
                 "total_time_spent": learner_session.total_time_spent,
-                "started_at": learner_session.started_at.isoformat() if learner_session.started_at else None
+                "started_at": learner_session.started_at.isoformat() if learner_session.started_at else None,
+                # New fields for profile refactoring
+                "objectives": learner_session.objectives,
+                "training_duration": learner_session.training_duration
             }
         
         return response_data
@@ -334,16 +337,20 @@ async def save_learner_profile(
                 detail="A profile already exists for this email in this training session"
             )
         
-        # Create learner session
+        # Create learner session with new profile structure
         learner_session = LearnerSession(
             training_session_id=training_session.id,
             email=profile_data.email,
             experience_level=profile_data.experience_level,
-            learning_style=profile_data.learning_style,
-            job_position=profile_data.job_position.strip(),
-            activity_sector=profile_data.activity_sector.strip(),
-            country=profile_data.country.strip(),
-            language=profile_data.language or "fr"
+            # Legacy fields set to None for new profiles (keeping for backward compatibility)
+            learning_style=None,
+            job_position=profile_data.job_and_sector.strip(),  # Store combined value in job_position for now
+            activity_sector=None,
+            country=None,
+            language=profile_data.language or "fr",
+            # New fields for profile refactoring
+            objectives=profile_data.objectives.strip(),
+            training_duration=profile_data.training_duration
         )
         
         # Sauvegarder en base

@@ -4,18 +4,25 @@ Schemas Pydantic minimaux pour génération de plans
 """
 
 from pydantic import BaseModel, Field, validator, ValidationError
-from typing import Dict, Any, List, Literal
+from typing import Dict, Any, List, Literal, Optional
 from uuid import UUID
 
 
 class LearnerProfileRequest(BaseModel):
-    """Schema minimal pour profil apprenant"""
+    """Schema minimal pour profil apprenant - Updated for new profile structure"""
     experience_level: str = Field(..., description="Niveau: beginner, intermediate, advanced")
-    learning_style: str = Field(..., description="Style: visual, auditory, kinesthetic, reading")
-    job_position: str = Field(..., description="Poste occupé")
-    activity_sector: str = Field(..., description="Secteur d'activité") 
-    country: str = Field(default="France", description="Pays de résidence")
     language: str = Field(default="fr", description="Langue préférée")
+    
+    # New fields from profile refactoring
+    job_and_sector: Optional[str] = Field(None, description="Poste et secteur combinés")
+    objectives: Optional[str] = Field(None, description="Objectifs de formation")
+    training_duration: Optional[str] = Field(None, description="Durée souhaitée")
+    
+    # Legacy fields - now optional for backward compatibility
+    learning_style: Optional[str] = Field(None, description="Style: visual, auditory, kinesthetic, reading")
+    job_position: Optional[str] = Field(None, description="Poste occupé")
+    activity_sector: Optional[str] = Field(None, description="Secteur d'activité") 
+    country: Optional[str] = Field(None, description="Pays de résidence")
 
 
 class PlanGenerationRequest(BaseModel):

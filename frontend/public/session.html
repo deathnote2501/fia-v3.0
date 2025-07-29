@@ -194,43 +194,33 @@
                                             </div>
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="learning_style" class="form-label">Learning Style *</label>
-                                                    <select class="form-select" id="learning_style" name="learning_style" required>
-                                                        <option value="">Choose your style...</option>
-                                                        <option value="visual">Visual (images, diagrams)</option>
-                                                        <option value="auditory">Auditory (listening, discussion)</option>
-                                                        <option value="kinesthetic">Kinesthetic (hands-on, practice)</option>
-                                                        <option value="reading">Reading/Writing (text-based)</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="job_position" class="form-label">Job Position *</label>
-                                                    <input type="text" class="form-control" id="job_position" name="job_position" required 
-                                                           placeholder="e.g., Software Developer">
-                                                </div>
-                                            </div>
+                                        <div class="mb-3">
+                                            <label for="job_and_sector" class="form-label">Job Position & Sector *</label>
+                                            <input type="text" class="form-control" id="job_and_sector" name="job_and_sector" required 
+                                                   placeholder="e.g., Software Developer in Information Technology">
+                                            <div class="form-text">Your current job position and the sector you work in</div>
                                         </div>
 
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="activity_sector" class="form-label">Activity Sector *</label>
-                                                    <input type="text" class="form-control" id="activity_sector" name="activity_sector" required 
-                                                           placeholder="e.g., Information Technology">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="country" class="form-label">Country *</label>
-                                                    <input type="text" class="form-control" id="country" name="country" required 
-                                                           placeholder="e.g., France">
-                                                </div>
-                                            </div>
+                                        <div class="mb-3">
+                                            <label for="objectives" class="form-label">Training Objectives *</label>
+                                            <textarea class="form-control" id="objectives" name="objectives" rows="3" required 
+                                                      placeholder="What do you hope to achieve with this training? What specific skills or knowledge are you looking to gain?"></textarea>
+                                            <div class="form-text">Help us personalize your learning experience (minimum 5 characters)</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="training_duration" class="form-label">Preferred Training Duration *</label>
+                                            <select class="form-select" id="training_duration" name="training_duration" required>
+                                                <option value="">Choose your preferred duration...</option>
+                                                <option value="2h">2 hours</option>
+                                                <option value="4h">4 hours</option>
+                                                <option value="6h">6 hours</option>
+                                                <option value="1 jour">1 day</option>
+                                                <option value="1.5 jour">1.5 days</option>
+                                                <option value="2 jours">2 days</option>
+                                                <option value="3 jours">3 days</option>
+                                            </select>
+                                            <div class="form-text">This will help us structure the appropriate number of modules and slides</div>
                                         </div>
 
                                         <div class="mb-4">
@@ -312,12 +302,14 @@
                         const profileData = {
                             email: formData.get('email'),
                             experience_level: formData.get('experience_level'),
-                            learning_style: formData.get('learning_style'),
-                            job_position: formData.get('job_position'),
-                            activity_sector: formData.get('activity_sector'),
-                            country: formData.get('country'),
+                            job_and_sector: formData.get('job_and_sector'),
+                            objectives: formData.get('objectives'),
+                            training_duration: formData.get('training_duration'),
                             language: formData.get('language') || 'fr'
                         };
+                        
+                        // Debug: Log the data being sent
+                        console.log('Sending profile data:', profileData);
                         
                         // Submit profile
                         const response = await fetch(`/api/session/${this.token}/profile`, {
@@ -328,9 +320,34 @@
                             body: JSON.stringify(profileData)
                         });
                         
+                        // Debug: Log response details
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers);
+                        
                         if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.detail || 'Failed to save profile');
+                            let errorMessage = 'Failed to save profile';
+                            try {
+                                const errorData = await response.json();
+                                console.error('Server error data:', errorData);
+                                
+                                if (errorData.detail) {
+                                    if (typeof errorData.detail === 'string') {
+                                        errorMessage = errorData.detail;
+                                    } else if (Array.isArray(errorData.detail)) {
+                                        // Pydantic validation errors
+                                        errorMessage = errorData.detail.map(err => 
+                                            `${err.loc?.join?.('.')} || ${err.type}): ${err.msg}`
+                                        ).join('; ');
+                                    } else {
+                                        errorMessage = JSON.stringify(errorData.detail);
+                                    }
+                                } else {
+                                    errorMessage = JSON.stringify(errorData);
+                                }
+                            } catch (parseError) {
+                                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                            }
+                            throw new Error(errorMessage);
                         }
                         
                         // Show success message

@@ -35,7 +35,10 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
             current_slide_number=model.current_slide_number,
             total_time_spent=model.total_time_spent,
             started_at=model.started_at,
-            last_activity_at=model.last_activity_at
+            last_activity_at=model.last_activity_at,
+            # New fields for profile refactoring
+            objectives=model.objectives,
+            training_duration=model.training_duration
         )
     
     def _entity_to_model(self, entity: LearnerSession) -> LearnerSessionModel:
@@ -54,7 +57,10 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
             current_slide_number=entity.current_slide_number,
             total_time_spent=entity.total_time_spent,
             started_at=entity.started_at,
-            last_activity_at=entity.last_activity_at
+            last_activity_at=entity.last_activity_at,
+            # New fields for profile refactoring
+            objectives=entity.objectives,
+            training_duration=entity.training_duration
         )
     
     async def create(self, learner_session: LearnerSession) -> LearnerSession:
@@ -108,6 +114,9 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
         model.current_slide_number = learner_session.current_slide_number
         model.total_time_spent = learner_session.total_time_spent
         model.last_activity_at = learner_session.last_activity_at
+        # New fields for profile refactoring
+        model.objectives = learner_session.objectives
+        model.training_duration = learner_session.training_duration
         
         await self.session.commit()
         await self.session.refresh(model)
