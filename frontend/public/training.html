@@ -722,6 +722,9 @@
                 this.currentSlideContent = content;
                 console.log('💾 [DISPLAY] Current slide content stored for interactions');
                 
+                // Mettre à jour le fil d'Ariane (breadcrumb)
+                this.updateBreadcrumb(slideData);
+                
                 this.container.innerHTML = `
                     <div class="row">
                         <!-- Main slide content (full width) -->
@@ -1207,6 +1210,57 @@
                         }
                     }
                 });
+            }
+            
+            updateBreadcrumb(slideData) {
+                console.log('🧭🧭🧭 [BREADCRUMB] === MISE À JOUR BREADCRUMB ===');
+                console.log('🧭🧭🧭 [BREADCRUMB] slideData:', slideData);
+                
+                const breadcrumbElement = document.getElementById('progress-breadcrumb');
+                if (!breadcrumbElement) {
+                    console.log('⚠️⚠️⚠️ [BREADCRUMB] Élément progress-breadcrumb non trouvé');
+                    return;
+                }
+                
+                // Extraire les informations de breadcrumb
+                let breadcrumb = null;
+                
+                // Priorité: breadcrumb direct dans slideData
+                if (slideData.breadcrumb) {
+                    console.log('🧭🧭🧭 [BREADCRUMB] BRANCHE 1: breadcrumb direct détecté');
+                    breadcrumb = slideData.breadcrumb;
+                } else if (slideData.data && slideData.data.breadcrumb) {
+                    console.log('🧭🧭🧭 [BREADCRUMB] BRANCHE 2: breadcrumb dans data détecté');
+                    breadcrumb = slideData.data.breadcrumb;
+                }
+                
+                console.log('🧭🧭🧭 [BREADCRUMB] Breadcrumb extrait:', breadcrumb);
+                
+                // Valeurs par défaut si pas de breadcrumb
+                if (!breadcrumb) {
+                    console.log('🧭🧭🧭 [BREADCRUMB] Utilisation valeurs par défaut');
+                    breadcrumb = {
+                        stage_name: "Formation",
+                        module_name: "Module",
+                        submodule_name: "Contenu"
+                    };
+                }
+                
+                // Construire le HTML du breadcrumb avec les styles appropriés
+                const breadcrumbHtml = `
+                    <span class="progress-text">
+                        ${breadcrumb.stage_name} 
+                        <i class="bi bi-chevron-right text-muted mx-1"></i> 
+                        ${breadcrumb.module_name} 
+                        <i class="bi bi-chevron-right text-muted mx-1"></i> 
+                        <span class="current-module">${breadcrumb.submodule_name}</span>
+                    </span>
+                `;
+                
+                console.log('🧭🧭🧭 [BREADCRUMB] HTML généré:', breadcrumbHtml);
+                breadcrumbElement.innerHTML = breadcrumbHtml;
+                
+                console.log('✅✅✅ [BREADCRUMB] Breadcrumb mis à jour avec succès');
             }
             
             updateNavigationButtonStates() {

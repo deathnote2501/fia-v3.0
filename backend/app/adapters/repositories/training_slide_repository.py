@@ -382,3 +382,60 @@ class TrainingSlideRepository:
             return result.scalar_one_or_none()
         except Exception:
             return None
+    
+    async def get_slide_breadcrumb(self, slide_id: UUID) -> dict:
+        """
+        Récupérer les informations de fil d'Ariane pour une slide donnée
+        
+        Returns:
+            Dict avec stage_name, module_name, submodule_name
+        """
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        try:
+            from app.infrastructure.models.training_submodule_model import TrainingSubmoduleModel
+            from app.infrastructure.models.training_module_model import TrainingModuleModel
+            
+            # Requête pour récupérer toutes les informations en une seule fois
+            result = await self.session.execute(
+                select(
+                    TrainingModuleModel.stage_number,
+                    TrainingModuleModel.title.label('module_title'),
+                    TrainingSubmoduleModel.title.label('submodule_title')
+                )
+                .join(TrainingSubmoduleModel, TrainingModuleModel.id == TrainingSubmoduleModel.module_id)
+                .join(TrainingSlideModel, TrainingSubmoduleModel.id == TrainingSlideModel.submodule_id)
+                .where(TrainingSlideModel.id == slide_id)
+            )
+            
+            row = result.first()
+            if not row:
+                return {
+                    "stage_name": "Formation",
+                    "module_name": "Module",
+                    "submodule_name": "Contenu"
+                }
+            
+            # Mapping des numéros d'étapes vers leurs noms
+            stage_names = {
+                1: "Mise en contexte",
+                2: "Acquisition des fondamentaux", 
+                3: "Construction progressive",
+                4: "Maîtrise",
+                5: "Validation"
+            }
+            
+            return {
+                "stage_name": stage_names.get(row.stage_number, f"Étape {row.stage_number}"),
+                "module_name": row.module_title or "Module",
+                "submodule_name": row.submodule_title or "Contenu"
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting slide breadcrumb: {e}")
+            return {
+                "stage_name": "Formation",
+                "module_name": "Module", 
+                "submodule_name": "Contenu"
+            }

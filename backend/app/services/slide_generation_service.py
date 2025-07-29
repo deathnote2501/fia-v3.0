@@ -125,13 +125,19 @@ class SlideGenerationService:
                 logger.info(f"🏁🏁🏁 SLIDE GENERATION [RESULT] Content LONGUEUR: {len(first_slide.content) if first_slide.content else 'NULL'}")
                 logger.info(f"🏁🏁🏁 SLIDE GENERATION [RESULT] Content FINAL PREVIEW (500 chars): {first_slide.content[:500] if first_slide.content else 'NULL'}")
                 
+                # Récupérer les informations de breadcrumb
+                logger.info(f"🧭🧭🧭 SLIDE GENERATION [BREADCRUMB] === RÉCUPÉRATION BREADCRUMB ===")
+                breadcrumb_info = await slide_repo.get_slide_breadcrumb(first_slide.id)
+                logger.info(f"🧭🧭🧭 SLIDE GENERATION [BREADCRUMB] Breadcrumb info: {breadcrumb_info}")
+                
                 result = {
                     "slide_id": str(first_slide.id),
                     "title": first_slide.title,
                     "content": first_slide.content,
                     "order_in_submodule": first_slide.order_in_submodule,
                     "generated_at": first_slide.generated_at.isoformat() if first_slide.generated_at else None,
-                    "generation_duration": round(duration, 2)
+                    "generation_duration": round(duration, 2),
+                    "breadcrumb": breadcrumb_info
                 }
                 
                 logger.info(f"🏁🏁🏁 SLIDE GENERATION [RESULT] RÉSULTAT DICT CRÉÉ:")
@@ -1585,6 +1591,11 @@ Génère maintenant le contenu de la slide de quiz :"""
                 # Obtenir les informations de position
                 position_info = await slide_repo.get_slide_position(next_slide.id, training_plan.id)
                 
+                # Récupérer les informations de breadcrumb
+                logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [NEXT] === RÉCUPÉRATION BREADCRUMB ===")
+                breadcrumb_info = await slide_repo.get_slide_breadcrumb(next_slide.id)
+                logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [NEXT] Breadcrumb info: {breadcrumb_info}")
+                
                 duration = time.time() - start_time
                 
                 result = {
@@ -1596,7 +1607,8 @@ Génère maintenant le contenu de la slide de quiz :"""
                     "navigation_duration": round(duration, 2),
                     "position": position_info,
                     "has_next": position_info["has_next"],
-                    "has_previous": position_info["has_previous"]
+                    "has_previous": position_info["has_previous"],
+                    "breadcrumb": breadcrumb_info
                 }
                 
                 logger.info(f"✅ SLIDE NAVIGATION [NEXT] Next slide retrieved/generated in {duration:.2f}s")
@@ -1673,6 +1685,11 @@ Génère maintenant le contenu de la slide de quiz :"""
                 current_slide_uuid = UUID(current_slide_id)
                 position_info = await slide_repo.get_slide_position(current_slide_uuid, training_plan.id)
                 
+                # Récupérer les informations de breadcrumb pour la slide précédente
+                logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [PREV] === RÉCUPÉRATION BREADCRUMB ===")
+                breadcrumb_info = await slide_repo.get_slide_breadcrumb(previous_slide.id)
+                logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [PREV] Breadcrumb info: {breadcrumb_info}")
+                
                 duration = time.time() - start_time
                 
                 result = {
@@ -1684,7 +1701,8 @@ Génère maintenant le contenu de la slide de quiz :"""
                     "navigation_duration": round(duration, 2),
                     "position": position_info,
                     "has_next": position_info["has_next"],
-                    "has_previous": position_info["has_previous"]
+                    "has_previous": position_info["has_previous"],
+                    "breadcrumb": breadcrumb_info
                 }
                 
                 logger.info(f"✅ SLIDE NAVIGATION [PREV] Previous slide retrieved in {duration:.2f}s")
