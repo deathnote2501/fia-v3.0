@@ -495,7 +495,7 @@
                     
                     // Au lieu d'afficher l'ancienne page de plan, aller directement à la première slide
                     console.log('🎯 Plan généré avec succès, redirection vers première slide...');
-                    await this.generateAndDisplayFirstSlide();
+                    await this.loadAndDisplayCurrentSlide();
                     
                 } catch (error) {
                     console.error('❌ Error generating training plan:', error);
@@ -536,17 +536,17 @@
             }
             
             
-            async generateAndDisplayFirstSlide() {
+            async loadAndDisplayCurrentSlide() {
                 try {
-                    console.log('🎯 [API] === DÉBUT GÉNÉRATION PREMIÈRE SLIDE ===');
+                    console.log('🎯 [API] === DÉBUT RÉCUPÉRATION SLIDE COURANTE ===');
                     console.log('🎯 [API] Session ID:', this.learnerSession.id);
                     
-                    // Afficher loading pendant génération
+                    // Afficher loading pendant récupération/génération
                     this.showSlideLoading();
                     
-                    // Appeler l'API pour générer la première slide
-                    console.log('🔄 [API] Appel API /api/slides/generate-first/${this.learnerSession.id}');
-                    const response = await fetch(`/api/slides/generate-first/${this.learnerSession.id}`, {
+                    // Appeler l'API pour récupérer la slide courante (reprise de session)
+                    console.log('🔄 [API] Appel API /api/slides/get-current/${this.learnerSession.id}');
+                    const response = await fetch(`/api/slides/get-current/${this.learnerSession.id}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -561,12 +561,19 @@
                         console.log('❌ [API] RESPONSE NOT OK - Récupération erreur...');
                         const errorData = await response.json();
                         console.log('❌ [API] ERROR DATA:', errorData);
-                        throw new Error(errorData.detail || 'Failed to generate first slide');
+                        throw new Error(errorData.detail || 'Failed to get current slide');
                     }
                     
                     console.log('🔄 [API] Parsing JSON response...');
                     const slideData = await response.json();
                     console.log('✅ [API] SLIDE DATA REÇUE (COMPLET):', slideData);
+                    
+                    // Log si on reprend une session en cours
+                    if (slideData.data && slideData.data.is_resuming) {
+                        console.log('🔄 [SESSION] REPRISE DE SESSION DÉTECTÉE - Slide #' + slideData.data.slide_number);
+                    } else {
+                        console.log('🆕 [SESSION] NOUVELLE SESSION - Début de formation');
+                    }
                     console.log('✅ [API] SLIDE DATA TYPE:', typeof slideData);
                     console.log('✅ [API] SLIDE DATA KEYS:', Object.keys(slideData));
                     
@@ -602,7 +609,7 @@
                     this.displaySlideContent(slideData.data || slideData);
                     
                 } catch (error) {
-                    console.error('❌ [API] ERROR generateAndDisplayFirstSlide:', error);
+                    console.error('❌ [API] ERROR loadAndDisplayCurrentSlide:', error);
                     console.error('❌ [API] ERROR STACK:', error.stack);
                     throw error;
                 }

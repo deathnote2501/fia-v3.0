@@ -28,12 +28,62 @@ class MoreDetailsSlideRequest(BaseModel):
     current_content: str
 
 
+@router.post("/get-current/{learner_session_id}", response_model=Dict[str, Any])
+async def get_current_slide(
+    learner_session_id: str
+) -> Dict[str, Any]:
+    """
+    Get the current slide content for a learner session (resume functionality)
+    Uses current_slide_number from learner_session to resume where learner left off
+    
+    Args:
+        learner_session_id: ID of the learner session
+        
+    Returns:
+        Dict containing current slide information and content
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [CURRENT] Getting current slide for session {learner_session_id}")
+        
+        # Apply rate limiting
+        if not await rate_limiter.is_allowed(f"slide_current_{learner_session_id}"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Rate limit exceeded for slide generation"
+            )
+        
+        # Initialize slide generation service
+        slide_service = SlideGenerationService()
+        
+        # Get current slide content
+        result = await slide_service.get_current_slide_content(learner_session_id)
+        
+        logger.info(f"✅ SLIDE API [CURRENT] Current slide retrieved for session {learner_session_id}")
+        return {
+            "success": True,
+            "data": result,
+            "message": "Current slide retrieved successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"❌ SLIDE API [CURRENT_NOT_FOUND] {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [CURRENT_ERROR] Failed to get current slide: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get current slide content"
+        )
+
+
 @router.post("/generate-first/{learner_session_id}", response_model=Dict[str, Any])
 async def generate_first_slide(
     learner_session_id: str
 ) -> Dict[str, Any]:
     """
-    Generate the first slide content for a learner session
+    Generate the first slide content for a learner session (legacy endpoint)
+    DEPRECATED: Use get-current endpoint instead for resume functionality
     
     Args:
         learner_session_id: ID of the learner session
@@ -314,9 +364,10 @@ async def get_previous_slide(
 
 
 @router.get("/session/{learner_session_id}/current")
-async def get_current_slide(learner_session_id: str) -> Dict[str, Any]:
+async def get_current_slide_legacy(learner_session_id: str) -> Dict[str, Any]:
     """
-    Get the current slide for a learner session
+    Get the current slide for a learner session (legacy GET endpoint)
+    Uses current_slide_number from learner_session to resume where learner left off
     
     Args:
         learner_session_id: ID of the learner session
@@ -325,14 +376,13 @@ async def get_current_slide(learner_session_id: str) -> Dict[str, Any]:
         Dict containing current slide information
     """
     try:
-        logger.info(f"🎯 SLIDE API [REQUEST] Getting current slide for session {learner_session_id}")
+        logger.info(f"🎯 SLIDE API [CURRENT_LEGACY] Getting current slide for session {learner_session_id}")
         
-        # TODO: Implement getting current slide based on learner_session.current_slide_number
-        # For now, return first slide if available
+        # Use the new current slide functionality
         slide_service = SlideGenerationService()
-        result = await slide_service.generate_first_slide_content(learner_session_id)
+        result = await slide_service.get_current_slide_content(learner_session_id)
         
-        logger.info(f"✅ SLIDE API [SUCCESS] Current slide retrieved for session {learner_session_id}")
+        logger.info(f"✅ SLIDE API [CURRENT_LEGACY] Current slide retrieved for session {learner_session_id}")
         return {
             "success": True,
             "data": result,
@@ -340,11 +390,11 @@ async def get_current_slide(learner_session_id: str) -> Dict[str, Any]:
         }
         
     except ValueError as e:
-        logger.error(f"❌ SLIDE API [NOT_FOUND] {str(e)}")
+        logger.error(f"❌ SLIDE API [CURRENT_LEGACY_NOT_FOUND] {str(e)}")
         raise HTTPException(status_code=404, detail=str(e))
         
     except Exception as e:
-        logger.error(f"❌ SLIDE API [ERROR] Failed to get current slide: {str(e)}")
+        logger.error(f"❌ SLIDE API [CURRENT_LEGACY_ERROR] Failed to get current slide: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve current slide"

@@ -130,6 +130,19 @@ class SlideGenerationService:
                 breadcrumb_info = await slide_repo.get_slide_breadcrumb(first_slide.id)
                 logger.info(f"🧭🧭🧭 SLIDE GENERATION [BREADCRUMB] Breadcrumb info: {breadcrumb_info}")
                 
+                # Mettre à jour le numéro de slide courante de l'apprenant
+                logger.info(f"📊📊📊 SLIDE GENERATION [PROGRESS] === MISE À JOUR PROGRESSION ===")
+                slide_global_number = await slide_repo.get_slide_global_number(first_slide.id, training_plan.id)
+                logger.info(f"📊📊📊 SLIDE GENERATION [PROGRESS] Slide global number: {slide_global_number}")
+                
+                # Mettre à jour current_slide_number dans learner_session
+                from uuid import UUID
+                update_success = await learner_session_repo.update_current_slide_number(
+                    learner_session_id=UUID(learner_session_id),
+                    slide_number=slide_global_number
+                )
+                logger.info(f"📊📊📊 SLIDE GENERATION [PROGRESS] Update success: {update_success}")
+                
                 result = {
                     "slide_id": str(first_slide.id),
                     "title": first_slide.title,
@@ -137,7 +150,8 @@ class SlideGenerationService:
                     "order_in_submodule": first_slide.order_in_submodule,
                     "generated_at": first_slide.generated_at.isoformat() if first_slide.generated_at else None,
                     "generation_duration": round(duration, 2),
-                    "breadcrumb": breadcrumb_info
+                    "breadcrumb": breadcrumb_info,
+                    "slide_number": slide_global_number
                 }
                 
                 logger.info(f"🏁🏁🏁 SLIDE GENERATION [RESULT] RÉSULTAT DICT CRÉÉ:")
@@ -152,6 +166,115 @@ class SlideGenerationService:
                 await session.rollback()
                 duration = time.time() - start_time
                 logger.error(f"❌ SLIDE GENERATION [ERROR] Failed after {duration:.2f}s: {str(e)}")
+                raise
+    
+    async def get_current_slide_content(self, learner_session_id: str) -> Dict[str, Any]:
+        """
+        Récupérer le contenu de la slide courante de l'apprenant (basé sur current_slide_number)
+        Cette méthode est utilisée pour reprendre la formation où l'apprenant s'est arrêté
+        
+        Args:
+            learner_session_id: ID de la session apprenant
+            
+        Returns:
+            Dict contenant les informations de la slide courante
+        """
+        start_time = time.time()
+        
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🎯 SLIDE CURRENT [START] Getting current slide for session {learner_session_id}")
+                
+                # Initialize repositories with session
+                learner_session_repo = LearnerSessionRepository(session)
+                learner_plan_repo = LearnerTrainingPlanRepository(session)
+                slide_repo = TrainingSlideRepository()
+                slide_repo.set_session(session)
+                
+                # 1. Récupérer la session apprenant
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # 2. Récupérer le plan de formation personnalisé (le plus récent)
+                training_plan = await learner_plan_repo.get_latest_by_learner_session_id(learner_session_id)
+                if not training_plan:
+                    raise ValueError(f"Training plan not found for session: {learner_session_id}")
+                
+                # 3. Récupérer la slide courante basée sur current_slide_number
+                current_slide_number = learner_session.current_slide_number or 1
+                logger.info(f"🎯 SLIDE CURRENT [NUMBER] Current slide number: {current_slide_number}")
+                
+                current_slide = await slide_repo.get_slide_by_global_number(current_slide_number, training_plan.id)
+                if not current_slide:
+                    logger.warning(f"⚠️ SLIDE CURRENT [FALLBACK] Slide {current_slide_number} not found, fallback to first slide")
+                    current_slide = await slide_repo.get_first_slide(training_plan.id)
+                    if not current_slide:
+                        raise ValueError(f"No slides found for training plan: {training_plan.id}")
+                
+                # 4. Générer le contenu de la slide si pas encore généré
+                if not current_slide.content:
+                    logger.info(f"📝📝📝 SLIDE CURRENT [GENERATE] === GÉNÉRATION CONTENU SLIDE ===")
+                    logger.info(f"📝📝📝 SLIDE CURRENT [GENERATE] Slide title: {current_slide.title}")
+                    
+                    slide_content = await self._generate_slide_content(
+                        slide_title=current_slide.title,
+                        slide_type=current_slide.slide_type,
+                        learner_profile=learner_session,
+                        training_plan=training_plan,
+                        slide_position="current",
+                        current_slide_id=str(current_slide.id)
+                    )
+                    
+                    # 5. Sauvegarder le contenu généré
+                    await slide_repo.update_content(current_slide.id, slide_content)
+                    current_slide.content = slide_content
+                    current_slide.generated_at = datetime.now(timezone.utc)
+                    
+                    logger.info(f"✅✅✅ SLIDE CURRENT [GENERATE] SAUVEGARDE TERMINÉE!")
+                else:
+                    logger.info(f"♻️♻️♻️ SLIDE CURRENT [REUSE] Slide déjà générée - réutilisation du contenu")
+                
+                # 6. Récupérer les informations de breadcrumb
+                logger.info(f"🧭🧭🧭 SLIDE CURRENT [BREADCRUMB] === RÉCUPÉRATION BREADCRUMB ===")
+                breadcrumb_info = await slide_repo.get_slide_breadcrumb(current_slide.id)
+                logger.info(f"🧭🧭🧭 SLIDE CURRENT [BREADCRUMB] Breadcrumb info: {breadcrumb_info}")
+                
+                # 7. Récupérer les informations de position
+                position_info = await slide_repo.get_slide_position(current_slide.id, training_plan.id)
+                
+                # 8. S'assurer que current_slide_number est bien à jour
+                slide_global_number = await slide_repo.get_slide_global_number(current_slide.id, training_plan.id)
+                if slide_global_number != current_slide_number:
+                    logger.info(f"📊📊📊 SLIDE CURRENT [SYNC] Syncing current_slide_number: {current_slide_number} -> {slide_global_number}")
+                    from uuid import UUID
+                    await learner_session_repo.update_current_slide_number(
+                        learner_session_id=UUID(learner_session_id),
+                        slide_number=slide_global_number
+                    )
+                
+                duration = time.time() - start_time
+                
+                result = {
+                    "slide_id": str(current_slide.id),
+                    "title": current_slide.title,
+                    "content": current_slide.content,
+                    "order_in_submodule": current_slide.order_in_submodule,
+                    "generated_at": current_slide.generated_at.isoformat() if current_slide.generated_at else None,
+                    "generation_duration": round(duration, 2),
+                    "breadcrumb": breadcrumb_info,
+                    "position": position_info,
+                    "slide_number": slide_global_number,
+                    "is_resuming": current_slide_number > 1  # Indique si on reprend une session
+                }
+                
+                logger.info(f"✅ SLIDE CURRENT [SUCCESS] Current slide retrieved in {duration:.2f}s - slide #{slide_global_number}")
+                return result
+                
+            except Exception as e:
+                await session.rollback()
+                duration = time.time() - start_time
+                logger.error(f"❌ SLIDE CURRENT [ERROR] Failed after {duration:.2f}s: {str(e)}")
                 raise
     
     async def _generate_slide_content(
@@ -1596,6 +1719,19 @@ Génère maintenant le contenu de la slide de quiz :"""
                 breadcrumb_info = await slide_repo.get_slide_breadcrumb(next_slide.id)
                 logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [NEXT] Breadcrumb info: {breadcrumb_info}")
                 
+                # Mettre à jour le numéro de slide courante de l'apprenant
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [NEXT] === MISE À JOUR PROGRESSION ===")
+                slide_global_number = await slide_repo.get_slide_global_number(next_slide.id, training_plan.id)
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [NEXT] Slide global number: {slide_global_number}")
+                
+                # Mettre à jour current_slide_number dans learner_session
+                from uuid import UUID
+                update_success = await learner_session_repo.update_current_slide_number(
+                    learner_session_id=UUID(learner_session_id),
+                    slide_number=slide_global_number
+                )
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [NEXT] Update success: {update_success}")
+                
                 duration = time.time() - start_time
                 
                 result = {
@@ -1608,7 +1744,8 @@ Génère maintenant le contenu de la slide de quiz :"""
                     "position": position_info,
                     "has_next": position_info["has_next"],
                     "has_previous": position_info["has_previous"],
-                    "breadcrumb": breadcrumb_info
+                    "breadcrumb": breadcrumb_info,
+                    "slide_number": slide_global_number
                 }
                 
                 logger.info(f"✅ SLIDE NAVIGATION [NEXT] Next slide retrieved/generated in {duration:.2f}s")
@@ -1690,6 +1827,19 @@ Génère maintenant le contenu de la slide de quiz :"""
                 breadcrumb_info = await slide_repo.get_slide_breadcrumb(previous_slide.id)
                 logger.info(f"🧭🧭🧭 SLIDE NAVIGATION [PREV] Breadcrumb info: {breadcrumb_info}")
                 
+                # Mettre à jour le numéro de slide courante de l'apprenant
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [PREV] === MISE À JOUR PROGRESSION ===")
+                slide_global_number = await slide_repo.get_slide_global_number(previous_slide.id, training_plan.id)
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [PREV] Slide global number: {slide_global_number}")
+                
+                # Mettre à jour current_slide_number dans learner_session
+                from uuid import UUID
+                update_success = await learner_session_repo.update_current_slide_number(
+                    learner_session_id=UUID(learner_session_id),
+                    slide_number=slide_global_number
+                )
+                logger.info(f"📊📊📊 SLIDE NAVIGATION [PREV] Update success: {update_success}")
+                
                 duration = time.time() - start_time
                 
                 result = {
@@ -1702,7 +1852,8 @@ Génère maintenant le contenu de la slide de quiz :"""
                     "position": position_info,
                     "has_next": position_info["has_next"],
                     "has_previous": position_info["has_previous"],
-                    "breadcrumb": breadcrumb_info
+                    "breadcrumb": breadcrumb_info,
+                    "slide_number": slide_global_number
                 }
                 
                 logger.info(f"✅ SLIDE NAVIGATION [PREV] Previous slide retrieved in {duration:.2f}s")

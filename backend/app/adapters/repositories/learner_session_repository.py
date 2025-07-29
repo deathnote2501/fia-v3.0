@@ -136,3 +136,39 @@ class LearnerSessionRepository(LearnerSessionRepositoryPort):
         )
         models = result.scalars().all()
         return [self._model_to_entity(model) for model in models]
+    
+    async def update_current_slide_number(self, learner_session_id: UUID, slide_number: int) -> bool:
+        """
+        Mettre à jour le numéro de slide courante de l'apprenant
+        
+        Args:
+            learner_session_id: ID de la session apprenant
+            slide_number: Nouveau numéro de slide (1-based)
+            
+        Returns:
+            True si la mise à jour a réussi, False sinon
+        """
+        try:
+            from sqlalchemy import update
+            from datetime import datetime, timezone
+            
+            # Mettre à jour le current_slide_number et last_activity_at
+            result = await self.session.execute(
+                update(LearnerSessionModel)
+                .where(LearnerSessionModel.id == learner_session_id)
+                .values(
+                    current_slide_number=slide_number,
+                    last_activity_at=datetime.now(timezone.utc)
+                )
+            )
+            
+            await self.session.commit()
+            
+            # Vérifier qu'une ligne a été mise à jour
+            return result.rowcount > 0
+            
+        except Exception as e:
+            await self.session.rollback()
+            # Log l'erreur sans importer logging pour éviter les dépendances circulaires
+            print(f"❌ Error updating current slide number: {e}")
+            return False

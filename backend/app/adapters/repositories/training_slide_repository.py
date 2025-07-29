@@ -439,3 +439,63 @@ class TrainingSlideRepository:
                 "module_name": "Module", 
                 "submodule_name": "Contenu"
             }
+    
+    async def get_slide_global_number(self, slide_id: UUID, training_plan_id: UUID) -> int:
+        """
+        Obtenir le numéro global de slide dans la formation (1-based)
+        
+        Args:
+            slide_id: ID de la slide
+            training_plan_id: ID du plan de formation
+            
+        Returns:
+            Numéro global de la slide (1 = première slide, 2 = deuxième, etc.)
+        """
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        try:
+            # Récupérer toutes les slides dans l'ordre
+            all_slides = await self.get_slides_by_training_plan(training_plan_id)
+            
+            # Trouver l'index de la slide actuelle
+            for index, slide in enumerate(all_slides):
+                if slide.id == slide_id:
+                    return index + 1  # 1-based numbering
+            
+            logger.warning(f"⚠️ Slide {slide_id} not found in training plan {training_plan_id}")
+            return 1  # Fallback à la première slide
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting slide global number: {e}")
+            return 1  # Fallback à la première slide
+    
+    async def get_slide_by_global_number(self, slide_number: int, training_plan_id: UUID) -> Optional[TrainingSlideModel]:
+        """
+        Récupérer une slide par son numéro global dans la formation
+        
+        Args:
+            slide_number: Numéro global de la slide (1-based)
+            training_plan_id: ID du plan de formation
+            
+        Returns:
+            Le modèle de slide correspondant ou None si non trouvé
+        """
+        if not self.session:
+            raise ValueError("Database session not set")
+        
+        try:
+            # Récupérer toutes les slides dans l'ordre
+            all_slides = await self.get_slides_by_training_plan(training_plan_id)
+            
+            # Vérifier que le numéro est valide
+            if slide_number < 1 or slide_number > len(all_slides):
+                logger.warning(f"⚠️ Invalid slide number {slide_number}, total slides: {len(all_slides)}")
+                return None
+            
+            # Retourner la slide correspondante (conversion 1-based vers 0-based)
+            return all_slides[slide_number - 1]
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting slide by global number: {e}")
+            return None
