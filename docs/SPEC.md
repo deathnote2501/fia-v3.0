@@ -33,7 +33,7 @@ Etape
         ├── Slide 1
         └── Slide 2
 
-- L'apprenant clique alors sur le bouton demarrer pour commencer sa formation (cela genere le premier slide et l'affiche à l'apprenant).
+- L'apprenant clique alors sur le bouton demarrer pour commencer sa formation : cela genere le plan de la formation avec tous les slides (en markdown avec une mise en forme Marked.js).
 - L'apprenant peut aller sur la slide suivante (cela génère la slide) ou revenir en arrière sur les slides deja generée. On ne regénère pas une slide existante dans la BD.
 - L'apprenant peut poser des quesions au formateur ia via le chat qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
 - IA analyse chaque conversation pour enrichir automatiquement le profil de l'apprenant et personnaliser les slides futures
@@ -59,7 +59,6 @@ Etape
 ---------------------------------------------------------------------------------------------------------------
 
 # Guide des Bonnes Pratiques à respecter pour le développement
-Marked.js
 ## 🏗️ Architecture et Organisation
 ### Principes Fondamentaux
 - **Principe KISS** : Toujours choisir la solution la plus simple et directe

@@ -493,8 +493,9 @@
                     const planData = await planResponse.json();
                     console.log('✅ Plan generated successfully:', planData);
                     
-                    // Afficher le plan généré
-                    this.renderGeneratedPlan(planData);
+                    // Au lieu d'afficher l'ancienne page de plan, aller directement à la première slide
+                    console.log('🎯 Plan généré avec succès, redirection vers première slide...');
+                    await this.generateAndDisplayFirstSlide();
                     
                 } catch (error) {
                     console.error('❌ Error generating training plan:', error);
@@ -534,137 +535,6 @@
                 `;
             }
             
-            renderGeneratedPlan(planData) {
-                console.log('🎨 Rendering generated plan:', planData);
-                
-                const trainingPlan = planData.training_plan;
-                const metadata = planData.generation_metadata;
-                
-                let accordionHTML = '';
-                trainingPlan.stages.forEach((stage, stageIndex) => {
-                    let modulesHTML = '';
-                    stage.modules.forEach((module, moduleIndex) => {
-                        let submodulesHTML = '';
-                        module.submodules.forEach((submodule, submoduleIndex) => {
-                            submodulesHTML += `
-                                <div class="col-md-6 mb-2">
-                                    <div class="card border-light bg-light">
-                                        <div class="card-body p-3">
-                                            <h6 class="card-title text-primary">${submodule.submodule_name}</h6>
-                                            <span class="badge bg-secondary">${submodule.slide_count} slides</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        
-                        modulesHTML += `
-                            <div class="mb-3">
-                                <h6 class="text-dark">${module.module_name}</h6>
-                                <div class="row">${submodulesHTML}</div>
-                            </div>
-                        `;
-                    });
-                    
-                    const isFirstStage = stageIndex === 0;
-                    accordionHTML += `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button ${isFirstStage ? '' : 'collapsed'}" type="button" 
-                                        data-bs-toggle="collapse" data-bs-target="#stage${stage.stage_number}">
-                                    <i class="bi bi-mortarboard me-2 text-primary"></i>
-                                    Étape ${stage.stage_number}: ${stage.stage_name}
-                                </button>
-                            </h2>
-                            <div id="stage${stage.stage_number}" class="accordion-collapse collapse ${isFirstStage ? 'show' : ''}">
-                                <div class="accordion-body">
-                                    ${modulesHTML}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                this.container.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div>
-                                    
-                                    <div class="row mb-3">
-                                        <div class="col-md-3">
-                                            <div class="text-center">
-                                                <div class="h4 text-primary">${metadata.total_stages}</div>
-                                                <small class="text-muted">Stages</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-center">
-                                                <div class="h4 text-info">${metadata.total_modules}</div>
-                                                <small class="text-muted">Modules</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-center">
-                                                <div class="h4 text-success">${metadata.total_slides}</div>
-                                                <small class="text-muted">Slides</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="text-center">
-                                                <div class="h4 text-warning">${metadata.database_integration?.generation_time_seconds || 0}s</div>
-                                                <small class="text-muted">Generation Time</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <h6 class="text-muted mb-3">Training Structure:</h6>
-                                    <div class="accordion" id="trainingAccordion">
-                                        ${accordionHTML}
-                                    </div>
-                                    
-                                    <div class="mt-4">
-                                        <button class="btn btn-primary me-2" id="start-training-btn">
-                                            <i class="bi bi-play-circle me-1"></i>Start Training
-                                        </button>
-                                        <button class="btn btn-outline-secondary me-2">
-                                            <i class="bi bi-download me-1"></i>Download Plan
-                                        </button>
-                                        <button class="btn btn-outline-info" onclick="location.reload()">
-                                            <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Debug Information -->
-                                    <div class="mt-4">
-                                        <details>
-                                            <summary class="text-muted">Debug Information</summary>
-                                            <pre class="bg-light p-3 mt-2 small">${JSON.stringify(metadata, null, 2)}</pre>
-                                        </details>
-                                    </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Ajouter l'event listener pour le bouton Start Training
-                const startButton = document.getElementById('start-training-btn');
-                if (startButton) {
-                    startButton.addEventListener('click', () => this.startTraining());
-                }
-            }
-            
-            async startTraining() {
-                try {
-                    console.log('🚀 Starting training for session:', this.learnerSession.id);
-                    
-                    // Générer et afficher la première slide
-                    await this.generateAndDisplayFirstSlide();
-                    
-                } catch (error) {
-                    console.error('❌ Error starting training:', error);
-                    this.showError(`Failed to start training: ${error.message}`);
-                }
-            }
             
             async generateAndDisplayFirstSlide() {
                 try {

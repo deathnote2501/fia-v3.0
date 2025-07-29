@@ -73,9 +73,11 @@ class SlideGenerationService:
                     
                     slide_content = await self._generate_slide_content(
                         slide_title=first_slide.title,
+                        slide_type=first_slide.slide_type,
                         learner_profile=learner_session,
                         training_plan=training_plan,
-                        slide_position="first"
+                        slide_position="first",
+                        current_slide_id=str(first_slide.id)
                     )
                     
                     logger.info(f"📝📝📝 SLIDE GENERATION [MAIN] === CONTENU GÉNÉRÉ REÇU ===")
@@ -149,9 +151,11 @@ class SlideGenerationService:
     async def _generate_slide_content(
         self,
         slide_title: str,
+        slide_type: str,
         learner_profile: Any,
         training_plan: Any,
-        slide_position: str = "first"
+        slide_position: str = "first",
+        current_slide_id: Optional[str] = None
     ) -> str:
         """
         Générer le contenu markdown d'une slide avec VertexAI
@@ -166,13 +170,25 @@ class SlideGenerationService:
             Contenu markdown de la slide
         """
         try:
-            # Construire le prompt personnalisé
-            prompt = self._build_slide_prompt(
-                slide_title=slide_title,
-                learner_profile=learner_profile,
-                training_plan=training_plan,
-                slide_position=slide_position
-            )
+            # Construire le prompt personnalisé selon le type de slide
+            if slide_type == "quiz":
+                # Pour les quiz, on a besoin d'informations supplémentaires
+                prompt = await self._build_slide_prompt_by_type_async(
+                    slide_title=slide_title,
+                    slide_type=slide_type,
+                    learner_profile=learner_profile,
+                    training_plan=training_plan,
+                    slide_position=slide_position,
+                    current_slide_id=current_slide_id
+                )
+            else:
+                prompt = self._build_slide_prompt_by_type(
+                    slide_title=slide_title,
+                    slide_type=slide_type,
+                    learner_profile=learner_profile,
+                    training_plan=training_plan,
+                    slide_position=slide_position
+                )
             
             # Configuration pour génération de contenu (VertexAI retourne du JSON)
             generation_config = {
@@ -630,6 +646,547 @@ Génère maintenant le contenu de la slide :"""
 
         return prompt
     
+    def _build_slide_prompt_by_type(
+        self,
+        slide_title: str,
+        slide_type: str,
+        learner_profile: Any,
+        training_plan: Any,
+        slide_position: str
+    ) -> str:
+        """Construire le prompt selon le type de slide"""
+        
+        # Import de l'enum pour la validation
+        from app.domain.entities.training_slide import SlideType
+        
+        # Valider le type de slide
+        try:
+            slide_type_enum = SlideType(slide_type)
+        except ValueError:
+            # Fallback vers content si type invalide
+            slide_type_enum = SlideType.CONTENT
+            logger.warning(f"⚠️ Invalid slide type '{slide_type}', using 'content' as fallback")
+        
+        # Sélectionner le prompt selon le type
+        if slide_type_enum == SlideType.PLAN:
+            return self._build_plan_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.STAGE:
+            return self._build_stage_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.MODULE:
+            return self._build_module_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.QUIZ:
+            return self._build_quiz_slide_prompt(slide_title, learner_profile, training_plan)
+        else:  # SlideType.CONTENT
+            return self._build_slide_prompt(slide_title, learner_profile, training_plan, slide_position)
+    
+    def _build_plan_slide_prompt(self, slide_title: str, learner_profile: Any, training_plan: Any) -> str:
+        """Construire le prompt pour une slide de type plan"""
+        
+        # Extraire les informations du profil apprenant
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant",
+            "style_apprentissage": learner_profile.learning_style or "visuel",
+            "poste": learner_profile.job_position or "non spécifié",
+            "secteur": learner_profile.activity_sector or "non spécifié",
+            "langue": learner_profile.language or "français"
+        }
+        
+        # Récupérer le profil enrichi s'il existe
+        enriched_context = ""
+        if hasattr(learner_profile, 'enriched_profile') and learner_profile.enriched_profile:
+            enriched_data = learner_profile.enriched_profile
+            if enriched_data.get("objectives"):
+                enriched_context += f"- Objectifs spécifiques : {enriched_data['objectives']}\n"
+            if enriched_data.get("interests"):
+                enriched_context += f"- Centres d'intérêt : {', '.join(enriched_data['interests'])}\n"
+        
+        # Extraire et formater intelligemment la structure du plan
+        plan_structure = self._extract_plan_structure(training_plan)
+        
+        prompt = f"""Tu es un expert pédagogue créant une slide de plan de formation personnalisée.
+
+CONTEXTE :
+- Type de slide : PLAN (vue d'ensemble complète de la formation)
+- Titre : "{slide_title}"
+- Formation personnalisée pour ce profil apprenant
+
+PROFIL APPRENANT :
+- Niveau : {profile_info['niveau']}
+- Style d'apprentissage : {profile_info['style_apprentissage']}
+- Poste : {profile_info['poste']}
+- Secteur : {profile_info['secteur']}
+- Langue : {profile_info['langue']}
+{enriched_context}
+
+STRUCTURE DE LA FORMATION :
+{plan_structure}
+
+CONSIGNES POUR SLIDE DE PLAN :
+1. Crée une vue d'ensemble engageante et complète de la formation
+2. Commence par une introduction personnalisée au profil apprenant
+3. Structure markdown hiérarchique :
+   - # Titre principal de la formation (adapté au secteur {profile_info['secteur']})
+   - ## 👋 Bienvenue dans votre formation personnalisée
+   - ## 📋 Plan de la formation
+   - ### Étape 1: [Titre] → Modules → Objectifs principaux
+   - ### Étape 2: [Titre] → Modules → Objectifs principaux
+   - (etc. pour toutes les étapes)
+   - ## 🎯 Ce que vous allez apprendre
+   - ## ⏱️ Durée estimée et recommandations
+4. Adapte le vocabulaire au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+5. Style {profile_info['style_apprentissage']} : privilégie les éléments visuels/pratiques/théoriques selon le style
+6. Ton motivant et professionnel
+
+CONTRAINTES STRICTES :
+- Tu dois répondre avec un JSON qui contient le contenu markdown dans le champ "slide_content"
+- Format JSON attendu : {{"slide_content": "le contenu markdown ici"}}
+- Le contenu dans slide_content doit être du markdown pur sans balises JSON
+- Utilise la structure fournie mais reformule de manière engageante
+- Longueur : 500-800 mots
+- Inclus des émojis discrets pour l'engagement (📚 🎯 ✨ etc.)
+- Termine par une phrase encourageante personnalisée
+- IMPORTANT: Le markdown ne doit pas contenir de structure JSON, juste du texte formaté markdown
+
+Génère maintenant le contenu de la slide de plan au format JSON avec le markdown dans slide_content :"""
+        
+        return prompt
+    
+    def _extract_plan_structure(self, training_plan: Any) -> str:
+        """Extraire et formater intelligemment la structure du plan de formation"""
+        if not hasattr(training_plan, 'plan_data') or not training_plan.plan_data:
+            return "Structure de formation personnalisée (5 étapes avec modules et sous-modules)"
+        
+        try:
+            plan_data = training_plan.plan_data if isinstance(training_plan.plan_data, dict) else json.loads(training_plan.plan_data)
+            training_plan_data = plan_data.get("training_plan", {})
+            stages = training_plan_data.get("stages", [])
+            
+            if not stages:
+                return "Structure de formation personnalisée (5 étapes avec modules et sous-modules)"
+            
+            structure_lines = []
+            
+            for stage in stages:
+                stage_num = stage.get("stage_number", "?")
+                stage_title = stage.get("title", "Étape sans titre")
+                modules = stage.get("modules", [])
+                
+                structure_lines.append(f"ÉTAPE {stage_num}: {stage_title}")
+                
+                for module in modules:
+                    module_name = module.get("module_name", "Module sans nom")
+                    submodules = module.get("submodules", [])
+                    structure_lines.append(f"  • Module: {module_name}")
+                    
+                    for submodule in submodules:
+                        submodule_name = submodule.get("submodule_name", "Sous-module")
+                        slide_count = submodule.get("slide_count", 0)
+                        structure_lines.append(f"    - {submodule_name} ({slide_count} slides)")
+                
+                structure_lines.append("")  # Ligne vide entre les étapes
+            
+            return "\n".join(structure_lines)
+            
+        except (json.JSONDecodeError, KeyError, AttributeError) as e:
+            logger.warning(f"⚠️ Error extracting plan structure: {e}")
+            return "Structure de formation personnalisée (5 étapes avec modules et sous-modules)"
+    
+    def _build_stage_slide_prompt(self, slide_title: str, learner_profile: Any, training_plan: Any) -> str:
+        """Construire le prompt pour une slide de type étape"""
+        
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant",
+            "style_apprentissage": learner_profile.learning_style or "visuel",
+            "poste": learner_profile.job_position or "non spécifié",
+            "secteur": learner_profile.activity_sector or "non spécifié"
+        }
+        
+        # Extraire les informations de l'étape spécifique
+        stage_context = self._extract_stage_context(slide_title, training_plan)
+        
+        # Récupérer le profil enrichi s'il existe
+        enriched_context = ""
+        if hasattr(learner_profile, 'enriched_profile') and learner_profile.enriched_profile:
+            enriched_data = learner_profile.enriched_profile
+            if enriched_data.get("learning_style_observed"):
+                enriched_context += f"- Style d'apprentissage observé : {enriched_data['learning_style_observed']}\n"
+            if enriched_data.get("blockers"):
+                enriched_context += f"- Difficultés à éviter : {', '.join(enriched_data['blockers'])}\n"
+        
+        prompt = f"""Tu es un expert pédagogue créant une slide d'introduction d'étape motivante.
+
+CONTEXTE :
+- Type de slide : ÉTAPE (introduction et transition vers une nouvelle étape)
+- Titre : "{slide_title}"
+- Position dans la formation : Transition importante entre les étapes
+
+PROFIL APPRENANT :
+- Niveau : {profile_info['niveau']}
+- Style d'apprentissage : {profile_info['style_apprentissage']}
+- Poste : {profile_info['poste']}
+- Secteur : {profile_info['secteur']}
+{enriched_context}
+
+CONTEXTE DE L'ÉTAPE :
+{stage_context}
+
+CONSIGNES POUR SLIDE D'ÉTAPE :
+1. Crée une introduction motivante qui fait la transition depuis l'étape précédente
+2. Structure markdown engageante :
+   - # Titre de l'étape avec émoji approprié
+   - ## 🎯 Pourquoi cette étape est importante pour vous
+   - ## 📋 Ce que vous allez découvrir (modules principaux)
+   - ## 🚀 Objectifs d'apprentissage spécifiques
+   - ## ⏱️ Ce qui vous attend (durée et approche)
+   - ## 💡 Conseil pour réussir cette étape
+3. Adapte le vocabulaire au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+4. Style {profile_info['style_apprentissage']} : privilégie les éléments adaptés au style
+5. Ton motivant et bienveillant qui donne envie de continuer
+6. Personnalise selon le poste {profile_info['poste']}
+
+CONTRAINTES :
+- Réponds UNIQUEMENT avec le contenu markdown pur (pas de JSON)
+- Longueur : 300-500 mots
+- Utilise les émojis avec parcimonie mais de manière engageante
+- Termine par une phrase de transition vers le premier module
+- Reste professionnel mais chaleureux
+
+Génère maintenant le contenu de la slide d'étape :"""
+        
+        return prompt
+    
+    def _extract_stage_context(self, slide_title: str, training_plan: Any) -> str:
+        """Extraire le contexte spécifique d'une étape depuis le training_plan"""
+        if not hasattr(training_plan, 'plan_data') or not training_plan.plan_data:
+            return f"Étape de formation basée sur le titre : {slide_title}"
+        
+        try:
+            plan_data = training_plan.plan_data if isinstance(training_plan.plan_data, dict) else json.loads(training_plan.plan_data)
+            stages = plan_data.get("training_plan", {}).get("stages", [])
+            
+            # Essayer de trouver l'étape correspondante au titre
+            for stage in stages:
+                stage_title = stage.get("title", "")
+                stage_number = stage.get("stage_number", 0)
+                
+                # Vérifier si le titre de la slide correspond à cette étape
+                if (stage_title.lower() in slide_title.lower() or 
+                    f"étape {stage_number}" in slide_title.lower() or
+                    f"stage {stage_number}" in slide_title.lower()):
+                    
+                    modules = stage.get("modules", [])
+                    context_lines = [
+                        f"Étape {stage_number}: {stage_title}",
+                        f"Nombre de modules: {len(modules)}"
+                    ]
+                    
+                    if modules:
+                        context_lines.append("Modules inclus:")
+                        for module in modules:
+                            module_name = module.get("module_name", "Module")
+                            submodules = module.get("submodules", [])
+                            submodule_count = len(submodules)
+                            context_lines.append(f"  • {module_name} ({submodule_count} sous-modules)")
+                    
+                    return "\n".join(context_lines)
+            
+            # Si aucune correspondance exacte, retourner une info générale
+            return f"Étape de formation (parmi {len(stages)} étapes total)"
+            
+        except (json.JSONDecodeError, KeyError, AttributeError) as e:
+            logger.warning(f"⚠️ Error extracting stage context: {e}")
+            return f"Étape de formation basée sur le titre : {slide_title}"
+    
+    def _build_module_slide_prompt(self, slide_title: str, learner_profile: Any, training_plan: Any) -> str:
+        """Construire le prompt pour une slide de type module"""
+        
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant",
+            "style_apprentissage": learner_profile.learning_style or "visuel",
+            "poste": learner_profile.job_position or "non spécifié",
+            "secteur": learner_profile.activity_sector or "non spécifié"
+        }
+        
+        # Extraire le contexte spécifique du module
+        module_context = self._extract_module_context(slide_title, training_plan)
+        
+        # Récupérer le profil enrichi s'il existe
+        enriched_context = ""
+        if hasattr(learner_profile, 'enriched_profile') and learner_profile.enriched_profile:
+            enriched_data = learner_profile.enriched_profile
+            if enriched_data.get("comprehension_level"):
+                enriched_context += f"- Niveau de compréhension observé : {enriched_data['comprehension_level']}\n"
+            if enriched_data.get("interests"):
+                enriched_context += f"- Points d'intérêt : {', '.join(enriched_data['interests'])}\n"
+        
+        prompt = f"""Tu es un expert pédagogue créant une slide d'introduction de module pratique et engageante.
+
+CONTEXTE :
+- Type de slide : MODULE (introduction et structuration d'un module d'apprentissage)
+- Titre : "{slide_title}"
+- Position : Démarrage d'un nouveau module de formation
+
+PROFIL APPRENANT :
+- Niveau : {profile_info['niveau']}
+- Style d'apprentissage : {profile_info['style_apprentissage']}
+- Poste : {profile_info['poste']}
+- Secteur : {profile_info['secteur']}
+{enriched_context}
+
+CONTEXTE DU MODULE :
+{module_context}
+
+CONSIGNES POUR SLIDE DE MODULE :
+1. Crée une introduction pratique et concrète du module
+2. Structure markdown claire et actionnable :
+   - # Titre du module avec icône appropriée
+   - ## 🎯 Objectif principal de ce module
+   - ## 📚 Ce que vous allez découvrir (sous-modules)
+   - ## 🛠️ Compétences pratiques à acquérir
+   - ## 💼 Applications dans votre métier de {profile_info['poste']}
+   - ## ⚡ Points clés à retenir
+   - ## ⏭️ Comment aborder ce module
+3. Adapte spécifiquement au secteur {profile_info['secteur']} avec exemples concrets
+4. Style {profile_info['style_apprentissage']} : privilégie l'approche la plus adaptée
+5. Ton professionnel mais accessible, avec focus sur l'application pratique
+6. Connecte avec les besoins métier du poste {profile_info['poste']}
+
+CONTRAINTES :
+- Réponds UNIQUEMENT avec le contenu markdown pur (pas de JSON)
+- Longueur : 250-400 mots
+- Reste très concret et applicable
+- Utilise des exemples du secteur {profile_info['secteur']}
+- Termine par une accroche vers le premier sous-module
+
+Génère maintenant le contenu de la slide de module :"""
+        
+        return prompt
+    
+    def _extract_module_context(self, slide_title: str, training_plan: Any) -> str:
+        """Extraire le contexte spécifique d'un module depuis le training_plan"""
+        if not hasattr(training_plan, 'plan_data') or not training_plan.plan_data:
+            return f"Module de formation basé sur le titre : {slide_title}"
+        
+        try:
+            plan_data = training_plan.plan_data if isinstance(training_plan.plan_data, dict) else json.loads(training_plan.plan_data)
+            stages = plan_data.get("training_plan", {}).get("stages", [])
+            
+            # Parcourir toutes les étapes et modules pour trouver une correspondance
+            for stage in stages:
+                modules = stage.get("modules", [])
+                for module in modules:
+                    module_name = module.get("module_name", "")
+                    
+                    # Vérifier si le titre de la slide correspond à ce module
+                    if (module_name.lower() in slide_title.lower() or 
+                        any(word in slide_title.lower() for word in module_name.lower().split())):
+                        
+                        submodules = module.get("submodules", [])
+                        context_lines = [
+                            f"Module: {module_name}",
+                            f"Étape parente: {stage.get('title', 'Non spécifiée')}",
+                            f"Nombre de sous-modules: {len(submodules)}"
+                        ]
+                        
+                        if submodules:
+                            context_lines.append("Sous-modules inclus:")
+                            for submodule in submodules:
+                                submodule_name = submodule.get("submodule_name", "Sous-module")
+                                slide_count = submodule.get("slide_count", 0)
+                                context_lines.append(f"  • {submodule_name} ({slide_count} slides)")
+                        
+                        return "\n".join(context_lines)
+            
+            # Si aucune correspondance exacte, retourner une info générale
+            total_modules = sum(len(stage.get("modules", [])) for stage in stages)
+            return f"Module de formation (parmi {total_modules} modules au total)"
+            
+        except (json.JSONDecodeError, KeyError, AttributeError) as e:
+            logger.warning(f"⚠️ Error extracting module context: {e}")
+            return f"Module de formation basé sur le titre : {slide_title}"
+    
+    def _build_quiz_slide_prompt(self, slide_title: str, learner_profile: Any, training_plan: Any) -> str:
+        """Construire le prompt pour une slide de type quiz"""
+        
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant",
+            "secteur": learner_profile.activity_sector or "non spécifié"
+        }
+        
+        prompt = f"""Tu es un expert pédagogue créant une slide de quiz/évaluation.
+
+CONTEXTE :
+- Type de slide : QUIZ (évaluation des acquis)
+- Titre : "{slide_title}"
+
+PROFIL APPRENANT :
+- Niveau : {profile_info['niveau']}
+- Secteur : {profile_info['secteur']}
+
+CONSIGNES POUR SLIDE DE QUIZ :
+1. Crée une évaluation interactive des connaissances acquises
+2. Structure markdown avec :
+   - # Titre du quiz
+   - ## Instructions pour le quiz
+   - ### Question 1: [Type de question]
+   - ### Question 2: [Type de question]
+   - etc. (5 questions au total)
+   - ## Comment utiliser le chat pour répondre
+3. 5 questions variées : QCM, questions ouvertes, cas pratiques
+4. Adapté au niveau {profile_info['niveau']} et secteur {profile_info['secteur']}
+5. Instructions claires pour utiliser le chat IA pour les réponses
+6. Longueur : 300-500 mots
+
+IMPORTANT : Rappelle que l'apprenant peut répondre en utilisant le chat IA qui corrigera ses réponses.
+
+Génère maintenant le contenu de la slide de quiz :"""
+        
+        return prompt
+    
+    async def _build_slide_prompt_by_type_async(
+        self,
+        slide_title: str,
+        slide_type: str,
+        learner_profile: Any,
+        training_plan: Any,
+        slide_position: str,
+        current_slide_id: Optional[str] = None
+    ) -> str:
+        """Construire le prompt selon le type de slide de façon asynchrone (pour quiz)"""
+        
+        # Import de l'enum pour la validation
+        from app.domain.entities.training_slide import SlideType
+        
+        # Valider le type de slide
+        try:
+            slide_type_enum = SlideType(slide_type)
+        except ValueError:
+            # Fallback vers content si type invalide
+            slide_type_enum = SlideType.CONTENT
+            logger.warning(f"⚠️ Invalid slide type '{slide_type}', using 'content' as fallback")
+        
+        # Sélectionner le prompt selon le type
+        if slide_type_enum == SlideType.PLAN:
+            return self._build_plan_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.STAGE:
+            return self._build_stage_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.MODULE:
+            return self._build_module_slide_prompt(slide_title, learner_profile, training_plan)
+        elif slide_type_enum == SlideType.QUIZ:
+            return await self._build_quiz_slide_prompt_async(slide_title, learner_profile, training_plan, current_slide_id)
+        else:  # SlideType.CONTENT
+            return self._build_slide_prompt(slide_title, learner_profile, training_plan, slide_position)
+    
+    async def _build_quiz_slide_prompt_async(
+        self, 
+        slide_title: str, 
+        learner_profile: Any, 
+        training_plan: Any, 
+        current_slide_id: Optional[str] = None
+    ) -> str:
+        """Construire le prompt pour une slide de type quiz avec récupération du contenu précédent"""
+        
+        profile_info = {
+            "niveau": learner_profile.experience_level or "débutant",
+            "secteur": learner_profile.activity_sector or "non spécifié"
+        }
+        
+        # Récupérer le contenu des slides précédentes pour le quiz
+        previous_content = ""
+        if current_slide_id:
+            try:
+                # Établir une session DB pour récupérer le contenu précédent
+                async with AsyncSessionLocal() as session:
+                    slide_repo = TrainingSlideRepository()
+                    slide_repo.set_session(session)
+                    
+                    # Détecter la portée du quiz selon le titre
+                    quiz_scope = self._detect_quiz_scope(slide_title)
+                    
+                    # Récupérer les slides de contenu précédentes
+                    from uuid import UUID
+                    current_slide_uuid = UUID(current_slide_id)
+                    previous_slides = await slide_repo.get_previous_content_slides(
+                        current_slide_id=current_slide_uuid,
+                        training_plan_id=training_plan.id,
+                        scope=quiz_scope
+                    )
+                    
+                    # Compiler le contenu précédent
+                    if previous_slides:
+                        content_parts = []
+                        for slide in previous_slides:
+                            if slide.content:
+                                content_parts.append(f"SLIDE: {slide.title}\n{slide.content}\n")
+                        
+                        if content_parts:
+                            previous_content = f"""
+CONTENU PRÉCÉDENT À UTILISER POUR LE QUIZ (Portée: {quiz_scope}):
+{chr(10).join(content_parts)}
+
+IMPORTANT: Base les questions du quiz sur ce contenu précédent !
+"""
+                        
+                    logger.info(f"🎯 QUIZ PROMPT [CONTENT] Retrieved {len(previous_slides)} previous slides for scope '{quiz_scope}'")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ QUIZ PROMPT [CONTENT] Failed to retrieve previous content: {e}")
+                previous_content = "(Contenu précédent non disponible - génère un quiz générique)"
+        
+        prompt = f"""Tu es un expert pédagogue créant une slide de quiz/évaluation interactive.
+
+CONTEXTE :
+- Type de slide : QUIZ (évaluation des acquis)
+- Titre : "{slide_title}"
+- Portée détectée : {self._detect_quiz_scope(slide_title) if current_slide_id else "général"}
+
+PROFIL APPRENANT :
+- Niveau : {profile_info['niveau']}
+- Secteur : {profile_info['secteur']}
+
+{previous_content}
+
+CONSIGNES POUR SLIDE DE QUIZ :
+1. Crée une évaluation interactive basée sur le contenu précédent
+2. Structure markdown avec :
+   - # Titre du quiz avec émoji 📝
+   - ## 🎯 Objectifs de ce quiz
+   - ## 📋 Instructions
+   - ### Question 1: [QCM] 
+   - ### Question 2: [Question ouverte]
+   - ### Question 3: [Cas pratique]
+   - ### Question 4: [Vrai/Faux]
+   - ### Question 5: [Application métier]
+   - ## 💬 Comment répondre avec le chat IA
+   - ## ✅ Ce que vous allez apprendre
+3. 5 questions variées adaptées au niveau {profile_info['niveau']}
+4. Questions basées spécifiquement sur le contenu précédent fourni
+5. Adapté au secteur {profile_info['secteur']} avec exemples concrets
+6. Instructions claires pour utiliser le chat IA pour obtenir des corrections
+7. Longueur : 400-600 mots
+
+CONTRAINTES :
+- Réponds UNIQUEMENT avec le contenu markdown pur (pas de JSON)
+- Base TOUTES les questions sur le contenu précédent fourni
+- Inclus des questions de différents niveaux (rappel, compréhension, application)
+- Termine par des encouragements et conseils pour réussir
+- Style engageant et motivant
+
+Génère maintenant le contenu de la slide de quiz :"""
+        
+        return prompt
+    
+    def _detect_quiz_scope(self, slide_title: str) -> str:
+        """Détecter la portée d'un quiz selon son titre"""
+        title_lower = slide_title.lower()
+        
+        if "étape" in title_lower or "stage" in title_lower:
+            return "stage"
+        elif "module" in title_lower:
+            return "module"
+        else:
+            return "submodule"  # Par défaut, portée sous-module
+    
     def _extract_content_from_json(self, json_response: str) -> str:
         """Extraire le contenu markdown du JSON retourné par VertexAI"""
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] === DÉBUT EXTRACTION ===")
@@ -909,9 +1466,11 @@ Génère maintenant le contenu de la slide :"""
                     
                     slide_content = await self._generate_slide_content(
                         slide_title=next_slide.title,
+                        slide_type=next_slide.slide_type,
                         learner_profile=learner_session,
                         training_plan=training_plan,
-                        slide_position="middle"  # Toutes les slides suivantes sont "middle"
+                        slide_position="middle",  # Toutes les slides suivantes sont "middle"
+                        current_slide_id=str(next_slide.id)
                     )
                     
                     # Sauvegarder le contenu généré
@@ -994,9 +1553,11 @@ Génère maintenant le contenu de la slide :"""
                     
                     slide_content = await self._generate_slide_content(
                         slide_title=previous_slide.title,
+                        slide_type=previous_slide.slide_type,
                         learner_profile=learner_session,
                         training_plan=training_plan,
-                        slide_position="middle"  # Les slides précédentes sont généralement "middle"
+                        slide_position="middle",  # Les slides précédentes sont généralement "middle"
+                        current_slide_id=str(previous_slide.id)
                     )
                     
                     # Sauvegarder le contenu généré

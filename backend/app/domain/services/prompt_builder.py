@@ -102,16 +102,28 @@ class PromptBuilder:
         )
     
     def build_example_structure(self) -> Dict[str, Any]:
-        """Build example JSON structure for the AI prompt"""
+        """Build example JSON structure for the AI prompt with slide typologies"""
         return {
             "training_plan": {
+                "plan_slide": {
+                    "title": "Plan de Formation - Nom de la Formation",
+                    "slide_type": "plan"
+                },
                 "stages": [
                     {
                         "stage_number": 1,
                         "title": "Mise en contexte",
+                        "stage_slide": {
+                            "title": "Étape 1: Mise en contexte",
+                            "slide_type": "stage"
+                        },
                         "modules": [
                             {
                                 "module_name": "Introduction au domaine",
+                                "module_slide": {
+                                    "title": "Module: Introduction au domaine",
+                                    "slide_type": "module"
+                                },
                                 "submodules": [
                                     {
                                         "submodule_name": "Présentation des enjeux",
@@ -121,11 +133,29 @@ class PromptBuilder:
                                             "Défis actuels du secteur", 
                                             "Objectifs de la formation",
                                             "Plan d'apprentissage personnalisé"
-                                        ]
+                                        ],
+                                        "slide_types": [
+                                            "content",
+                                            "content",
+                                            "content", 
+                                            "content"
+                                        ],
+                                        "quiz_slide": {
+                                            "title": "Quiz: Présentation des enjeux",
+                                            "slide_type": "quiz"
+                                        }
                                     }
-                                ]
+                                ],
+                                "module_quiz_slide": {
+                                    "title": "Quiz: Introduction au domaine",
+                                    "slide_type": "quiz"
+                                }
                             }
-                        ]
+                        ],
+                        "stage_quiz_slide": {
+                            "title": "Quiz: Mise en contexte",
+                            "slide_type": "quiz"
+                        }
                     }
                 ]
             }
@@ -193,7 +223,16 @@ CONTRAINTES STRICTES:
 - Chaque module contient 1-4 sous-modules
 - Chaque sous-module a un slide_count entre 2 et 8
 - Chaque sous-module DOIT inclure "slide_titles": tableau avec le titre exact de chaque slide
+- Chaque sous-module DOIT inclure "slide_types": tableau avec "content" pour chaque slide
 - Le nombre de titres dans slide_titles DOIT égaler slide_count
+- Le nombre d'éléments dans slide_types DOIT égaler slide_count
+- NOUVELLE STRUCTURE OBLIGATOIRE:
+  * 1 slide "plan" au début avec le plan global de formation
+  * 1 slide "stage" avant chaque étape avec introduction de l'étape
+  * 1 slide "module" avant chaque module avec introduction du module  
+  * 1 slide "quiz" après chaque sous-module (quiz_slide)
+  * 1 slide "quiz" après chaque module (module_quiz_slide)
+  * 1 slide "quiz" après chaque étape (stage_quiz_slide)
 - Adapte le contenu au profil {level}/{style}/{sector}
 - Utilise des exemples concrets du secteur {sector}
 - Privilégie le style d'apprentissage {style}
