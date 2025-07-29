@@ -647,10 +647,10 @@
                 // slideData peut contenir slide_content (format JSON), content, ou slide.content
                 let title, content;
                 
-                if (slideData.title && slideData.slide_content) {
-                    // Structure avec slide_content (format JSON de l'API)
-                    console.log('🎯 [DISPLAY] BRANCHE 1: title + slide_content détectés');
-                    title = slideData.title;
+                // Priorité: slide_content d'abord (peu importe si title existe)
+                if (slideData.slide_content) {
+                    console.log('🎯 [DISPLAY] BRANCHE 1: slide_content détecté (priorité haute)');
+                    title = slideData.title || 'Formation Content';
                     content = slideData.slide_content;
                     console.log('🎯 [DISPLAY] BRANCHE 1: title =', title);
                     console.log('🎯 [DISPLAY] BRANCHE 1: content =', content);
@@ -669,10 +669,26 @@
                     console.log('🎯 [DISPLAY] BRANCHE 3: title =', title);
                     console.log('🎯 [DISPLAY] BRANCHE 3: content =', content);
                 } else {
-                    // Fallback
-                    console.log('🎯 [DISPLAY] BRANCHE 4: FALLBACK utilisé');
-                    title = 'Formation Content';
-                    content = slideData.slide_content || slideData.content || JSON.stringify(slideData);
+                    // Fallback - essayer de parser si c'est un JSON string contenant slide_content
+                    console.log('🎯 [DISPLAY] BRANCHE 4: FALLBACK - tentative parsing JSON');
+                    try {
+                        if (typeof slideData === 'string') {
+                            const parsed = JSON.parse(slideData);
+                            if (parsed.slide_content) {
+                                console.log('🎯 [DISPLAY] BRANCHE 4: JSON parsé avec slide_content trouvé');
+                                title = parsed.title || 'Formation Content';
+                                content = parsed.slide_content;
+                            } else {
+                                throw new Error('No slide_content in parsed JSON');
+                            }
+                        } else {
+                            throw new Error('Not a JSON string');
+                        }
+                    } catch (e) {
+                        console.log('🎯 [DISPLAY] BRANCHE 4: VRAI FALLBACK utilisé');
+                        title = 'Formation Content';
+                        content = slideData.content || JSON.stringify(slideData);
+                    }
                     console.log('🎯 [DISPLAY] BRANCHE 4: title =', title);
                     console.log('🎯 [DISPLAY] BRANCHE 4: content =', content);
                 }
@@ -683,6 +699,24 @@
                 console.log('📝 [DISPLAY] content FINAL (longueur):', content ? content.length : 'NULL');
                 console.log('📝 [DISPLAY] content FINAL (preview):', content ? content.substring(0, 100) + '...' : 'NULL');
                 console.log('🎨 [DISPLAY] === AVANT PASSAGE À MARKDOWN ===');
+                
+                // CORRECTION: Vérifier si le contenu est un objet JSON avec slide_content
+                if (typeof content === 'object' && content !== null && content.slide_content) {
+                    console.log('🔧 [DISPLAY] CORRECTION: Contenu est un objet JSON avec slide_content');
+                    content = content.slide_content;
+                    console.log('🔧 [DISPLAY] CORRECTION: Contenu extrait:', content.substring(0, 100) + '...');
+                } else if (typeof content === 'string' && content.startsWith('{') && content.includes('slide_content')) {
+                    console.log('🔧 [DISPLAY] CORRECTION: Contenu est une string JSON avec slide_content');
+                    try {
+                        const parsed = JSON.parse(content);
+                        if (parsed.slide_content) {
+                            content = parsed.slide_content;
+                            console.log('🔧 [DISPLAY] CORRECTION: Contenu extrait depuis JSON string:', content.substring(0, 100) + '...');
+                        }
+                    } catch (e) {
+                        console.log('🔧 [DISPLAY] CORRECTION: Échec parsing JSON, utilisation contenu original');
+                    }
+                }
                 
                 // Stocker le contenu markdown original pour les fonctionnalités d'interaction
                 this.currentSlideContent = content;

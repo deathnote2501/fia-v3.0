@@ -170,6 +170,14 @@ class SlideGenerationService:
             Contenu markdown de la slide
         """
         try:
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - DÉBUT GÉNÉRATION
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === DÉBUT GÉNÉRATION SLIDE ÉTAPE ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Slide title: {slide_title}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Slide type: {slide_type}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Slide position: {slide_position}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Current slide ID: {current_slide_id}")
+            
             # Construire le prompt personnalisé selon le type de slide
             if slide_type == "quiz":
                 # Pour les quiz, on a besoin d'informations supplémentaires
@@ -190,6 +198,13 @@ class SlideGenerationService:
                     slide_position=slide_position
                 )
             
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - PROMPT GÉNÉRÉ
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Prompt généré avec succès")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Prompt longueur: {len(prompt)}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Prompt contient 'slide_content': {'slide_content' in prompt}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Prompt contient 'JSON': {'JSON' in prompt}")
+            
             # Configuration pour génération de contenu (VertexAI retourne du JSON)
             generation_config = {
                 "temperature": 0.7,  # Créativité modérée pour contenu pédagogique
@@ -201,17 +216,47 @@ class SlideGenerationService:
             
             logger.info(f"🚀 SLIDE GENERATION [AI] Calling VertexAI for slide content generation...")
             
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - AVANT VERTEXAI
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === APPEL VERTEXAI ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Generation config: {generation_config}")
+            
             # Appeler VertexAI pour générer le contenu
             raw_content = await self.vertex_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
             )
             
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - RÉPONSE VERTEXAI
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === RÉPONSE VERTEXAI REÇUE ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Raw content type: {type(raw_content)}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Raw content longueur: {len(raw_content) if raw_content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Raw content preview (500 chars): {raw_content[:500] if raw_content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Raw content contient 'slide_content': {'slide_content' in raw_content if raw_content else False}")
+            
             # Parser le JSON et extraire le content markdown
             content = self._extract_content_from_json(raw_content)
             
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - APRÈS EXTRACTION JSON
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === APRÈS EXTRACTION JSON ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Extracted content type: {type(content)}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Extracted content longueur: {len(content) if content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Extracted content preview (500 chars): {content[:500] if content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Extracted content est markdown?: {content.startswith('#') if content else False}")
+            
             # Nettoyer et valider le contenu
             cleaned_content = self._clean_markdown_content(content)
+            
+            # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE - APRÈS NETTOYAGE
+            if slide_type == "stage":
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === APRÈS NETTOYAGE MARKDOWN ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Cleaned content type: {type(cleaned_content)}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Cleaned content longueur: {len(cleaned_content) if cleaned_content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Cleaned content preview (500 chars): {cleaned_content[:500] if cleaned_content else 'NULL'}")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] === GÉNÉRATION SLIDE ÉTAPE TERMINÉE ===")
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [GENERATION] Content final prêt pour retour: {len(cleaned_content)} caractères")
             
             logger.info(f"✅ SLIDE GENERATION [AI] Content generated - {len(cleaned_content)} characters")
             return cleaned_content
@@ -667,11 +712,21 @@ Génère maintenant le contenu de la slide :"""
             slide_type_enum = SlideType.CONTENT
             logger.warning(f"⚠️ Invalid slide type '{slide_type}', using 'content' as fallback")
         
+        # LOGS SPÉCIFIQUES POUR SLIDES ÉTAPE
+        if slide_type_enum == SlideType.STAGE:
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] === GÉNÉRATION PROMPT SLIDE ÉTAPE ===")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] Slide title: {slide_title}")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] Slide type: {slide_type}")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] Learner profile: {learner_profile.email if hasattr(learner_profile, 'email') else 'N/A'}")
+        
         # Sélectionner le prompt selon le type
         if slide_type_enum == SlideType.PLAN:
             return self._build_plan_slide_prompt(slide_title, learner_profile, training_plan)
         elif slide_type_enum == SlideType.STAGE:
-            return self._build_stage_slide_prompt(slide_title, learner_profile, training_plan)
+            prompt = self._build_stage_slide_prompt(slide_title, learner_profile, training_plan)
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] Prompt généré (longueur: {len(prompt)})")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [PROMPT] Prompt preview (500 chars): {prompt[:500]}")
+            return prompt
         elif slide_type_enum == SlideType.MODULE:
             return self._build_module_slide_prompt(slide_title, learner_profile, training_plan)
         elif slide_type_enum == SlideType.QUIZ:
@@ -844,14 +899,17 @@ CONSIGNES POUR SLIDE D'ÉTAPE :
 5. Ton motivant et bienveillant qui donne envie de continuer
 6. Personnalise selon le poste {profile_info['poste']}
 
-CONTRAINTES :
-- Réponds UNIQUEMENT avec le contenu markdown pur (pas de JSON)
+CONTRAINTES STRICTES :
+- Tu dois répondre avec un JSON qui contient le contenu markdown dans le champ "slide_content"
+- Format JSON attendu : {{"slide_content": "le contenu markdown ici"}}
+- Le contenu dans slide_content doit être du markdown pur sans balises JSON
 - Longueur : 300-500 mots
 - Utilise les émojis avec parcimonie mais de manière engageante
 - Termine par une phrase de transition vers le premier module
 - Reste professionnel mais chaleureux
+- IMPORTANT: Le markdown ne doit pas contenir de structure JSON, juste du texte formaté markdown
 
-Génère maintenant le contenu de la slide d'étape :"""
+Génère maintenant le contenu de la slide d'étape au format JSON avec le markdown dans slide_content :"""
         
         return prompt
     
@@ -1194,6 +1252,11 @@ Génère maintenant le contenu de la slide de quiz :"""
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] JSON brut LONGUEUR: {len(json_response) if json_response else 'NULL'}")
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] JSON brut PREVIEW (500 chars): {json_response[:500] if json_response else 'NULL'}")
         
+        # LOGS SPÉCIFIQUES POUR DEBUGGING SLIDES ÉTAPE
+        if json_response and '"slide_content"' in json_response:
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [JSON-EXTRACTION] === SLIDE_CONTENT DÉTECTÉ DANS JSON ===")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [JSON-EXTRACTION] Le JSON contient 'slide_content' - traitement spécial")
+        
         try:
             # Parser le JSON
             logger.info(f"🔄🔄🔄 SLIDE GENERATION [JSON-EXTRACTION] PARSING JSON avec json.loads()...")
@@ -1268,6 +1331,13 @@ Génère maintenant le contenu de la slide de quiz :"""
                     logger.info(f"✅✅✅ SLIDE GENERATION [JSON-EXTRACTION] TROUVÉ root.slide_content!")
                     logger.info(f"🔍🔍🔍 SLIDE GENERATION [JSON-EXTRACTION] Content: {content[:200] if content else 'NULL'}")
                     logger.info(f"🎯🎯🎯 SLIDE GENERATION [JSON-EXTRACTION] RETOUR content depuis root.slide_content")
+                    
+                    # LOGS SPÉCIFIQUES SLIDES ÉTAPE - SUCCESS PATH
+                    if content and content.startswith('#'):
+                        logger.info(f"🎭🎭🎭 STAGE SLIDE [JSON-EXTRACTION] === MARKDOWN EXTRAIT AVEC SUCCÈS ===")
+                        logger.info(f"🎭🎭🎭 STAGE SLIDE [JSON-EXTRACTION] Content est du markdown valide (commence par #)")
+                        logger.info(f"🎭🎭🎭 STAGE SLIDE [JSON-EXTRACTION] Content markdown longueur: {len(content)}")
+                    
                     return content
                     
                 # 2c: Structure avec content direct
@@ -1312,6 +1382,33 @@ Génère maintenant le contenu de la slide de quiz :"""
             logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] DEFAULT CONTENT: {default_content}")
             return default_content
         
+        # NOUVELLE ÉTAPE: Détecter et traiter le JSON avant le nettoyage markdown
+        logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] ÉTAPE 0: Détection JSON...")
+        content_stripped = content.strip()
+        
+        # Détecter si le contenu est un JSON avec slide_content
+        if ((content_stripped.startswith('{') and '"slide_content"' in content_stripped) or 
+            (content_stripped.startswith('[') and '"slide_content"' in content_stripped)):
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [MARKDOWN-CLEAN] === JSON DÉTECTÉ AVEC SLIDE_CONTENT ===")
+            logger.info(f"🎭🎭🎭 STAGE SLIDE [MARKDOWN-CLEAN] Tentative d'extraction du contenu markdown...")
+            
+            try:
+                # Essayer d'extraire le contenu markdown du JSON
+                extracted_content = self._extract_content_from_json(content_stripped)
+                logger.info(f"🎭🎭🎭 STAGE SLIDE [MARKDOWN-CLEAN] Contenu extrait: {extracted_content[:200] if extracted_content else 'NULL'}")
+                
+                # Si l'extraction a réussi et renvoie du markdown valide, l'utiliser
+                if extracted_content and extracted_content != content_stripped and extracted_content.startswith('#'):
+                    logger.info(f"✅✅✅ SLIDE GENERATION [MARKDOWN-CLEAN] JSON EXTRAIT AVEC SUCCÈS - MARKDOWN DÉTECTÉ")
+                    logger.info(f"🎯🎯🎯 SLIDE GENERATION [MARKDOWN-CLEAN] UTILISATION DU CONTENU EXTRAIT")
+                    content = extracted_content
+                    logger.info(f"🎭🎭🎭 STAGE SLIDE [MARKDOWN-CLEAN] Contenu remplacé par markdown extrait: {content[:200]}")
+                else:
+                    logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [MARKDOWN-CLEAN] EXTRACTION JSON ÉCHOUÉE - CONTENU INCHANGÉ")
+            except Exception as e:
+                logger.error(f"❌❌❌ SLIDE GENERATION [MARKDOWN-CLEAN] ERREUR EXTRACTION JSON: {e}")
+                logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] FALLBACK - CONTENU INCHANGÉ")
+        
         # Nettoyer les balises potentielles
         logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] ÉTAPE 1: strip()...")
         cleaned = content.strip()
@@ -1348,11 +1445,18 @@ Génère maintenant le contenu de la slide de quiz :"""
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [MARKDOWN-CLEAN] Nombre de lignes: {len(lines)}")
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [MARKDOWN-CLEAN] Premières lignes: {lines[:5]}")
         
-        if not has_title:
-            logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] AJOUT titre par défaut")
-            # Ajouter un titre si manquant
+        # MODIFICATION CRITIQUE: Ne pas ajouter de titre par défaut si le contenu semble être du JSON
+        is_json_like = (cleaned.startswith('{') or cleaned.startswith('[')) and ('"' in cleaned)
+        logger.info(f"🔍🔍🔍 SLIDE GENERATION [MARKDOWN-CLEAN] Semble être du JSON?: {is_json_like}")
+        
+        if not has_title and not is_json_like:
+            logger.info(f"🔄🔄🔄 SLIDE GENERATION [MARKDOWN-CLEAN] AJOUT titre par défaut (contenu non-JSON)")
+            # Ajouter un titre si manquant (seulement si ce n'est pas du JSON)
             cleaned = f"# Contenu de Formation\n\n{cleaned}"
             logger.info(f"🔍🔍🔍 SLIDE GENERATION [MARKDOWN-CLEAN] Après ajout titre - LONGUEUR: {len(cleaned)}")
+        elif not has_title and is_json_like:
+            logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [MARKDOWN-CLEAN] CONTENU JSON DÉTECTÉ - PAS D'AJOUT DE TITRE")
+            logger.warning(f"⚠️⚠️⚠️ SLIDE GENERATION [MARKDOWN-CLEAN] Le contenu nécessite une extraction JSON appropriée")
         
         logger.info(f"✅✅✅ SLIDE GENERATION [MARKDOWN-CLEAN] NETTOYAGE TERMINÉ!")
         logger.info(f"🔍🔍🔍 SLIDE GENERATION [MARKDOWN-CLEAN] RÉSULTAT FINAL - TYPE: {type(cleaned)}")
@@ -1565,8 +1669,9 @@ Génère maintenant le contenu de la slide de quiz :"""
                     previous_slide.content = slide_content
                     previous_slide.generated_at = datetime.now(timezone.utc)
                 
-                # Obtenir les informations de position
-                position_info = await slide_repo.get_slide_position(previous_slide.id, training_plan.id)
+                # Obtenir les informations de position basées sur la slide actuelle, pas la précédente
+                current_slide_uuid = UUID(current_slide_id)
+                position_info = await slide_repo.get_slide_position(current_slide_uuid, training_plan.id)
                 
                 duration = time.time() - start_time
                 
