@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     google_cloud_region: str = Field(default="europe-west1", description="GCP region")
     gemini_model_name: str = Field(default="gemini-2.0-flash-exp", description="Gemini 2.0 Flash model name")
     
+    # OpenAI
+    openai_api_key: str = Field(default="", description="OpenAI API key for image generation")
+    
     # Application
     environment: str = Field(default="development", description="Environment (development/production)")
     debug: bool = Field(default=False, description="Debug mode")

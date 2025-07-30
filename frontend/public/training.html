@@ -583,8 +583,11 @@
                     <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
                         <i class="bi bi-arrow-down-circle me-1"></i>Simplify
                     </button>
-                    <button id="new-more-details-btn" class="btn btn-outline-primary">
+                    <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
                         <i class="bi bi-arrow-up-circle me-1"></i>Deepen
+                    </button>
+                    <button id="generate-image-btn" class="btn btn-outline-primary">
+                        <i class="bi bi-image me-1"></i>Generate Image
                     </button>
                 </div>
                 
@@ -2970,6 +2973,12 @@
                     console.log('✅ [NEW_BUTTONS] New more details button connected');
                 }
                 
+                const generateImageBtn = document.getElementById('generate-image-btn');
+                if (generateImageBtn) {
+                    generateImageBtn.addEventListener('click', () => this.generateSlideImage());
+                    console.log('✅ [NEW_BUTTONS] Generate image button connected');
+                }
+                
                 if (newNextBtn) {
                     newNextBtn.addEventListener('click', () => this.navigateToNextSlide());
                     console.log('✅ [NEW_BUTTONS] New next button connected');
@@ -3169,6 +3178,133 @@
             showMoreDetailsError(errorMessage) {
                 // Alerts supprimés - fonction désactivée
                 console.error('❌ [MORE_DETAILS] Error:', errorMessage);
+            }
+            
+            async generateSlideImage() {
+                const generateImageBtn = document.getElementById('generate-image-btn');
+                const slideContentEl = document.getElementById('slide-content');
+                
+                if (!slideContentEl) {
+                    console.error('❌ [IMAGE_GEN] Slide content element not found');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [IMAGE_GEN] Starting image generation');
+                    
+                    // Désactiver le bouton pendant le traitement
+                    if (generateImageBtn) {
+                        generateImageBtn.disabled = true;
+                        generateImageBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                    }
+                    
+                    // Obtenir le contenu markdown actuel
+                    const currentMarkdown = this.getCurrentSlideMarkdown();
+                    if (!currentMarkdown) {
+                        console.error('❌ [IMAGE_GEN] No current slide content to generate image from');
+                        return;
+                    }
+                    
+                    console.log('📝 [IMAGE_GEN] Content length:', currentMarkdown.length);
+                    console.log('📝 [IMAGE_GEN] Content preview:', currentMarkdown.substring(0, 100) + '...');
+                    
+                    // Appeler l'API de génération d'image
+                    const response = await fetch('/api/image-generation/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            slide_content: currentMarkdown,
+                            learner_session_id: this.learnerSession.id,
+                            slide_id: this.currentSlide?.slide_id || this.currentSlide?.id
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ [IMAGE_GEN] API response received:', result);
+                    
+                    if (result.success && result.image_data) {
+                        // Construire l'URL de l'image sauvegardée
+                        const imageUrl = this.buildImageUrl(result);
+                        
+                        // Afficher l'image générée en bas du contenu
+                        this.displayGeneratedImage(result.image_data, result.revised_prompt, imageUrl);
+                        console.log('✅ [IMAGE_GEN] Image displayed successfully');
+                    } else {
+                        throw new Error(result.error_message || 'Failed to generate image');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [IMAGE_GEN] Error:', error);
+                    
+                    // Afficher une erreur à l'utilisateur
+                    this.showImageGenerationError(error.message);
+                    
+                } finally {
+                    // Réactiver le bouton
+                    if (generateImageBtn) {
+                        generateImageBtn.disabled = false;
+                        generateImageBtn.innerHTML = '<i class="bi bi-image me-1"></i>Generate Image';
+                    }
+                }
+            }
+            
+            buildImageUrl(result) {
+                // Si on a un slide_id, construire l'URL pour l'image sauvegardée
+                const slideId = this.currentSlide?.slide_id || this.currentSlide?.id;
+                if (slideId) {
+                    return `/api/slides/image/${this.learnerSession.id}/${slideId}`;
+                }
+                return null;
+            }
+            
+            displayGeneratedImage(imageBase64, revisedPrompt, imageUrl = null) {
+                const slideContentEl = document.getElementById('slide-content');
+                if (!slideContentEl) return;
+                
+                // Supprimer l'image précédente s'il y en a une
+                const existingImage = slideContentEl.querySelector('.generated-image-container');
+                if (existingImage) {
+                    existingImage.remove();
+                }
+                
+                // Utiliser l'URL permanente si disponible, sinon base64 pour affichage immédiat
+                const imageSrc = imageUrl || `data:image/png;base64,${imageBase64}`;
+                
+                // Créer le container pour l'image
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'generated-image-container mt-4 p-3 border rounded';
+                imageContainer.innerHTML = `
+                    <h5 class="mb-3"><i class="bi bi-image text-primary me-2"></i>Generated Infographic</h5>
+                    <img src="${imageSrc}" 
+                         alt="Generated infographic" 
+                         class="img-fluid rounded shadow-sm" 
+                         style="max-width: 100%; height: auto;"
+                         onerror="this.src='data:image/png;base64,${imageBase64}'; console.warn('Fallback to base64 image');">
+                    ${revisedPrompt ? `<small class="text-muted d-block mt-2"><strong>AI Prompt:</strong> ${revisedPrompt}</small>` : ''}
+                `;
+                
+                // Ajouter l'image à la fin du contenu
+                slideContentEl.appendChild(imageContainer);
+                
+                // Faire défiler vers l'image
+                imageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            showImageGenerationError(errorMessage) {
+                console.error('❌ [IMAGE_GEN] Error:', errorMessage);
+                
+                // Afficher un message d'erreur simple dans la console (pas d'alert)
+                const message = errorMessage.includes('rate limit') 
+                    ? 'Image generation limit reached. Please try again later.'
+                    : 'Failed to generate image. Please try again.';
+                    
+                console.warn('🚨 [IMAGE_GEN] User message:', message);
             }
             
             async navigateToNextSlide() {

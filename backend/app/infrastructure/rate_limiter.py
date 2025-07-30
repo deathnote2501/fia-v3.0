@@ -171,6 +171,60 @@ class GeminiRateLimiter:
 gemini_rate_limiter = GeminiRateLimiter()
 
 
+class OpenAIRateLimiter:
+    """
+    Specialized rate limiter for OpenAI API calls
+    Similar pattern to GeminiRateLimiter but with lower limits for cost control
+    """
+    
+    def __init__(self):
+        # Lower rate limit for image generation to control costs (10 images/minute)
+        self.rate_limiter = SlidingWindowRateLimiter(
+            requests_per_minute=10,
+            window_size_seconds=60
+        )
+        self.api_key = "openai_api"
+        
+    async def acquire(self, wait: bool = True, max_wait_seconds: int = 300) -> None:
+        """
+        Acquire a rate limit slot for OpenAI API
+        
+        Args:
+            wait: Whether to wait if rate limit is exceeded
+            max_wait_seconds: Maximum time to wait
+            
+        Raises:
+            RateLimitExceeded: If rate limit exceeded and wait=False or timeout
+        """
+        if wait:
+            await self.rate_limiter.wait_until_allowed(self.api_key, max_wait_seconds)
+        else:
+            if not await self.rate_limiter.is_allowed(self.api_key):
+                remaining = self.rate_limiter.get_remaining_requests(self.api_key)
+                reset_time = self.rate_limiter.get_reset_time(self.api_key)
+                raise RateLimitExceeded(
+                    f"OpenAI API rate limit exceeded. "
+                    f"Remaining requests: {remaining}. "
+                    f"Reset time: {reset_time}"
+                )
+    
+    def get_status(self) -> Dict[str, any]:
+        """Get current rate limit status"""
+        remaining = self.rate_limiter.get_remaining_requests(self.api_key)
+        reset_time = self.rate_limiter.get_reset_time(self.api_key)
+        
+        return {
+            "requests_per_minute": 10,
+            "remaining_requests": remaining,
+            "reset_time": reset_time,
+            "reset_in_seconds": max(0, reset_time - time.time()) if reset_time else 0
+        }
+
+
+# Global rate limiter instances
+openai_rate_limiter = OpenAIRateLimiter()
+
+
 async def with_gemini_rate_limit(func, *args, **kwargs):
     """
     Decorator-like function to apply rate limiting to Gemini API calls

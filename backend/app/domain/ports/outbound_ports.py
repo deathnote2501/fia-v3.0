@@ -255,6 +255,31 @@ class LiveConversationServicePort(ABC):
         pass
 
 
+class ImageGenerationServicePort(ABC):
+    """Port for image generation service using OpenAI"""
+    
+    @abstractmethod
+    async def generate_infographic(
+        self,
+        slide_content: str,
+        learner_profile: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate educational infographic from slide content
+        
+        Args:
+            slide_content: The slide content to create infographic from
+            learner_profile: Optional learner profile for personalization
+            
+        Returns:
+            Dict containing:
+            - image_data: str - Base64 encoded image data
+            - revised_prompt: str - The revised prompt used by OpenAI
+            - metadata: Dict - Additional metadata (size, format, etc.)
+        """
+        pass
+
+
 class TTSServicePort(ABC):
     """Port for Text-to-Speech service using Vertex AI"""
     

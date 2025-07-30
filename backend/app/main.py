@@ -21,6 +21,7 @@ from app.adapters.inbound.slide_controller import router as slide_router
 from app.adapters.inbound.conversation_controller import router as conversation_router
 from app.adapters.inbound.live_session_controller import router as live_session_router
 from app.adapters.inbound.tts_controller import router as tts_router
+from app.adapters.inbound.image_generation_controller import router as image_generation_router
 
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
@@ -111,6 +112,9 @@ app.include_router(live_session_router)
 
 # Include TTS router
 app.include_router(tts_router)
+
+# Include image generation router
+app.include_router(image_generation_router)
 
 # Include unified plan generation router if available
 if PLAN_GENERATION_AVAILABLE:

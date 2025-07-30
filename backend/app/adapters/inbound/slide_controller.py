@@ -5,8 +5,11 @@ API endpoints for slide generation and management
 
 import logging
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse
 from typing import Dict, Any
 from pydantic import BaseModel
+from pathlib import Path
+from uuid import UUID
 
 from app.services.slide_generation_service_orchestrator import SlideGenerationServiceOrchestrator
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
@@ -421,3 +424,52 @@ async def slide_service_health() -> Dict[str, Any]:
             "status": "unhealthy",
             "error": str(e)
         }
+
+
+@router.get("/image/{learner_session_id}/{slide_id}")
+async def get_slide_image(
+    learner_session_id: UUID,
+    slide_id: UUID
+) -> FileResponse:
+    """
+    Serve generated slide image file
+    
+    Args:
+        learner_session_id: ID of the learner session
+        slide_id: ID of the slide
+        
+    Returns:
+        FileResponse with the PNG image
+    """
+    try:
+        logger.info(f"🎯 SLIDE API [IMAGE] Serving image for session {learner_session_id}, slide {slide_id}")
+        
+        # Construct expected image path
+        image_path = Path(f"uploads/images/slide_images/{learner_session_id}/slide_{slide_id}_image.png")
+        
+        # Check if file exists
+        if not image_path.exists():
+            logger.warning(f"❌ SLIDE API [IMAGE_NOT_FOUND] Image not found: {image_path}")
+            raise HTTPException(
+                status_code=404,
+                detail="Image not found for this slide"
+            )
+        
+        logger.info(f"✅ SLIDE API [IMAGE] Serving image: {image_path}")
+        
+        return FileResponse(
+            path=str(image_path),
+            media_type="image/png",
+            filename=f"slide_{slide_id}_image.png"
+        )
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+        
+    except Exception as e:
+        logger.error(f"❌ SLIDE API [IMAGE_ERROR] Failed to serve image: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to serve slide image"
+        )
