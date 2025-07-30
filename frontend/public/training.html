@@ -171,6 +171,132 @@
             min-height: 1rem;
         }
         
+        /* TTS Controls */
+        .tts-controls {
+            padding: 0.75rem 1rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        /* iPhone-style Toggle Switch */
+        .tts-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tts-switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+        
+        .tts-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .tts-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 31px;
+        }
+        
+        .tts-slider:before {
+            position: absolute;
+            content: "";
+            height: 23px;
+            width: 23px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .tts-slider {
+            background-color: #34c759;
+        }
+        
+        input:checked + .tts-slider:before {
+            transform: translateX(20px);
+        }
+        
+        .tts-label {
+            font-size: 0.9rem;
+            color: #495057;
+            user-select: none;
+            cursor: pointer;
+        }
+        
+        /* Audio Control Buttons on Messages */
+        .message-audio-controls {
+            margin-top: 0.5rem;
+            display: none; /* Hidden by default, shown when TTS is enabled */
+        }
+        
+        .message.assistant .message-audio-controls {
+            display: block; /* Always show for assistant messages when TTS enabled */
+        }
+        
+        .audio-play-btn, .audio-pause-btn, .audio-stop-btn {
+            margin-right: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .audio-play-btn {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+        
+        .audio-pause-btn {
+            background-color: #fd7e14;
+            border-color: #fd7e14;
+            color: white;
+        }
+        
+        .audio-stop-btn {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        
+        /* Audio Loading States */
+        .message.playing-audio .message-content {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .message.loading-audio .message-content {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .audio-loading-indicator {
+            display: none;
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        
+        .message.loading-audio .audio-loading-indicator {
+            display: block;
+        }
+        
         /* Voice Chat Button States */
         .voice-chat-btn {
             min-width: 2.5rem;
@@ -401,6 +527,17 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn">
                         <i class="bi bi-star me-1"></i>Key Points
                     </button>
+                </div>
+            </div>
+            
+            <!-- TTS Controls (above chat input) -->
+            <div class="tts-controls mb-2">
+                <div class="tts-toggle-container">
+                    <label class="tts-switch">
+                        <input type="checkbox" id="tts-toggle">
+                        <span class="tts-slider"></span>
+                    </label>
+                    <label for="tts-toggle" class="tts-label">Enable Audio</label>
                 </div>
             </div>
             
@@ -732,6 +869,353 @@
         }
         
         // ============================================================================
+        // TEXT-TO-SPEECH MANAGER
+        // ============================================================================
+        
+        class TTSManager {
+            constructor() {
+                this.enabled = false;
+                this.currentAudio = null;
+                this.audioQueue = [];
+                this.currentPlayingMessageId = null;
+                this.defaultVoice = 'Kore';
+                this.defaultLanguage = 'fr';
+                
+                console.log('🔊 TTS [MANAGER] Initialized');
+            }
+            
+            /**
+             * Enable or disable TTS functionality
+             */
+            setEnabled(enabled) {
+                this.enabled = enabled;
+                console.log(`🔊 TTS [MANAGER] ${enabled ? 'Enabled' : 'Disabled'}`);
+                
+                // Update UI state
+                this.updateToggleUI(enabled);
+                this.updateMessageAudioControls(enabled);
+                
+                // Stop current playback if disabling
+                if (!enabled && this.currentAudio) {
+                    this.stopAudio();
+                }
+            }
+            
+            /**
+             * Update toggle button UI
+             */
+            updateToggleUI(enabled) {
+                const toggle = document.getElementById('tts-toggle');
+                const icon = document.getElementById('tts-icon');
+                
+                if (toggle && icon) {
+                    if (enabled) {
+                        toggle.classList.add('enabled');
+                        icon.className = 'bi bi-toggle-on';
+                    } else {
+                        toggle.classList.remove('enabled');
+                        icon.className = 'bi bi-toggle-off';
+                    }
+                }
+            }
+            
+            /**
+             * Update audio controls visibility on all messages
+             */
+            updateMessageAudioControls(enabled) {
+                const messages = document.querySelectorAll('.message.assistant');
+                messages.forEach(message => {
+                    const controls = message.querySelector('.message-audio-controls');
+                    if (controls) {
+                        controls.style.display = enabled ? 'block' : 'none';
+                    }
+                });
+            }
+            
+            /**
+             * Generate speech for text and auto-play if enabled
+             */
+            async generateAndPlaySpeech(text, messageElement, autoPlay = true) {
+                if (!this.enabled) {
+                    console.log('🔊 TTS [MANAGER] TTS disabled, skipping speech generation');
+                    return;
+                }
+                
+                if (!text || text.trim().length === 0) {
+                    console.log('🔊 TTS [MANAGER] Empty text, skipping speech generation');
+                    return;
+                }
+                
+                try {
+                    console.log(`🔊 TTS [MANAGER] Generating speech for text: ${text.substring(0, 100)}...`);
+                    
+                    // Show loading state
+                    this.showLoadingState(messageElement);
+                    
+                    // Clean text for TTS (remove HTML tags, etc.)
+                    const cleanText = this.cleanTextForTTS(text);
+                    
+                    // Call TTS API
+                    const response = await fetch('/api/tts/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: cleanText,
+                            voice: this.defaultVoice,
+                            language: this.defaultLanguage
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`TTS API error: ${response.status}`);
+                    }
+                    
+                    const ttsData = await response.json();
+                    
+                    // Convert base64 to audio blob
+                    const audioBlob = this.base64ToBlob(ttsData.audio_data, ttsData.mime_type);
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // Create audio element with proper settings
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+                    audio.crossOrigin = 'anonymous';
+                    
+                    // Set up error handling before setting src
+                    audio.onerror = (e) => {
+                        console.error('❌ TTS [MANAGER] Audio load error:', e);
+                        URL.revokeObjectURL(audioUrl);
+                    };
+                    
+                    // Set src after error handler
+                    audio.src = audioUrl;
+                    
+                    // Store audio data on message element
+                    messageElement.ttsAudio = audio;
+                    messageElement.ttsData = ttsData;
+                    messageElement.audioUrl = audioUrl;
+                    
+                    // Hide loading state
+                    this.hideLoadingState(messageElement);
+                    
+                    // Auto-play if requested - wait for audio to be ready
+                    if (autoPlay) {
+                        audio.addEventListener('canplay', () => {
+                            this.playAudio(messageElement);
+                        }, { once: true });
+                        
+                        // Fallback timeout
+                        setTimeout(() => {
+                            if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+                                this.playAudio(messageElement);
+                            }
+                        }, 500);
+                    }
+                    
+                    console.log(`✅ TTS [MANAGER] Speech generated successfully - Duration: ${ttsData.duration}s`);
+                    
+                } catch (error) {
+                    console.error('❌ TTS [MANAGER] Speech generation failed:', error);
+                    this.hideLoadingState(messageElement);
+                    this.showError(messageElement, 'Speech generation failed');
+                }
+            }
+            
+            /**
+             * Play audio for a specific message
+             */
+            async playAudio(messageElement) {
+                if (!messageElement.ttsAudio) {
+                    console.log('🔊 TTS [MANAGER] No audio data available for message');
+                    return;
+                }
+                
+                try {
+                    // Stop current audio if playing
+                    if (this.currentAudio && !this.currentAudio.paused) {
+                        this.currentAudio.pause();
+                        this.currentAudio.currentTime = 0;
+                    }
+                    
+                    // Set current audio
+                    this.currentAudio = messageElement.ttsAudio;
+                    this.currentPlayingMessageId = messageElement.dataset.messageId;
+                    
+                    // Show playing state
+                    this.showPlayingState(messageElement);
+                    
+                    // Set up audio event listeners
+                    this.currentAudio.onended = () => {
+                        this.hidePlayingState(messageElement);
+                        this.currentAudio = null;
+                        this.currentPlayingMessageId = null;
+                    };
+                    
+                    this.currentAudio.onerror = () => {
+                        console.error('❌ TTS [MANAGER] Audio playback error');
+                        this.hidePlayingState(messageElement);
+                        this.currentAudio = null;
+                        this.currentPlayingMessageId = null;
+                    };
+                    
+                    // Play audio
+                    await this.currentAudio.play();
+                    console.log('🔊 TTS [MANAGER] Audio playback started');
+                    
+                } catch (error) {
+                    console.error('❌ TTS [MANAGER] Audio playback failed:', error);
+                    this.hidePlayingState(messageElement);
+                }
+            }
+            
+            /**
+             * Pause current audio playback
+             */
+            pauseAudio() {
+                if (this.currentAudio && !this.currentAudio.paused) {
+                    this.currentAudio.pause();
+                    console.log('⏸️ TTS [MANAGER] Audio paused');
+                }
+            }
+            
+            /**
+             * Stop current audio playback
+             */
+            stopAudio() {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.currentTime = 0;
+                    
+                    // Clear playing state
+                    const playingMessage = document.querySelector('.message.playing-audio');
+                    if (playingMessage) {
+                        this.hidePlayingState(playingMessage);
+                    }
+                    
+                    this.currentAudio = null;
+                    this.currentPlayingMessageId = null;
+                    console.log('⏹️ TTS [MANAGER] Audio stopped');
+                }
+            }
+            
+            /**
+             * Clean text for TTS (remove HTML, markdown, etc.)
+             */
+            cleanTextForTTS(text) {
+                // Remove HTML tags
+                let cleaned = text.replace(/<[^>]*>/g, '');
+                
+                // Remove markdown formatting
+                cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1'); // Bold
+                cleaned = cleaned.replace(/\*(.*?)\*/g, '$1'); // Italic
+                cleaned = cleaned.replace(/`(.*?)`/g, '$1'); // Code
+                cleaned = cleaned.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Links
+                
+                // Clean up whitespace
+                cleaned = cleaned.replace(/\s+/g, ' ').trim();
+                
+                // Limit length (TTS API has limits)
+                if (cleaned.length > 500) {
+                    cleaned = cleaned.substring(0, 480) + '...';
+                }
+                
+                return cleaned;
+            }
+            
+            /**
+             * Convert base64 to blob
+             */
+            base64ToBlob(base64, mimeType) {
+                try {
+                    const byteCharacters = atob(base64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    return new Blob([byteArray], { type: mimeType || 'audio/wav' });
+                } catch (error) {
+                    console.error('❌ TTS [MANAGER] Failed to convert base64 to blob:', error);
+                    throw error;
+                }
+            }
+            
+            /**
+             * Show loading state on message
+             */
+            showLoadingState(messageElement) {
+                messageElement.classList.add('loading-audio');
+                const indicator = messageElement.querySelector('.audio-loading-indicator');
+                if (indicator) {
+                    indicator.textContent = '🔄 Generating speech...';
+                }
+            }
+            
+            /**
+             * Hide loading state on message
+             */
+            hideLoadingState(messageElement) {
+                messageElement.classList.remove('loading-audio');
+            }
+            
+            /**
+             * Show playing state on message
+             */
+            showPlayingState(messageElement) {
+                // Remove playing state from other messages
+                document.querySelectorAll('.message.playing-audio').forEach(msg => {
+                    msg.classList.remove('playing-audio');
+                });
+                
+                // Add playing state to current message
+                messageElement.classList.add('playing-audio');
+            }
+            
+            /**
+             * Hide playing state on message
+             */
+            hidePlayingState(messageElement) {
+                messageElement.classList.remove('playing-audio');
+            }
+            
+            /**
+             * Show error state on message
+             */
+            showError(messageElement, errorMessage) {
+                const indicator = messageElement.querySelector('.audio-loading-indicator');
+                if (indicator) {
+                    indicator.textContent = `❌ ${errorMessage}`;
+                    indicator.style.display = 'block';
+                    
+                    // Hide error after 3 seconds
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            /**
+             * Set language for TTS
+             */
+            setLanguage(language) {
+                this.defaultLanguage = language;
+                console.log(`🔊 TTS [MANAGER] Language set to: ${language}`);
+            }
+            
+            /**
+             * Set voice for TTS
+             */
+            setVoice(voice) {
+                this.defaultVoice = voice;
+                console.log(`🔊 TTS [MANAGER] Voice set to: ${voice}`);
+            }
+        }
+        
+        // ============================================================================
         // TRAINING APPLICATION
         // ============================================================================
         
@@ -746,6 +1230,9 @@
                 // Initialize Voice Chat Handler
                 this.voiceHandler = null;
                 this.currentButtonState = 'mic'; // 'mic', 'recording', 'send'
+                
+                // Initialize TTS Manager
+                this.ttsManager = new TTSManager();
                 
                 if (!this.token) {
                     this.showError('No session token provided');
@@ -1242,6 +1729,9 @@
                 // Initialize voice handler based on learner language
                 this.initializeVoiceHandler();
                 
+                // Setup TTS functionality
+                this.setupTTSFunctionality();
+                
                 // Setup fallback for unsupported browsers
                 this.setupVoiceFallback(sendBtnFallback, chatInput);
                 
@@ -1253,6 +1743,32 @@
                     console.log('✅ [CHAT] Chat functionality initialized with voice support');
                 } else {
                     console.error('❌ [CHAT] Missing chat elements');
+                }
+            }
+            
+            /**
+             * Setup TTS functionality
+             */
+            setupTTSFunctionality() {
+                const ttsToggle = document.getElementById('tts-toggle');
+                
+                if (ttsToggle) {
+                    // Setup TTS toggle listener
+                    ttsToggle.addEventListener('click', () => {
+                        const isCurrentlyEnabled = this.ttsManager.enabled;
+                        this.ttsManager.setEnabled(!isCurrentlyEnabled);
+                        
+                        console.log(`🔊 TTS [APP] TTS ${!isCurrentlyEnabled ? 'enabled' : 'disabled'} by user`);
+                    });
+                    
+                    // Set language based on learner profile
+                    if (this.learnerSession && this.learnerSession.language) {
+                        this.ttsManager.setLanguage(this.learnerSession.language);
+                    }
+                    
+                    console.log('✅ [TTS] TTS functionality initialized');
+                } else {
+                    console.error('❌ [TTS] TTS toggle not found');
                 }
             }
             
@@ -1880,9 +2396,31 @@
                     }
                 }
 
+                // Generate unique message ID for TTS
+                const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Add audio controls for assistant messages
+                let audioControls = '';
+                if (!isUser && !metadata.error) {
+                    audioControls = `
+                        <div class="message-audio-controls" style="display: ${this.ttsManager.enabled ? 'block' : 'none'}">
+                            <button class="btn btn-sm audio-play-btn" onclick="app.playMessageAudio('${messageId}')">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                            <button class="btn btn-sm audio-pause-btn" onclick="app.pauseMessageAudio('${messageId}')" style="display: none;">
+                                <i class="bi bi-pause-fill"></i>
+                            </button>
+                            <button class="btn btn-sm audio-stop-btn" onclick="app.stopMessageAudio('${messageId}')" style="display: none;">
+                                <i class="bi bi-stop-fill"></i>
+                            </button>
+                            <div class="audio-loading-indicator">🔄 Generating speech...</div>
+                        </div>
+                    `;
+                }
+
                 const messageHtml = `
                     <div class="p-3">
-                        <div class="message ${role} mb-3" ${metadata.action_type ? `data-action-type="${metadata.action_type}"` : ''}>
+                        <div class="message ${role} mb-3" data-message-id="${messageId}" ${metadata.action_type ? `data-action-type="${metadata.action_type}"` : ''}>
                             <div class="d-flex align-items-start ${messageClass}">
                                 <div class="message-content">
                                     <div class="${bubbleClass} p-2 rounded">
@@ -1901,6 +2439,7 @@
                                             </div>` : ''}
                                         ${metadata.error ? `<div class="mt-1"><span class="badge bg-danger">Error</span></div>` : ''}
                                     </div>
+                                    ${audioControls}
                                 </div>
                             </div>
                         </div>
@@ -1910,7 +2449,81 @@
                 chatMessages.insertAdjacentHTML('beforeend', messageHtml);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
                 
+                // Auto-generate TTS for assistant messages if enabled
+                if (!isUser && !metadata.error && this.ttsManager.enabled) {
+                    const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
+                    if (messageElement) {
+                        // Generate and auto-play TTS
+                        this.ttsManager.generateAndPlaySpeech(content, messageElement, true);
+                    }
+                }
+                
                 console.log('💬 [CHAT] Message added:', { role, content: content.substring(0, 50) + '...', metadata });
+            }
+            
+            /**
+             * Play audio for a specific message
+             */
+            async playMessageAudio(messageId) {
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (messageElement) {
+                    // If no audio data exists, generate it first
+                    if (!messageElement.ttsAudio) {
+                        const content = messageElement.querySelector('.message-content p').textContent;
+                        await this.ttsManager.generateAndPlaySpeech(content, messageElement, false);
+                    }
+                    
+                    // Play the audio
+                    await this.ttsManager.playAudio(messageElement);
+                    
+                    // Update button states
+                    this.updateAudioControlButtons(messageId, 'playing');
+                }
+            }
+            
+            /**
+             * Pause audio for a specific message
+             */
+            pauseMessageAudio(messageId) {
+                this.ttsManager.pauseAudio();
+                this.updateAudioControlButtons(messageId, 'paused');
+            }
+            
+            /**
+             * Stop audio for a specific message
+             */
+            stopMessageAudio(messageId) {
+                this.ttsManager.stopAudio();
+                this.updateAudioControlButtons(messageId, 'stopped');
+            }
+            
+            /**
+             * Update audio control button states
+             */
+            updateAudioControlButtons(messageId, state) {
+                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (!messageElement) return;
+                
+                const playBtn = messageElement.querySelector('.audio-play-btn');
+                const pauseBtn = messageElement.querySelector('.audio-pause-btn');
+                const stopBtn = messageElement.querySelector('.audio-stop-btn');
+                
+                if (playBtn && pauseBtn && stopBtn) {
+                    switch (state) {
+                        case 'playing':
+                            playBtn.style.display = 'none';
+                            pauseBtn.style.display = 'inline-block';
+                            stopBtn.style.display = 'inline-block';
+                            break;
+                        case 'paused':
+                        case 'stopped':
+                        default:
+                            playBtn.style.display = 'inline-block';
+                            pauseBtn.style.display = 'none';
+                            stopBtn.style.display = 'none';
+                            break;
+                    }
+                }
             }
             
             showTypingAnimation() {
@@ -3178,7 +3791,7 @@
         // Initialize the application when page loads
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🌟 Training page loaded, initializing app...');
-            new TrainingApp();
+            window.app = new TrainingApp();
         });
     </script>
 </body>

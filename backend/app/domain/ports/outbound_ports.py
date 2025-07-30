@@ -253,3 +253,46 @@ class LiveConversationServicePort(ABC):
     ) -> bool:
         """Close Live API session"""
         pass
+
+
+class TTSServicePort(ABC):
+    """Port for Text-to-Speech service using Vertex AI"""
+    
+    @abstractmethod
+    async def generate_speech(
+        self,
+        text: str,
+        voice_name: str = "Kore",
+        language_code: str = "fr"
+    ) -> Dict[str, Any]:
+        """
+        Generate speech audio from text
+        
+        Args:
+            text: Text to convert to speech
+            voice_name: Voice to use (e.g., 'Kore', 'Puck', 'Aoede')
+            language_code: Language code (e.g., 'fr', 'en', 'es')
+            
+        Returns:
+            Dict containing:
+            - audio_data: bytes - Audio data in WAV format
+            - duration_seconds: float - Duration of audio
+            - metadata: Dict - Additional metadata
+        """
+        pass
+    
+    @abstractmethod
+    async def get_available_voices(
+        self,
+        language_code: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get list of available voices
+        
+        Args:
+            language_code: Optional language filter
+            
+        Returns:
+            List of voice information dictionaries
+        """
+        pass

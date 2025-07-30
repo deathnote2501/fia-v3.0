@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 try:
     import vertexai
     from vertexai.generative_models import GenerativeModel, Part
+    from google import genai
+    from google.genai import types
+    import wave
     VERTEX_AI_AVAILABLE = True
     logger.info("🤖 VERTEX AI [ADAPTER] imported successfully")
 except ImportError as e:
@@ -28,6 +31,8 @@ except ImportError as e:
     VERTEX_AI_AVAILABLE = False
     GenerativeModel = None
     Part = None
+    genai = None
+    types = None
 
 
 class VertexAIError(Exception):
@@ -367,3 +372,190 @@ class VertexAIAdapter:
             "api_calls_made": self.api_call_counter,
             "max_retries": self.max_retries
         }
+    
+    async def generate_speech_audio(
+        self,
+        text: str,
+        voice_name: str = "Kore",
+        language_code: str = "fr"
+    ) -> tuple[bytes, Dict[str, Any]]:
+        """
+        Generate speech audio using Vertex AI Gemini 2.5 TTS
+        
+        Args:
+            text: Text to convert to speech
+            voice_name: Voice name (e.g., 'Kore', 'Puck', 'Aoede')
+            language_code: Language code (e.g., 'fr', 'en', 'es')
+            
+        Returns:
+            Tuple of (audio_data_bytes, metadata_dict)
+        """
+        if not VERTEX_AI_AVAILABLE or not genai:
+            raise VertexAIError("Vertex AI TTS not available - missing dependencies")
+        
+        start_time = time.time()
+        
+        try:
+            # Initialize Gemini client for TTS
+            client = genai.Client()
+            
+            # Prepare TTS prompt with voice style guidance
+            tts_prompt = self._build_tts_prompt(text, voice_name, language_code)
+            
+            logger.info(f"🔊 VERTEX AI [TTS] Generating speech - Voice: {voice_name}, Lang: {language_code}, Text: {len(text)} chars")
+            
+            # Generate speech using Gemini 2.5 TTS
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model="gemini-2.5-flash-preview-tts",
+                contents=tts_prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name=voice_name
+                            )
+                        )
+                    )
+                )
+            )
+            
+            # Extract audio data
+            if not response.candidates or not response.candidates[0].content.parts:
+                raise VertexAIError("No audio data in TTS response")
+            
+            audio_part = response.candidates[0].content.parts[0]
+            if not hasattr(audio_part, 'inline_data') or not audio_part.inline_data:
+                raise VertexAIError("No inline audio data in TTS response")
+            
+            # Get raw PCM data from Gemini TTS
+            pcm_data = audio_part.inline_data.data
+            
+            # Convert PCM to WAV format for browser compatibility
+            audio_data = self._pcm_to_wav(pcm_data)
+            
+            duration = time.time() - start_time
+            
+            # Log API call
+            self._log_api_call(
+                "tts_generation",
+                {
+                    "text_length": len(text),
+                    "voice_name": voice_name,
+                    "language_code": language_code
+                },
+                {
+                    "audio_size_bytes": len(audio_data),
+                    "success": True
+                },
+                duration
+            )
+            
+            metadata = {
+                "voice_used": voice_name,
+                "language": language_code,
+                "generation_time_seconds": round(duration, 3),
+                "audio_format": "wav",
+                "audio_size_bytes": len(audio_data),
+                "model": "gemini-2.5-flash-preview-tts"
+            }
+            
+            logger.info(f"✅ VERTEX AI [TTS] Speech generated - {len(audio_data)} bytes in {duration:.2f}s")
+            return audio_data, metadata
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            
+            # Log failed API call
+            self._log_api_call(
+                "tts_generation",
+                {
+                    "text_length": len(text),
+                    "voice_name": voice_name,
+                    "language_code": language_code
+                },
+                {},
+                duration,
+                success=False,
+                error=str(e)
+            )
+            
+            logger.error(f"❌ VERTEX AI [TTS] Speech generation failed: {str(e)}")
+            raise VertexAIError(f"TTS generation failed: {str(e)}", original_error=e)
+    
+    def _pcm_to_wav(self, pcm_data: bytes, sample_rate: int = 24000, channels: int = 1, sample_width: int = 2) -> bytes:
+        """
+        Convert PCM raw audio data to WAV format
+        
+        Args:
+            pcm_data: Raw PCM audio data from Gemini TTS
+            sample_rate: Sample rate (default 24000 Hz for Gemini TTS)
+            channels: Number of channels (default 1 for mono)
+            sample_width: Sample width in bytes (default 2 for 16-bit)
+            
+        Returns:
+            WAV formatted audio data
+        """
+        import io
+        
+        try:
+            # Create in-memory WAV file
+            wav_buffer = io.BytesIO()
+            
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(channels)
+                wav_file.setsampwidth(sample_width)
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(pcm_data)
+            
+            wav_data = wav_buffer.getvalue()
+            wav_buffer.close()
+            
+            logger.info(f"🔊 VERTEX AI [TTS] PCM to WAV conversion: {len(pcm_data)} -> {len(wav_data)} bytes")
+            return wav_data
+            
+        except Exception as e:
+            logger.error(f"❌ VERTEX AI [TTS] PCM to WAV conversion failed: {str(e)}")
+            raise VertexAIError(f"Audio format conversion failed: {str(e)}", original_error=e)
+    
+    def _build_tts_prompt(self, text: str, voice_name: str, language_code: str) -> str:
+        """
+        Build TTS prompt with appropriate voice style guidance
+        
+        Args:
+            text: Text to convert to speech
+            voice_name: Voice name to use
+            language_code: Language code
+            
+        Returns:
+            Formatted prompt for TTS
+        """
+        # Voice style mapping for better TTS results
+        voice_styles = {
+            "Kore": "in a firm, professional tone",
+            "Puck": "in an upbeat, friendly tone", 
+            "Aoede": "in a breezy, pleasant tone",
+            "Orus": "in a firm, authoritative tone",
+            "Charon": "in an informative, clear tone",
+            "Algieba": "in a smooth, polished tone",
+            "Fenrir": "in an excitable, energetic tone",
+            "Leda": "in a youthful, engaging tone"
+        }
+        
+        style_guidance = voice_styles.get(voice_name, "in a natural, pedagogical tone")
+        
+        # Language-specific prompt formatting
+        if language_code == "fr":
+            prompt = f"Dis de manière claire et pédagogique {style_guidance} : {text}"
+        elif language_code == "en":
+            prompt = f"Say clearly and pedagogically {style_guidance}: {text}"
+        elif language_code == "es":
+            prompt = f"Di de manera clara y pedagógica {style_guidance}: {text}"
+        elif language_code == "de":
+            prompt = f"Sage klar und pädagogisch {style_guidance}: {text}"
+        else:
+            # Fallback to English
+            prompt = f"Say clearly and pedagogically {style_guidance}: {text}"
+        
+        return prompt
