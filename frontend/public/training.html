@@ -171,6 +171,96 @@
             min-height: 1rem;
         }
         
+        /* Voice Chat Button States */
+        .voice-chat-btn {
+            min-width: 2.5rem;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Microphone state (default - blue) */
+        .voice-chat-btn.state-mic {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .voice-chat-btn.state-mic:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
+        
+        .voice-chat-btn.state-mic:active {
+            background-color: #0a58ca;
+            color: white;
+            transform: scale(0.98);
+        }
+        
+        /* Recording state (red) */
+        .voice-chat-btn.state-recording {
+            background-color: #dc3545;
+            color: white;
+            animation: pulse-recording 1.5s infinite;
+        }
+        
+        .voice-chat-btn.state-recording:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        /* Send state (blue) */
+        .voice-chat-btn.state-send {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .voice-chat-btn.state-send:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
+        
+        .voice-chat-btn.state-send:active {
+            background-color: #0a58ca;
+            color: white;
+            transform: scale(0.98);
+        }
+        
+        /* Disabled state */
+        .voice-chat-btn:disabled {
+            background-color: #6c757d;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        /* Recording pulse animation */
+        @keyframes pulse-recording {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+        
+        /* Voice support indicator */
+        .voice-not-supported {
+            display: none;
+        }
+        
+        .no-voice-support .voice-not-supported {
+            display: inline;
+        }
+        
+        .no-voice-support .voice-chat-btn {
+            display: none;
+        }
+        
         /* Typing Animation for AI thinking */
         .typing-animation {
             display: inline-flex;
@@ -319,10 +409,23 @@
                 <div class="input-group">
                     <input type="text" class="form-control" id="chat-input" 
                            placeholder="Ask your AI trainer..." maxlength="500">
-                    <button class="btn btn-primary" type="button" id="send-message-btn">
-                        <i class="bi bi-send"></i>
+                    
+                    <!-- Voice Chat Button (adaptive) -->
+                    <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
+                            title="Click to start voice recording">
+                        <i class="bi bi-mic" id="voice-btn-icon"></i>
                     </button>
+                    
+                    <!-- Fallback text for unsupported browsers -->
+                    <span class="voice-not-supported">
+                        <button class="btn btn-primary" type="button" id="send-message-btn-fallback">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </span>
                 </div>
+                
+                <!-- Voice status indicator -->
+                <div class="chat-status" id="voice-status"></div>
             </div>
         </div>
         
@@ -362,6 +465,276 @@
     <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
     
     <script>
+        // ============================================================================
+        // VOICE CHAT HANDLER - Web Speech API Integration
+        // ============================================================================
+        
+        class VoiceChatHandler {
+            constructor(language = 'fr-FR') {
+                this.language = language;
+                this.recognition = null;
+                this.isSupported = this.checkSupport();
+                this.isListening = false;
+                this.hasPermission = false;
+                
+                // Callbacks for integration with main app
+                this.onResult = null;
+                this.onError = null;
+                this.onStart = null;
+                this.onEnd = null;
+                
+                console.log('🎤 [VOICE] VoiceChatHandler initialized:', {
+                    supported: this.isSupported,
+                    language: this.language
+                });
+            }
+            
+            /**
+             * Check if Web Speech API is supported in current browser
+             */
+            checkSupport() {
+                const hasWebkitSpeech = 'webkitSpeechRecognition' in window;
+                const hasSpeech = 'SpeechRecognition' in window;
+                
+                console.log('🎤 [VOICE] Browser support check:', {
+                    webkitSpeechRecognition: hasWebkitSpeech,
+                    SpeechRecognition: hasSpeech,
+                    userAgent: navigator.userAgent
+                });
+                
+                return hasWebkitSpeech || hasSpeech;
+            }
+            
+            /**
+             * Check if Web Speech API is supported
+             */
+            isApiSupported() {
+                return this.isSupported;
+            }
+            
+            /**
+             * Request microphone permissions
+             */
+            async requestPermissions() {
+                try {
+                    console.log('🎤 [VOICE] Requesting microphone permissions...');
+                    
+                    // Test microphone access
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Stop the test stream immediately
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    this.hasPermission = true;
+                    console.log('✅ [VOICE] Microphone permissions granted');
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ [VOICE] Microphone permission denied:', error);
+                    this.hasPermission = false;
+                    return false;
+                }
+            }
+            
+            /**
+             * Initialize speech recognition with proper configuration
+             */
+            initRecognition() {
+                if (!this.isSupported) {
+                    console.error('❌ [VOICE] Speech recognition not supported');
+                    return false;
+                }
+                
+                try {
+                    // Create recognition instance
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    
+                    // Configure recognition settings
+                    this.recognition.continuous = true;           // Keep listening continuously
+                    this.recognition.interimResults = true;       // Get partial results
+                    this.recognition.maxAlternatives = 1;         // Only best result
+                    this.recognition.lang = this.language;        // Set language
+                    
+                    // Configure timeout for silence (10 seconds)
+                    this.recognition.speechTimeoutLength = 10000;
+                    
+                    // Setup event handlers
+                    this.setupRecognitionEvents();
+                    
+                    console.log('✅ [VOICE] Speech recognition initialized:', {
+                        continuous: this.recognition.continuous,
+                        interimResults: this.recognition.interimResults,
+                        language: this.recognition.lang
+                    });
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ [VOICE] Failed to initialize speech recognition:', error);
+                    return false;
+                }
+            }
+            
+            /**
+             * Setup speech recognition event handlers
+             */
+            setupRecognitionEvents() {
+                if (!this.recognition) return;
+                
+                // Recognition started
+                this.recognition.onstart = () => {
+                    console.log('🎤 [VOICE] Recognition started');
+                    this.isListening = true;
+                    if (this.onStart) this.onStart();
+                };
+                
+                // Recognition ended
+                this.recognition.onend = () => {
+                    console.log('🎤 [VOICE] Recognition ended');
+                    this.isListening = false;
+                    if (this.onEnd) this.onEnd();
+                };
+                
+                // Recognition result received
+                this.recognition.onresult = (event) => {
+                    console.log('🎤 [VOICE] Recognition result:', event);
+                    
+                    let transcript = '';
+                    let isFinal = false;
+                    
+                    // Process all results
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        transcript += result[0].transcript;
+                        
+                        if (result.isFinal) {
+                            isFinal = true;
+                        }
+                    }
+                    
+                    console.log('🎤 [VOICE] Transcript:', {
+                        text: transcript,
+                        isFinal: isFinal,
+                        confidence: event.results[0]?.[0]?.confidence
+                    });
+                    
+                    // Call result callback
+                    if (this.onResult) {
+                        this.onResult(transcript, isFinal);
+                    }
+                };
+                
+                // Recognition error
+                this.recognition.onerror = (event) => {
+                    console.error('❌ [VOICE] Recognition error:', event.error);
+                    
+                    const errorMessage = this.getErrorMessage(event.error);
+                    
+                    if (this.onError) {
+                        this.onError(event.error, errorMessage);
+                    }
+                };
+            }
+            
+            /**
+             * Get user-friendly error message
+             */
+            getErrorMessage(error) {
+                const errorMessages = {
+                    'not-allowed': 'Microphone access denied. Please allow microphone permissions.',
+                    'no-speech': 'No speech detected. Please speak clearly.',
+                    'audio-capture': 'Microphone not available. Please check your microphone.',
+                    'network': 'Network error. Please check your internet connection.',
+                    'service-not-allowed': 'Speech recognition service not allowed.',
+                    'bad-grammar': 'Speech recognition grammar error.',
+                    'language-not-supported': 'Selected language not supported for speech recognition.'
+                };
+                
+                return errorMessages[error] || `Speech recognition error: ${error}`;
+            }
+            
+            /**
+             * Set the recognition language
+             */
+            setLanguage(language) {
+                this.language = language;
+                if (this.recognition) {
+                    this.recognition.lang = language;
+                }
+                console.log('🎤 [VOICE] Language set to:', language);
+            }
+            
+            /**
+             * Start speech recognition
+             */
+            async startRecognition() {
+                if (!this.isSupported) {
+                    throw new Error('Speech recognition not supported in this browser');
+                }
+                
+                if (!this.hasPermission) {
+                    const hasPermission = await this.requestPermissions();
+                    if (!hasPermission) {
+                        throw new Error('Microphone permission required');
+                    }
+                }
+                
+                if (!this.recognition) {
+                    const initialized = this.initRecognition();
+                    if (!initialized) {
+                        throw new Error('Failed to initialize speech recognition');
+                    }
+                }
+                
+                if (this.isListening) {
+                    console.log('🎤 [VOICE] Already listening, ignoring start request');
+                    return;
+                }
+                
+                try {
+                    console.log('🎤 [VOICE] Starting recognition...');
+                    this.recognition.start();
+                } catch (error) {
+                    console.error('❌ [VOICE] Failed to start recognition:', error);
+                    throw error;
+                }
+            }
+            
+            /**
+             * Stop speech recognition
+             */
+            stopRecognition() {
+                if (!this.recognition || !this.isListening) {
+                    console.log('🎤 [VOICE] Not listening, ignoring stop request');
+                    return;
+                }
+                
+                try {
+                    console.log('🎤 [VOICE] Stopping recognition...');
+                    this.recognition.stop();
+                } catch (error) {
+                    console.error('❌ [VOICE] Failed to stop recognition:', error);
+                }
+            }
+            
+            /**
+             * Get current status
+             */
+            getStatus() {
+                return {
+                    isSupported: this.isSupported,
+                    hasPermission: this.hasPermission,
+                    isListening: this.isListening,
+                    language: this.language
+                };
+            }
+        }
+        
+        // ============================================================================
+        // TRAINING APPLICATION
+        // ============================================================================
+        
         class TrainingApp {
             constructor() {
                 this.container = document.getElementById('main-content');
@@ -369,6 +742,10 @@
                 this.sessionData = null;
                 this.learnerSession = null;
                 this.currentSlide = null; // Track current slide for navigation
+                
+                // Initialize Voice Chat Handler
+                this.voiceHandler = null;
+                this.currentButtonState = 'mic'; // 'mic', 'recording', 'send'
                 
                 if (!this.token) {
                     this.showError('No session token provided');
@@ -856,111 +1233,629 @@
             
             setupChatFunctionality() {
                 const chatInput = document.getElementById('chat-input');
-                const sendButton = document.getElementById('send-message-btn');
+                const voiceChatBtn = document.getElementById('voice-chat-btn');
+                const voiceBtnIcon = document.getElementById('voice-btn-icon');
+                const voiceStatus = document.getElementById('voice-status');
                 const chatMessages = document.getElementById('chat-messages');
+                const sendBtnFallback = document.getElementById('send-message-btn-fallback');
                 
-                if (chatInput && sendButton && chatMessages) {
-                    const sendMessage = async () => {
-                        const message = chatInput.value.trim();
-                        if (!message) return;
-                        
-                        console.log('💬 [CHAT] Sending message:', message);
-                        
-                        // Désactiver l'input et le bouton pendant l'envoi
-                        chatInput.disabled = true;
-                        sendButton.disabled = true;
-                        sendButton.innerHTML = '<i class="bi bi-hourglass-split"></i>';
-                        
-                        // Ajouter le message de l'utilisateur au chat
-                        this.addChatMessage('user', message);
-                        chatInput.value = '';
-                        
-                        // Afficher l'animation de réflexion de l'IA
-                        this.showTypingAnimation();
-                        
-                        try {
-                            // Préparer la requête chat
-                            const chatRequest = {
-                                message: message,
-                                context: {
-                                    training_id: this.sessionData.training_session.training_id,
-                                    learner_session_id: this.learnerSession.id,
-                                    current_slide_id: null, // TODO: Add current slide ID when available
-                                    training_content: "Current slide content", // TODO: Get actual current slide content
-                                    learner_profile: {
-                                        experience_level: this.learnerSession.experience_level,
-                                        learning_style: this.learnerSession.learning_style,
-                                        job_position: this.learnerSession.job_position,
-                                        activity_sector: this.learnerSession.activity_sector,
-                                        country: this.learnerSession.country,
-                                        language: this.learnerSession.language
-                                    },
-                                    conversation_history: this.getChatHistory()
-                                },
-                                conversation_type: "general"
-                            };
-                            
-                            console.log('📤 [CHAT] Request payload:', chatRequest);
-                            
-                            // Appeler l'API chat
-                            const response = await fetch('/api/chat', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(chatRequest)
-                            });
-                            
-                            console.log('📥 [CHAT] Response status:', response.status);
-                            console.log('📥 [CHAT] Response headers:', [...response.headers.entries()]);
-                            
-                            if (!response.ok) {
-                                const errorData = await response.json();
-                                console.error('❌ [CHAT] Error response:', errorData);
-                                throw new Error(errorData.detail || 'Chat service temporarily unavailable');
-                            }
-                            
-                            const chatResponse = await response.json();
-                            console.log('✅ [CHAT] Success response:', chatResponse);
-                            
-                            // Supprimer l'animation de réflexion
-                            this.hideTypingAnimation();
-                            
-                            // Ajouter la réponse de l'IA au chat
-                            this.addChatMessage('assistant', chatResponse.response, {
-                                confidence: chatResponse.confidence_score,
-                                suggested_actions: chatResponse.suggested_actions,
-                                related_concepts: chatResponse.related_concepts
-                            });
-                            
-                        } catch (error) {
-                            console.error('❌ [CHAT] Error:', error);
-                            
-                            // Supprimer l'animation de réflexion en cas d'erreur
-                            this.hideTypingAnimation();
-                            
-                            this.addChatMessage('assistant', 
-                                `I'm sorry, I encountered an error. Please try again. (${error.message})`,
-                                { error: true }
-                            );
-                        } finally {
-                            // Réactiver l'input et le bouton
-                            chatInput.disabled = false;
-                            sendButton.disabled = false;
-                            sendButton.innerHTML = '<i class="bi bi-send"></i>';
-                            chatInput.focus();
-                        }
-                    };
+                // Initialize voice handler based on learner language
+                this.initializeVoiceHandler();
+                
+                // Setup fallback for unsupported browsers
+                this.setupVoiceFallback(sendBtnFallback, chatInput);
+                
+                if (chatInput && voiceChatBtn && chatMessages) {
+                    // Setup input change listener for adaptive button behavior
+                    this.setupInputChangeListener(chatInput, voiceChatBtn, voiceBtnIcon);
                     
-                    sendButton.addEventListener('click', sendMessage);
-                    chatInput.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            sendMessage();
-                        }
+                    // The actual send message and voice logic will be added in Phase 3 & 4
+                    console.log('✅ [CHAT] Chat functionality initialized with voice support');
+                } else {
+                    console.error('❌ [CHAT] Missing chat elements');
+                }
+            }
+            
+            /**
+             * Initialize voice handler with learner's language
+             */
+            initializeVoiceHandler() {
+                // Map learner language to speech recognition language codes
+                const languageMap = {
+                    'fr': 'fr-FR',
+                    'en': 'en-US', 
+                    'es': 'es-ES',
+                    'de': 'de-DE'
+                };
+                
+                const learnerLang = this.learnerSession?.language || 'fr';
+                const speechLang = languageMap[learnerLang] || 'fr-FR';
+                
+                this.voiceHandler = new VoiceChatHandler(speechLang);
+                
+                // Check if voice is supported
+                if (!this.voiceHandler.isApiSupported()) {
+                    console.log('🎤 [VOICE] Web Speech API not supported, showing fallback');
+                    this.showVoiceFallback();
+                } else {
+                    console.log('✅ [VOICE] Voice handler initialized with language:', speechLang);
+                }
+            }
+            
+            /**
+             * Setup voice fallback for unsupported browsers
+             */
+            setupVoiceFallback(fallbackBtn, chatInput) {
+                if (fallbackBtn) {
+                    fallbackBtn.addEventListener('click', () => {
+                        this.sendChatMessage(chatInput.value.trim());
                     });
                 }
             }
+            
+            /**
+             * Show voice fallback UI
+             */
+            showVoiceFallback() {
+                const chatInputContainer = document.querySelector('.chat-input');
+                if (chatInputContainer) {
+                    chatInputContainer.classList.add('no-voice-support');
+                }
+            }
+            
+            /**
+             * Setup input change listener for adaptive button behavior
+             */
+            setupInputChangeListener(chatInput, voiceChatBtn, voiceBtnIcon) {
+                const updateButtonState = () => {
+                    const hasText = chatInput.value.trim().length > 0;
+                    
+                    if (hasText && this.currentButtonState !== 'send') {
+                        // Switch to send mode
+                        this.setButtonState('send', voiceChatBtn, voiceBtnIcon);
+                    } else if (!hasText && this.currentButtonState !== 'mic' && this.currentButtonState !== 'recording') {
+                        // Switch back to mic mode
+                        this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                    }
+                };
+                
+                // Listen for input changes
+                chatInput.addEventListener('input', updateButtonState);
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (this.currentButtonState === 'send') {
+                            this.sendChatMessage(chatInput.value.trim());
+                        }
+                    }
+                });
+                
+                // Setup voice recording press & hold
+                this.setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                
+                // Initial state check
+                updateButtonState();
+            }
+            
+            /**
+             * Set button state with visual feedback
+             */
+            setButtonState(state, button, icon) {
+                // Remove all state classes
+                button.classList.remove('state-mic', 'state-recording', 'state-send');
+                
+                // Add new state class and update icon
+                switch (state) {
+                    case 'mic':
+                        button.classList.add('state-mic');
+                        icon.className = 'bi bi-mic';
+                        button.title = 'Click to start voice recording';
+                        this.currentButtonState = 'mic';
+                        break;
+                        
+                    case 'recording':
+                        button.classList.add('state-recording');
+                        icon.className = 'bi bi-record-circle';
+                        button.title = 'Recording... Click to stop';
+                        this.currentButtonState = 'recording';
+                        break;
+                        
+                    case 'send':
+                        button.classList.add('state-send');
+                        icon.className = 'bi bi-send';
+                        button.title = 'Send message';
+                        this.currentButtonState = 'send';
+                        break;
+                }
+                
+                console.log('🎤 [VOICE] Button state changed to:', state);
+            }
+            
+            /**
+             * Setup voice recording click on/off functionality
+             */
+            setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
+                if (!this.voiceHandler || !this.voiceHandler.isApiSupported()) {
+                    console.log('🎤 [VOICE] Voice recording setup skipped - not supported');
+                    return;
+                }
+                
+                let isRecording = false;
+                let silenceTimeout = null;
+                let accumulatedTranscript = '';
+                
+                // Toggle recording function
+                const toggleRecording = async (e) => {
+                    e.preventDefault();
+                    
+                    // If in send mode, send the message
+                    if (this.currentButtonState === 'send') {
+                        this.sendChatMessage(chatInput.value.trim());
+                        return;
+                    }
+                    
+                    // If not in mic mode, ignore
+                    if (this.currentButtonState !== 'mic' && this.currentButtonState !== 'recording') {
+                        return;
+                    }
+                    
+                    if (!isRecording) {
+                        // Start recording
+                        await this.startVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                        isRecording = true;
+                    } else {
+                        // Stop recording
+                        await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                        isRecording = false;
+                    }
+                };
+                
+                // Setup silence timeout function
+                const resetSilenceTimeout = () => {
+                    if (silenceTimeout) {
+                        clearTimeout(silenceTimeout);
+                    }
+                    
+                    // Auto-stop after 10 seconds of silence
+                    silenceTimeout = setTimeout(async () => {
+                        if (isRecording) {
+                            console.log('🎤 [VOICE] Auto-stopping after 10 seconds of silence');
+                            await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                            isRecording = false;
+                        }
+                    }, 10000);
+                };
+                
+                // Store timeout functions for access in other methods
+                this.resetSilenceTimeout = resetSilenceTimeout;
+                this.clearSilenceTimeout = () => {
+                    if (silenceTimeout) {
+                        clearTimeout(silenceTimeout);
+                        silenceTimeout = null;
+                    }
+                };
+                
+                // Click event for toggle functionality
+                voiceChatBtn.addEventListener('click', toggleRecording);
+                
+                // Prevent context menu on mobile
+                voiceChatBtn.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+                
+                console.log('✅ [VOICE] Voice recording click on/off setup complete');
+            }
+            
+            /**
+             * Start voice recording
+             */
+            async startVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
+                // Only start recording if no text in input
+                if (chatInput.value.trim().length > 0) {
+                    console.log('🎤 [VOICE] Cannot start recording with text in input');
+                    return;
+                }
+                
+                console.log('🎤 [VOICE] Starting voice recording...');
+                
+                try {
+                    // Setup voice handler callbacks
+                    this.setupVoiceCallbacks(voiceChatBtn, voiceBtnIcon, chatInput);
+                    
+                    // Start recording
+                    await this.voiceHandler.startRecognition();
+                    
+                    // Change to recording state
+                    this.setButtonState('recording', voiceChatBtn, voiceBtnIcon);
+                    this.updateVoiceStatus('Recording... Click again to stop');
+                    
+                    // Start silence timeout
+                    if (this.resetSilenceTimeout) {
+                        this.resetSilenceTimeout();
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [VOICE] Failed to start recording:', error);
+                    this.updateVoiceStatus(`Error: ${error.message}`);
+                    this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                }
+            }
+            
+            /**
+             * Stop voice recording
+             */
+            async stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
+                console.log('🎤 [VOICE] Stopping voice recording...');
+                
+                try {
+                    // Clear silence timeout
+                    if (this.clearSilenceTimeout) {
+                        this.clearSilenceTimeout();
+                    }
+                    
+                    // Stop recording
+                    this.voiceHandler.stopRecognition();
+                    
+                    // Show processing state
+                    this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                    this.updateVoiceStatus('Processing speech...');
+                    
+                } catch (error) {
+                    console.error('❌ [VOICE] Failed to stop recording:', error);
+                    this.updateVoiceStatus(`Error: ${error.message}`);
+                    this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                }
+            }
+            
+            /**
+             * Setup voice handler callbacks for recording session
+             */
+            setupVoiceCallbacks(voiceChatBtn, voiceBtnIcon, chatInput) {
+                // Store partial transcript for continuous updates
+                let partialTranscript = '';
+                let finalTranscript = '';
+                
+                this.voiceHandler.onStart = () => {
+                    console.log('🎤 [VOICE] Recording started');
+                    this.updateVoiceStatus('Recording... Click again to stop');
+                    partialTranscript = '';
+                    finalTranscript = '';
+                };
+                
+                this.voiceHandler.onEnd = () => {
+                    console.log('🎤 [VOICE] Recording ended');
+                    
+                    // Clear silence timeout
+                    if (this.clearSilenceTimeout) {
+                        this.clearSilenceTimeout();
+                    }
+                    
+                    // Process final accumulated transcript
+                    if (finalTranscript.trim()) {
+                        this.handleVoiceTranscript(finalTranscript.trim(), chatInput, voiceChatBtn, voiceBtnIcon);
+                    } else {
+                        console.log('🎤 [VOICE] No final transcript available');
+                        this.updateVoiceStatus('No speech detected');
+                        setTimeout(() => {
+                            this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                            this.updateVoiceStatus('');
+                        }, 2000);
+                    }
+                };
+                
+                this.voiceHandler.onResult = (transcript, isFinal) => {
+                    console.log('🎤 [VOICE] Transcript received:', { 
+                        transcript, 
+                        isFinal, 
+                        length: transcript.length 
+                    });
+                    
+                    if (isFinal) {
+                        // Accumulate final results
+                        if (transcript.trim()) {
+                            finalTranscript += (finalTranscript ? ' ' : '') + transcript.trim();
+                            console.log('🎤 [VOICE] Final transcript accumulated:', finalTranscript);
+                        }
+                        
+                        // Reset silence timeout on final result
+                        if (this.resetSilenceTimeout) {
+                            this.resetSilenceTimeout();
+                        }
+                        
+                    } else {
+                        // Partial result - show preview in status
+                        partialTranscript = transcript;
+                        const displayText = (finalTranscript + ' ' + transcript).trim();
+                        
+                        if (displayText) {
+                            this.updateVoiceStatus(`Recognizing: "${displayText}"`);
+                        } else {
+                            this.updateVoiceStatus('Recording... Click again to stop');
+                        }
+                        
+                        // Reset silence timeout on partial result (speech detected)
+                        if (transcript.trim() && this.resetSilenceTimeout) {
+                            this.resetSilenceTimeout();
+                        }
+                    }
+                };
+                
+                this.voiceHandler.onError = (error, message) => {
+                    console.error('❌ [VOICE] Recognition error:', error);
+                    this.updateVoiceStatus(`Error: ${message}`);
+                    
+                    // Clear silence timeout
+                    if (this.clearSilenceTimeout) {
+                        this.clearSilenceTimeout();
+                    }
+                    
+                    // Reset to mic state after error
+                    setTimeout(() => {
+                        this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                        this.updateVoiceStatus('');
+                    }, 3000);
+                };
+            }
+            
+            /**
+             * Handle voice transcript result with smart text processing
+             */
+            handleVoiceTranscript(transcript, chatInput, voiceChatBtn, voiceBtnIcon) {
+                console.log('🎤 [VOICE] Handling transcript:', transcript);
+                
+                // Clean and process transcript
+                const processedTranscript = this.processTranscript(transcript);
+                
+                if (!processedTranscript) {
+                    console.log('🎤 [VOICE] Processed transcript is empty, ignoring');
+                    this.updateVoiceStatus('No valid speech detected');
+                    setTimeout(() => {
+                        this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                        this.updateVoiceStatus('');
+                    }, 2000);
+                    return;
+                }
+                
+                // Check if there's existing text in input
+                const existingText = chatInput.value.trim();
+                let finalText = processedTranscript;
+                
+                if (existingText) {
+                    // Append to existing text with space
+                    finalText = existingText + ' ' + processedTranscript;
+                    console.log('🎤 [VOICE] Appending to existing text:', { existingText, processedTranscript, finalText });
+                }
+                
+                // Insert final text into input field
+                chatInput.value = finalText;
+                
+                // Focus input field and set cursor at end
+                chatInput.focus();
+                chatInput.setSelectionRange(finalText.length, finalText.length);
+                
+                // Trigger input event to update button state
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Show success feedback
+                this.updateVoiceStatus('✓ Voice message transcribed');
+                
+                // Clear success message after 2 seconds
+                setTimeout(() => {
+                    this.updateVoiceStatus('');
+                }, 2000);
+                
+                console.log('✅ [VOICE] Transcript processed and inserted:', { 
+                    original: transcript, 
+                    processed: processedTranscript, 
+                    final: finalText 
+                });
+            }
+            
+            /**
+             * Process and clean transcript text
+             */
+            processTranscript(transcript) {
+                if (!transcript || typeof transcript !== 'string') {
+                    return '';
+                }
+                
+                // Clean transcript
+                let processed = transcript.trim();
+                
+                // Capitalize first letter
+                if (processed.length > 0) {
+                    processed = processed.charAt(0).toUpperCase() + processed.slice(1);
+                }
+                
+                // Add punctuation if missing
+                if (processed.length > 0 && !/[.!?]$/.test(processed)) {
+                    // Only add period for statements (not questions)
+                    if (!/^(que|quoi|comment|pourquoi|où|quand|qui|how|what|where|when|why|who)/i.test(processed)) {
+                        processed += '.';
+                    } else {
+                        processed += '?';
+                    }
+                }
+                
+                console.log('🎤 [VOICE] Transcript processed:', { original: transcript, processed });
+                return processed;
+            }
+            
+            /**
+             * Update voice status indicator
+             */
+            updateVoiceStatus(message) {
+                const voiceStatus = document.getElementById('voice-status');
+                if (voiceStatus) {
+                    voiceStatus.textContent = message;
+                }
+            }
+            
+            /**
+             * Send chat message to AI trainer
+             */
+            async sendChatMessage(message) {
+                if (!message) return;
+                
+                console.log('💬 [CHAT] Sending message:', message);
+                
+                const chatInput = document.getElementById('chat-input');
+                const voiceChatBtn = document.getElementById('voice-chat-btn');
+                const voiceBtnIcon = document.getElementById('voice-btn-icon');
+                const chatMessages = document.getElementById('chat-messages');
+                
+                if (!chatMessages) {
+                    console.error('❌ [CHAT] Chat messages container not found');
+                    return;
+                }
+                
+                try {
+                    // Disable input and button during sending
+                    if (chatInput) chatInput.disabled = true;
+                    if (voiceChatBtn) voiceChatBtn.disabled = true;
+                    
+                    // Set button to loading state
+                    this.setButtonState('send', voiceChatBtn, voiceBtnIcon);
+                    if (voiceBtnIcon) voiceBtnIcon.className = 'bi bi-hourglass-split';
+                    
+                    // Add user message to chat
+                    this.addChatMessage('user', message);
+                    
+                    // Clear input
+                    if (chatInput) chatInput.value = '';
+                    
+                    // Show typing animation
+                    this.showTypingAnimation();
+                    
+                    // Prepare chat request
+                    const chatRequest = {
+                        message: message,
+                        context: {
+                            training_id: this.sessionData.training_session.training_id,
+                            learner_session_id: this.learnerSession.id,
+                            current_slide_id: this.currentSlide?.id || null,
+                            training_content: this.getCurrentSlideContent(),
+                            learner_profile: this.getLearnerProfile(),
+                            conversation_history: this.getChatHistory()
+                        },
+                        conversation_type: "general"
+                    };
+                    
+                    console.log('📤 [CHAT] Request payload:', chatRequest);
+                    
+                    // Call chat API
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(chatRequest)
+                    });
+                    
+                    console.log('📥 [CHAT] Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('❌ [CHAT] Error response:', errorData);
+                        throw new Error(errorData.detail || 'Chat service temporarily unavailable');
+                    }
+                    
+                    const chatResponse = await response.json();
+                    console.log('✅ [CHAT] Success response:', chatResponse);
+                    
+                    // Hide typing animation
+                    this.hideTypingAnimation();
+                    
+                    // Add AI response to chat
+                    this.addChatMessage('assistant', chatResponse.response, {
+                        confidence: chatResponse.confidence_score,
+                        suggested_actions: chatResponse.suggested_actions,
+                        related_concepts: chatResponse.related_concepts,
+                        conversation_type: chatResponse.conversation_type
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ [CHAT] Error:', error);
+                    
+                    // Hide typing animation on error
+                    this.hideTypingAnimation();
+                    
+                    // Show error message
+                    this.addChatMessage('assistant', 
+                        `I'm sorry, I encountered an error. Please try again. (${error.message})`,
+                        { error: true }
+                    );
+                    
+                } finally {
+                    // Re-enable input and button
+                    if (chatInput) {
+                        chatInput.disabled = false;
+                        chatInput.focus();
+                    }
+                    if (voiceChatBtn) voiceChatBtn.disabled = false;
+                    
+                    // Reset button state
+                    this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+                }
+            }
+            
+            /**
+             * Get current slide content for context
+             */
+            getCurrentSlideContent() {
+                if (this.currentSlide) {
+                    return this.currentSlide.content || 'Current slide content';
+                }
+                return 'Training session content';
+            }
+            
+            /**
+             * Get learner profile for context
+             */
+            getLearnerProfile() {
+                if (!this.learnerSession) {
+                    return {};
+                }
+                
+                return {
+                    experience_level: this.learnerSession.experience_level,
+                    learning_style: this.learnerSession.learning_style,
+                    job_position: this.learnerSession.job_position,
+                    activity_sector: this.learnerSession.activity_sector,
+                    country: this.learnerSession.country,
+                    language: this.learnerSession.language,
+                    objectives: this.learnerSession.objectives,
+                    training_duration: this.learnerSession.training_duration,
+                    enriched_profile: this.learnerSession.enriched_profile
+                };
+            }
+            
+            /**
+             * Get conversation history for context
+             */
+            getChatHistory() {
+                const chatMessages = document.getElementById('chat-messages');
+                if (!chatMessages) return [];
+                
+                const messages = [];
+                const messageElements = chatMessages.querySelectorAll('.message');
+                
+                messageElements.forEach(msgEl => {
+                    const role = msgEl.classList.contains('user') ? 'user' : 'assistant';
+                    const contentEl = msgEl.querySelector('.message-content p');
+                    if (contentEl) {
+                        messages.push({
+                            role: role,
+                            content: contentEl.textContent.trim(),
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                });
+                
+                // Return last 10 messages to avoid context overflow
+                return messages.slice(-10);
+            }
+            
             
             addChatMessage(role, content, metadata = {}) {
                 const chatMessages = document.getElementById('chat-messages');
