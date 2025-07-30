@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Generation Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="text-primary mb-4">
+            <i class="bi bi-graph-up me-2"></i>Chart Generation Test
+        </h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Test Content</h5>
+                        <textarea id="test-content" class="form-control mb-3" rows="8">Performance des équipes en 2024:
+- Équipe Marketing: 85% de satisfaction client
+- Équipe Ventes: 92% d'objectifs atteints  
+- Équipe Support: 78% de résolution première fois
+- Équipe Technique: 96% de disponibilité système
+
+Ces métriques montrent l'évolution positive sur les 4 trimestres.</textarea>
+                        
+                        <button id="generate-chart-btn" class="btn btn-outline-info me-2">
+                            <i class="bi bi-graph-up me-1"></i>Generate Chart
+                        </button>
+                        <button id="clear-cache-btn" class="btn btn-outline-secondary">
+                            <i class="bi bi-trash me-1"></i>Clear Cache
+                        </button>
+                        
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Charts are cached - click again to see instant loading!
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div id="chart-container" class="mt-4" style="display: none;">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-graph-up me-2"></i>Generated Charts
+                    </h5>
+                    <div id="charts-display" class="row">
+                        <!-- Charts will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple chart cache for testing
+        const chartCache = new Map();
+        
+        function createContentHash(content) {
+            let hash = 0;
+            if (content.length === 0) return hash.toString();
+            
+            for (let i = 0; i < content.length; i++) {
+                const char = content.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            
+            return Math.abs(hash).toString();
+        }
+        
+        document.getElementById('generate-chart-btn').addEventListener('click', async function() {
+            const btn = this;
+            const content = document.getElementById('test-content').value;
+            
+            // Check cache first
+            const cacheKey = createContentHash(content);
+            if (chartCache.has(cacheKey)) {
+                console.log('♻️ Loading from cache');
+                const cached = chartCache.get(cacheKey);
+                displayCharts(cached.charts, cached.message + ' (cached)');
+                return;
+            }
+            
+            // Show loading
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+            
+            try {
+                const response = await fetch('/api/slides/12345678-1234-1234-1234-123456789abc/generate-chart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        slide_content: content,
+                        slide_title: 'Test Slide',
+                        max_charts: 3
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.charts) {
+                    // Cache the result
+                    chartCache.set(cacheKey, {
+                        charts: result.charts,
+                        message: result.message
+                    });
+                    
+                    displayCharts(result.charts, result.message);
+                } else {
+                    showError(result.message || 'No charts generated');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to generate charts: ' + error.message);
+                
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-graph-up me-1"></i>Generate Chart';
+            }
+        });
+        
+        document.getElementById('clear-cache-btn').addEventListener('click', function() {
+            chartCache.clear();
+            console.log('♻️ Cache cleared');
+            
+            // Show feedback
+            const container = document.getElementById('chart-container');
+            const display = document.getElementById('charts-display');
+            
+            display.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-trash me-2"></i>Cache cleared successfully!
+                    </div>
+                </div>
+            `;
+            container.style.display = 'block';
+        });
+        
+        function displayCharts(charts, message) {
+            const container = document.getElementById('chart-container');
+            const display = document.getElementById('charts-display');
+            
+            display.innerHTML = '';
+            container.style.display = 'block';
+            
+            if (message) {
+                const messageEl = document.createElement('div');
+                const isCached = message.includes('(cached)');
+                messageEl.className = `alert ${isCached ? 'alert-success' : 'alert-info'} mb-3`;
+                const icon = isCached ? 'lightning-charge' : 'info-circle';
+                messageEl.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
+                display.appendChild(messageEl);
+            }
+            
+            charts.forEach((chart, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'col-12 mb-4';
+                
+                wrapper.innerHTML = `
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title text-primary">
+                                <i class="bi bi-graph-up me-2"></i>${chart.title}
+                            </h6>
+                            ${chart.description ? `<p class="text-muted small">${chart.description}</p>` : ''}
+                            <div style="position: relative; height: 300px;">
+                                <canvas id="chart-${index}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                display.appendChild(wrapper);
+                
+                // Create chart
+                setTimeout(() => {
+                    const canvas = document.getElementById(`chart-${index}`);
+                    const ctx = canvas.getContext('2d');
+                    
+                    const colors = getBootstrapColors();
+                    
+                    new Chart(ctx, {
+                        type: chart.type,
+                        data: {
+                            labels: chart.labels,
+                            datasets: [{
+                                label: chart.title,
+                                data: chart.data,
+                                backgroundColor: colors.background,
+                                borderColor: colors.border,
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom'
+                                }
+                            },
+                            animation: {
+                                delay: (ctx) => ctx.dataIndex * 200
+                            }
+                        }
+                    });
+                }, 100);
+            });
+        }
+        
+        function getBootstrapColors() {
+            return {
+                background: ['rgba(13, 110, 253, 0.2)', 'rgba(25, 135, 84, 0.2)', 'rgba(255, 193, 7, 0.2)', 'rgba(220, 53, 69, 0.2)'],
+                border: ['#0d6efd', '#198754', '#ffc107', '#dc3545']
+            };
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('chart-container');
+            const display = document.getElementById('charts-display');
+            
+            display.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>${message}
+                    </div>
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

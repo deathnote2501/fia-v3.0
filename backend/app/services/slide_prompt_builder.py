@@ -61,7 +61,7 @@ Créer le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}. Cette [SL
 - Plan de la formation : {plan_context}
 
 [CONTRAINTES] :
-- Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur
+- Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # ## ### - > ** *
 - Utilise la structure suivante : 1 titre, entre 2 et 4 sous-titres MAXIMUM, entre 1 et 5 points clés MAXIMUM sous forme de liste à puces avec pour chaque puce 5 à 15 mots MAXIMUM
@@ -113,7 +113,7 @@ Créer le contenu de la [SLIDE DE FORMATION] de type quiz. Cette [SLIDE DE FORMA
 
 [CONTRAINTES] :
 - La slide contiendra un titre et entre 3 et 5 questions de connaissance
-- Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur
+- Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # et -
 - Utilise la structure suivante : titre, questions de connaissance sous forme de liste à puces, textes courts (5 à 15 mots)
@@ -181,7 +181,7 @@ Tu es un formateur pédagogue spécialisé dans la réécriture de [SLIDE DE FOR
 {{
   "slide_content": "Le contenu Markdown {action} ici"
 }}
-- Le contenu dans slide_content doit être du Markdown pur
+- Le contenu dans slide_content doit être du Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Garde la même structure Markdown (titres, listes, etc.) mais adapte le texte
 - Reste professionnel et pédagogique
 
@@ -236,7 +236,7 @@ Créer une introduction personnalisée pour le module "{module_name}" selon le [
 - Sous-modules inclus : {submodules_list}
 
 [CONTRAINTES] :
-- Réponds UNIQUEMENT avec le texte d'introduction (pas de Markdown)
+- Réponds UNIQUEMENT avec le texte d'introduction (pas de Markdown) (en insérant quelques emojis si cela est pertinent)
 - 2-3 phrases maximum (20-30 mots)
 - Explique l'objectif et ce que l'apprenant va découvrir
 - Adapte au profil professionnel de l'apprenant

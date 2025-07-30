@@ -47,7 +47,7 @@ class ConversationPromptBuilder:
 Tu es un formateur pédagogue spécialisé dans la réponse aux [MESSAGE] d'un apprenant dans le cadre d'une session de formation interactive.
 
 [OBJECTIF] :
-Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone en s'adaptant au contenu du [SLIDE COURANT], à la [CONVERSATION RECENTE] et à son [PROFIL APPRENANT].
+Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone en s'adaptant au contenu du [SLIDE COURANT], au [PROFIL APPRENANT] et toutes les informations complémentaires ci-dessous.
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -62,13 +62,26 @@ Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interact
 [HISTORIQUE CONVERSATION] :
 {history_text}
 
+[FONCTIONNEMENT FORMATION INTERACTIVE] :
+L'apprenant peut utiliser les boutons en bas des slides pour : 
+- Simplifier ou approfondir le contenu du slide courant 
+- Générer une image pour représenter le contenu du slide sous forme d'infographie
+- Générer un graphique pour représenter le contenu du slide sous forme de graphique
+L'apprenant peut utiliser les boutons du chat pour :
+- Utiliser son micro pour te parler
+- Activer l'audio pour que tu répondes à haute voix
+- Te demander de commenter le slide
+- Te demander de poser une question de compréhension
+- Te demander un exemple pour illustrer les concepts présents dans le slide
+- Te demander les points clés à retrnir sur ce slide
+
 [MESSAGE APPRENANT] :
 {message}
 
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Ta réponse pédagogique personnalisée à l'apprenant",
+  "response": "Ta réponse pédagogique personnalisée à l'apprenant (avec 1 ou 2 emojis uniquement si c'est pertinent)",
   "learner_profile": {{
     "learning_style_observed": "style d'apprentissage observé lors de cette interaction",
     "comprehension_level": "niveau de compréhension détecté",
@@ -161,7 +174,7 @@ Génère maintenant le commentaire au format JSON selon la [STRUCTURE JSON ATTEN
         prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de donner des exemples sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Donner un exemple adapté au poste et secteur d'activité de l'apprenant : {learner_profile.get('job_position', 'professional')}, pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
+Donner 1 ) 3 exemples adaptés au poste et secteur d'activité de l'apprenant : {learner_profile.get('job_position', 'professional')}, pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -177,7 +190,7 @@ Contenu : {slide_content}
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Tes exemples pratiques personnalisés (2-3 exemples concrets)"
+  "response": "Tes exemples pratiques personnalisés"
 }}
 
 Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
@@ -211,7 +224,7 @@ Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDU
         prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de poser des questions de compréhension sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Pose une question de compréhention adapté au [PROFIL APPRENANT] à l'apprenant pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
+Pose une seule question de compréhention adapté au [PROFIL APPRENANT] à l'apprenant pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -227,7 +240,7 @@ Contenu : {slide_content}
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "T question de compréhension personnalisées (5 à 25 mots)"
+  "response": "Ta question de compréhension personnalisées (5 à 25 mots)"
 }}
 
 Génère maintenant les questions au format JSON selon la [STRUCTURE JSON ATTENDUE]."""

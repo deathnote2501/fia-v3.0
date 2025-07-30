@@ -586,8 +586,11 @@
                     <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
                         <i class="bi bi-arrow-up-circle me-1"></i>Deepen
                     </button>
-                    <button id="generate-image-btn" class="btn btn-outline-primary">
+                    <button id="generate-image-btn" class="btn btn-outline-primary me-2">
                         <i class="bi bi-image me-1"></i>Generate Image
+                    </button>
+                    <button id="generate-chart-btn" class="btn btn-outline-info">
+                        <i class="bi bi-graph-up me-1"></i>Generate Chart
                     </button>
                 </div>
                 
@@ -603,6 +606,9 @@
     
     <!-- Marked.js for markdown parsing (KISS solution) -->
     <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    
+    <!-- Chart.js for chart generation -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     
     <script>
         // ============================================================================
@@ -1230,6 +1236,9 @@
                 this.learnerSession = null;
                 this.currentSlide = null; // Track current slide for navigation
                 
+                // Chart generation cache
+                this.chartCache = new Map(); // Cache for generated charts
+                
                 // Initialize Voice Chat Handler
                 this.voiceHandler = null;
                 this.currentButtonState = 'mic'; // 'mic', 'recording', 'send'
@@ -1677,6 +1686,16 @@
                             <!-- Slide content in markdown format -->
                             <div id="slide-content" class="slide-content">
                                 ${htmlTransformed}
+                            </div>
+                            
+                            <!-- Chart container (hidden by default) -->
+                            <div id="chart-container" class="mt-4" style="display: none;">
+                                <h5 class="text-primary mb-3">
+                                    <i class="bi bi-graph-up me-2"></i>Visual Representations
+                                </h5>
+                                <div id="charts-display" class="row">
+                                    <!-- Charts will be rendered here -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2979,6 +2998,12 @@
                     console.log('✅ [NEW_BUTTONS] Generate image button connected');
                 }
                 
+                const generateChartBtn = document.getElementById('generate-chart-btn');
+                if (generateChartBtn) {
+                    generateChartBtn.addEventListener('click', () => this.generateSlideChart());
+                    console.log('✅ [NEW_BUTTONS] Generate chart button connected');
+                }
+                
                 if (newNextBtn) {
                     newNextBtn.addEventListener('click', () => this.navigateToNextSlide());
                     console.log('✅ [NEW_BUTTONS] New next button connected');
@@ -3303,6 +3328,322 @@
                     : 'Failed to generate image. Please try again.';
                     
                 console.warn('🚨 [IMAGE_GEN] User message:', message);
+            }
+            
+            async generateSlideChart() {
+                const generateChartBtn = document.getElementById('generate-chart-btn');
+                const slideContentEl = document.getElementById('slide-content');
+                
+                if (!slideContentEl) {
+                    console.error('❌ [CHART_GEN] Slide content element not found');
+                    return;
+                }
+                
+                try {
+                    console.log('🎯 [CHART_GEN] Starting chart generation');
+                    
+                    // Get current slide content
+                    const currentMarkdown = this.getCurrentSlideMarkdown();
+                    if (!currentMarkdown) {
+                        console.error('❌ [CHART_GEN] No current slide content to generate charts from');
+                        return;
+                    }
+                    
+                    // Create cache key from content hash
+                    const cacheKey = this.createContentHash(currentMarkdown);
+                    
+                    // Check cache first
+                    if (this.chartCache.has(cacheKey)) {
+                        console.log('♻️ [CHART_GEN] Loading charts from cache');
+                        const cachedResult = this.chartCache.get(cacheKey);
+                        this.displayGeneratedCharts(cachedResult.charts, cachedResult.message + ' (cached)');
+                        return;
+                    }
+                    
+                    // Disable button and show loading
+                    if (generateChartBtn) {
+                        generateChartBtn.disabled = true;
+                        generateChartBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                    }
+                    
+                    console.log('📝 [CHART_GEN] Content length:', currentMarkdown.length);
+                    console.log('📝 [CHART_GEN] Content preview:', currentMarkdown.substring(0, 100) + '...');
+                    
+                    // Prepare request
+                    const requestData = {
+                        slide_content: currentMarkdown,
+                        slide_title: this.currentSlide?.title || 'Current Slide',
+                        max_charts: 3
+                    };
+                    
+                    console.log('🚀 [CHART_GEN] Sending request to backend...');
+                    
+                    // Call backend API
+                    const response = await fetch(`/api/slides/${this.learnerSession.id}/generate-chart`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || `HTTP ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ [CHART_GEN] Backend response:', result);
+                    
+                    if (result.success && result.charts && result.charts.length > 0) {
+                        // Cache the result
+                        this.chartCache.set(cacheKey, {
+                            charts: result.charts,
+                            message: result.message,
+                            timestamp: Date.now()
+                        });
+                        
+                        // Limit cache size (keep only last 10 entries)
+                        if (this.chartCache.size > 10) {
+                            const firstKey = this.chartCache.keys().next().value;
+                            this.chartCache.delete(firstKey);
+                        }
+                        
+                        // Display generated charts
+                        this.displayGeneratedCharts(result.charts, result.message);
+                        console.log('✅ [CHART_GEN] Charts generated and cached successfully');
+                    } else {
+                        this.showChartError(result.message || 'No charts could be generated from this content');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ [CHART_GEN] Error:', error);
+                    this.showChartError(error.message || 'Failed to generate charts');
+                    
+                } finally {
+                    // Re-enable button
+                    if (generateChartBtn) {
+                        generateChartBtn.disabled = false;
+                        generateChartBtn.innerHTML = '<i class="bi bi-graph-up me-1"></i>Generate Chart';
+                    }
+                }
+            }
+            
+            displayGeneratedCharts(charts, message) {
+                const chartContainer = document.getElementById('chart-container');
+                const chartsDisplay = document.getElementById('charts-display');
+                
+                if (!chartContainer || !chartsDisplay) {
+                    console.error('❌ [CHART_GEN] Chart containers not found');
+                    return;
+                }
+                
+                // Clear previous charts
+                chartsDisplay.innerHTML = '';
+                
+                // Show container
+                chartContainer.style.display = 'block';
+                
+                // Add description message
+                if (message) {
+                    const messageEl = document.createElement('div');
+                    const isCached = message.includes('(cached)');
+                    messageEl.className = `alert ${isCached ? 'alert-success' : 'alert-info'} mb-3`;
+                    const icon = isCached ? 'lightning-charge' : 'info-circle';
+                    messageEl.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
+                    chartsDisplay.appendChild(messageEl);
+                }
+                
+                // Render each chart
+                charts.forEach((chartConfig, index) => {
+                    this.renderChart(chartConfig, index, chartsDisplay);
+                });
+                
+                // Scroll to charts
+                chartContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            
+            renderChart(chartConfig, index, container) {
+                // Create chart wrapper
+                const chartWrapper = document.createElement('div');
+                const totalCharts = container.querySelectorAll('.col-lg-6, .col-lg-12').length + 1;
+                chartWrapper.className = `col-lg-${totalCharts === 1 ? '12' : '6'} mb-4`;
+                
+                // Create chart card
+                const chartCard = document.createElement('div');
+                chartCard.className = 'card shadow-sm';
+                chartCard.innerHTML = `
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">
+                            <i class="bi bi-${this.getChartIcon(chartConfig.type)} me-2"></i>
+                            ${chartConfig.title}
+                        </h6>
+                        ${chartConfig.description ? `<p class="card-text text-muted small">${chartConfig.description}</p>` : ''}
+                        <div class="chart-canvas-wrapper" style="position: relative; height: 300px;">
+                            <canvas id="chart-${index}" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                `;
+                
+                chartWrapper.appendChild(chartCard);
+                container.appendChild(chartWrapper);
+                
+                // Render Chart.js chart
+                setTimeout(() => {
+                    this.createChart(`chart-${index}`, chartConfig);
+                }, 100);
+            }
+            
+            createChart(canvasId, chartConfig) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) {
+                    console.error(`❌ [CHART_GEN] Canvas ${canvasId} not found`);
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Get Bootstrap colors
+                const colors = this.getBootstrapColors(chartConfig.color_palette);
+                
+                // Create Chart.js configuration
+                const config = this.buildChartConfig(chartConfig, colors);
+                
+                // Create chart
+                new Chart(ctx, config);
+                console.log(`✅ [CHART_GEN] Chart ${canvasId} created successfully`);
+            }
+            
+            buildChartConfig(chartConfig, colors) {
+                const baseConfig = {
+                    type: chartConfig.type,
+                    data: {
+                        labels: chartConfig.labels,
+                        datasets: [{
+                            label: chartConfig.title,
+                            data: chartConfig.data,
+                            backgroundColor: colors.background,
+                            borderColor: colors.border,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                enabled: true
+                            }
+                        },
+                        animation: {
+                            delay: (ctx) => ctx.dataIndex * 200 // Staggered animation
+                        }
+                    }
+                };
+                
+                // Type-specific configurations
+                if (chartConfig.type === 'line') {
+                    baseConfig.data.datasets[0].fill = false;
+                    baseConfig.data.datasets[0].tension = 0.3;
+                } else if (chartConfig.type === 'radar') {
+                    baseConfig.options.scales = {
+                        r: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(13, 110, 253, 0.1)'
+                            }
+                        }
+                    };
+                }
+                
+                return baseConfig;
+            }
+            
+            getBootstrapColors(palette) {
+                const colorPalettes = {
+                    default: {
+                        background: ['rgba(13, 110, 253, 0.2)', 'rgba(25, 135, 84, 0.2)', 'rgba(255, 193, 7, 0.2)', 'rgba(220, 53, 69, 0.2)', 'rgba(13, 202, 240, 0.2)', 'rgba(108, 117, 125, 0.2)'],
+                        border: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6c757d']
+                    },
+                    blues: {
+                        background: ['rgba(13, 110, 253, 0.2)', 'rgba(13, 202, 240, 0.2)', 'rgba(77, 171, 247, 0.2)', 'rgba(28, 126, 214, 0.2)', 'rgba(51, 154, 240, 0.2)', 'rgba(108, 117, 125, 0.2)'],
+                        border: ['#0d6efd', '#0dcaf0', '#4dabf7', '#1c7ed6', '#339af0', '#6c757d']
+                    },
+                    success: {
+                        background: ['rgba(25, 135, 84, 0.2)', 'rgba(81, 207, 102, 0.2)', 'rgba(55, 178, 77, 0.2)', 'rgba(47, 158, 68, 0.2)', 'rgba(13, 202, 240, 0.2)', 'rgba(13, 110, 253, 0.2)'],
+                        border: ['#198754', '#51cf66', '#37b24d', '#2f9e44', '#0dcaf0', '#0d6efd']
+                    }
+                };
+                
+                return colorPalettes[palette] || colorPalettes.default;
+            }
+            
+            getChartIcon(chartType) {
+                const icons = {
+                    line: 'graph-up',
+                    pie: 'pie-chart',
+                    radar: 'hexagon'
+                };
+                return icons[chartType] || 'graph-up';
+            }
+            
+            showChartError(errorMessage) {
+                console.error('❌ [CHART_GEN] Error:', errorMessage);
+                
+                const chartContainer = document.getElementById('chart-container');
+                const chartsDisplay = document.getElementById('charts-display');
+                
+                if (chartContainer && chartsDisplay) {
+                    chartsDisplay.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                ${errorMessage}
+                            </div>
+                        </div>
+                    `;
+                    chartContainer.style.display = 'block';
+                }
+                
+                // Log for debugging
+                const message = errorMessage.includes('rate limit') 
+                    ? 'Chart generation limit reached. Please try again later.'
+                    : 'Failed to generate charts. Please try again.';
+                    
+                console.warn('🚨 [CHART_GEN] User message:', message);
+            }
+            
+            createContentHash(content) {
+                // Simple hash function for cache key generation
+                let hash = 0;
+                if (content.length === 0) return hash.toString();
+                
+                for (let i = 0; i < content.length; i++) {
+                    const char = content.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32-bit integer
+                }
+                
+                return Math.abs(hash).toString();
+            }
+            
+            clearChartCache() {
+                // Method to clear cache if needed
+                this.chartCache.clear();
+                console.log('♻️ [CHART_GEN] Cache cleared');
+            }
+            
+            getCacheStats() {
+                // Method to get cache statistics
+                return {
+                    size: this.chartCache.size,
+                    entries: Array.from(this.chartCache.keys()),
+                    totalMemoryEstimate: this.chartCache.size * 1024 // Rough estimate
+                };
             }
             
             async navigateToNextSlide() {
