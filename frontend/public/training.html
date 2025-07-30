@@ -3280,13 +3280,11 @@
                 const imageContainer = document.createElement('div');
                 imageContainer.className = 'generated-image-container mt-4 p-3 border rounded';
                 imageContainer.innerHTML = `
-                    <h5 class="mb-3"><i class="bi bi-image text-primary me-2"></i>Generated Infographic</h5>
                     <img src="${imageSrc}" 
                          alt="Generated infographic" 
                          class="img-fluid rounded shadow-sm" 
                          style="max-width: 100%; height: auto;"
                          onerror="this.src='data:image/png;base64,${imageBase64}'; console.warn('Fallback to base64 image');">
-                    ${revisedPrompt ? `<small class="text-muted d-block mt-2"><strong>AI Prompt:</strong> ${revisedPrompt}</small>` : ''}
                 `;
                 
                 // Ajouter l'image à la fin du contenu

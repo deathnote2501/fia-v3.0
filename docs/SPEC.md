@@ -4,20 +4,14 @@
 - Un formateur peut creer un compte sur /register.html (email, mot de passe, nomet prenom) puis se logguer sur /login.html
 - Il peut accéder à son dashboard via l'url trainer.html
 - Sur trainer.html 
-    - Il a un onglet pour créer des formations : nom, description et charger un supprt pdf ou powerpoint qui sera stocké dans son format natif pdf ou powerpoint dans la base de donnee
+    - Il a un onglet pour créer et visualiser ses formations (ou créer des formations full IA) : nom, description et charger un supprt pdf ou powerpoint qui sera stocké dans son format natif pdf ou powerpoint dans la base de donnee
     - Il a un onglet pour créer des sessions pour les apprenants qui génère un lien qu'il enverra par email aux apprenants
-    - Il a un onglet pour la partie "Analytics" (que nous implémenterons plus tard)
 
 ## La vue du côté de l'apprenant
 - Quand une session est créée par le formateur, un lien de session est généré et est envoyé à l'apprenant par email
-- L'apprenant clique sur le lien est arrive sur une page ou on lui pose des questions pour créer son profil que l'on enregister en BD (email, niveau, style d'apprentissage, poste occupé, secteur d'activité, pays de résidence et langue (par defaut la langue du navigateur))
+- L'apprenant clique sur le lien est arrive sur une page ou on lui pose des questions pour créer son profil que l'on enregister en BD (email, niveau, poste occupé et secteur d'activité, objectifs/attentes , durée de la formation  et langue)
 
-- Une fois répondu à ces questions, on appelle l'api gemini flash 2.0 via Vertex AI (avec les capacités https://ai.google.dev/gemini-api/docs/document-processing + https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output + https://ai.google.dev/gemini-api/docs/prompting-strategies) pour generer un plan de formation personnalisé au profil de l'apprenant basé sur ces 5 étapes : 
-    - 1. Mise en contexte : enjeux, objectifs, etc.
-    - 2. Acquisition des Fondamentaux : Concepts de base
-    - 3. Construction Progressive : Approfondissement par étapes
-    - 4. Maîtrise : Approfondissement & Pratique autonome
-    - 5. Validation : Évaluation finale
+- Une fois répondu à ces questions, on utilise vertexAI pour generer un plan de formation personnalisé au profil de l'apprenant basé sur 5 étapes
 - Chaque étape est structurée de la manière suivante : un ou plusiurs modules qui contient un ou plusieurs sous-modules qui contient un ou plusieurs slides : on ne genere que la structure du plan "Étapes → Modules → Sous-modules" pas les slides car ils sont génrés en temps reel en fonction du profil de l'apprenant.
 Etape
 ├── Module 1
@@ -33,14 +27,12 @@ Etape
         ├── Slide 1
         └── Slide 2
 
-- L'apprenant clique alors sur le bouton demarrer pour commencer sa formation : cela genere le plan de la formation avec tous les slides (en markdown avec une mise en forme Marked.js).
+- L'apprenant arrive sur le premier slide de la formation généré en markdown avec une mise en forme Marked.js.
 - L'apprenant peut aller sur la slide suivante (cela génère la slide) ou revenir en arrière sur les slides deja generée. On ne regénère pas une slide existante dans la BD.
-- L'apprenant peut poser des quesions au formateur ia via le chat (message ou via son micro) qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
+- L'apprenant peut poser des quesions au formateur ia via le chat ou utiliser des actions pré-définie via des boutons (message ou via son micro) qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
 - IA analyse chaque conversation pour enrichir automatiquement le profil de l'apprenant et personnaliser les slides futures
-- Interactions Apprenants (en cours d'implémentation) :
-  - Chat avec formateur IA intégré (avec boutons : exercices, exemples, "le plus important")-
-  - Boutons d'interaction avec les slides : simplifier et approfondir-
-  - Quiz ou question avez-vous bien compris slide, sous module, module, etapes > Chat formateur-
+- L'apprenant a les options suivantes sur les slides :
+  - implifier,  approfondir, générer une image et générer des graphiques
 
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 

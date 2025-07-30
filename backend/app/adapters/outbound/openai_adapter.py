@@ -43,8 +43,13 @@ class OpenAIAdapter(ImageGenerationServicePort):
             # Apply rate limiting before API call
             await openai_rate_limiter.acquire()
             
+            # Extract language from learner profile, default to French
+            language = "french"  # Default for your use case
+            if learner_profile and learner_profile.get("language"):
+                language = learner_profile.get("language")
+            
             # Build prompt for infographic generation
-            prompt = self._build_infographic_prompt(slide_content, learner_profile)
+            prompt = self._build_infographic_prompt(slide_content, learner_profile, language)
             
             logger.debug(f"Generating infographic with prompt: {prompt[:200]}...")
             
@@ -102,21 +107,23 @@ class OpenAIAdapter(ImageGenerationServicePort):
     def _build_infographic_prompt(
         self, 
         slide_content: str, 
-        learner_profile: Optional[Dict[str, Any]] = None
+        learner_profile: Optional[Dict[str, Any]] = None,
+        language: str = "english"
     ) -> str:
         """Build optimized prompt for infographic generation"""
         
         # Base prompt for educational infographic
-        base_prompt = f"""Create an educational infographic based on this slide content:
+        base_prompt = f"""Create a square infographic in a flat design style to explain the content of the [content of the slide] below.
+The infographic must include:
+- 6 to 8 simple, modern illustrations
+- A clean, educational layout
+- A white background
+- 1 to 5 words in {language} per illustration, using a simple sans-serif font
 
+[content of the slide]:
 {slide_content}
 
-Make it visually appealing, educational, and suitable for e-learning. Use:
-- Clear, readable typography
-- Relevant icons and visual elements
-- Professional layout with good visual hierarchy
-- Educational color scheme
-- Information organized in digestible sections"""
+IMPORTANT: All text in the infographic must be written in {language}."""
         
         # Add personalization if learner profile is available
         if learner_profile:
