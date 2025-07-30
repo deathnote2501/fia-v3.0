@@ -73,8 +73,8 @@ def log_error(message: str, error: Exception = None):
 # Configuration du projet (variables en dur pour développement local)
 GOOGLE_CLOUD_PROJECT = "animemate-ddb62"
 GOOGLE_CLOUD_LOCATION = "europe-west1"
-# Configuration audio
-CHUNK = 4200
+# Configuration audio - Optimisée pour fluidité
+CHUNK = 2048  # Augmenté pour plus de fluidité
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 INPUT_RATE = 16000
@@ -115,7 +115,7 @@ class ConversationManager:
             raise
         
         log_debug("🎛️ Configuration de la session Live API")
-        # Configuration de la session avec voix française et transcription
+        # Configuration de la session avec voix française et Affective Dialog
         # Note: Le modèle native-audio ne supporte que response_modalities=["AUDIO"]
         self.config = types.LiveConnectConfig(
             response_modalities=["AUDIO"],
@@ -131,27 +131,32 @@ class ConversationManager:
             input_audio_transcription=types.AudioTranscriptionConfig(),
             output_audio_transcription=types.AudioTranscriptionConfig(),
             system_instruction=types.Content(
-                parts=[types.Part(text="""Tu es un assistant IA conversationnel en français. 
-                Réponds de manière naturelle, claire et concise. 
-                Adapte ton ton à celui de l'utilisateur. 
-                Si l'utilisateur pose une question technique, sois précis mais accessible.
-                RÉPONDS TOUJOURS EN FRANÇAIS DE MANIÈRE NATURELLE.""")], 
+                parts=[types.Part(text="""Tu es un assistant IA conversationnel en français avec une personnalité expressive et adaptative. 
+                Adapte ton ton et style de réponse selon l'émotion et le ton de l'utilisateur :
+                - Si l'utilisateur semble joyeux, sois enthousiaste
+                - Si l'utilisateur semble inquiet, sois rassurant et calme
+                - Si l'utilisateur semble pressé, sois concis et efficace
+                - Si l'utilisateur semble détendu, sois conversationnel
+                
+                Réponds de manière naturelle, claire et avec de l'émotion dans la voix.
+                Utilise des expressions françaises appropriées au contexte émotionnel.
+                RÉPONDS TOUJOURS EN FRANÇAIS DE MANIÈRE NATURELLE ET EXPRESSIVE.""")], 
                 role='user'
             ),
-            # Configuration pour des réponses plus rapides
+            # Configuration pour des réponses plus rapides et fluides
             realtime_input_config=types.RealtimeInputConfig(
                 automatic_activity_detection=types.AutomaticActivityDetection(
                     disabled=False,
                     start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_HIGH,
-                    end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_LOW,
-                    prefix_padding_ms=50,
-                    silence_duration_ms=800,
+                    end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,  # Plus sensible
+                    prefix_padding_ms=100,  # Plus de padding
+                    silence_duration_ms=500,  # Moins de silence requis
                 )
             ),
-            # Fonctionnalités native audio (preview)
-            enable_affective_dialog=True,  # Dialog affectif
+            # ✨ AFFECTIVE DIALOG ACTIVÉ ✨
+            enable_affective_dialog=True,  # Adaptation du style selon le ton vocal
         )
-        log_info("✅ Configuration Live API native-audio créée")
+        log_info("✅ Configuration Live API native-audio avec Affective Dialog créée")
         
         log_debug("🔊 Initialisation interface audio PyAudio")
         try:
@@ -250,6 +255,14 @@ class ConversationManager:
             print(f"  - Région: {GOOGLE_CLOUD_LOCATION}")
             print(f"  - Modèle: {MODEL}")
             
+            # Si erreur de modèle non trouvé, suggérer des alternatives
+            if "was not fo" in str(e) or "not found" in str(e).lower():
+                print(f"{Fore.YELLOW}💡 Le modèle Live API n'est pas disponible dans votre projet.")
+                print(f"{Fore.YELLOW}   Solutions possibles:")
+                print(f"{Fore.YELLOW}   1. Demander l'accès au modèle privé 'gemini-live-2.5-flash'")
+                print(f"{Fore.YELLOW}   2. Contacter votre équipe Google Cloud pour l'activation")
+                print(f"{Fore.YELLOW}   3. Vérifier les quotas et limites de votre projet")
+            
             raise
             
     async def _send_audio(self):
@@ -300,6 +313,7 @@ class ConversationManager:
         """Reçoit et joue l'audio de réponse"""
         output_stream = None
         message_count = 0
+        audio_buffer = bytearray()  # Buffer pour lisser l'audio
         
         try:
             log_debug("🔊 Ouverture du stream de sortie audio")
@@ -327,39 +341,80 @@ class ConversationManager:
                 if hasattr(message, 'server_content') and message.server_content:
                     if message.server_content.input_transcription:
                         user_text = message.server_content.input_transcription.text
-                        if user_text.strip():
+                        # Protection contre les valeurs None
+                        if user_text and user_text.strip():
                             log_info(f"🗣️ Transcription utilisateur: {user_text}")
                             print(f"{Fore.BLUE}👤 Vous: {Style.BRIGHT}{user_text}")
                             
                     if message.server_content.output_transcription:
                         ai_text = message.server_content.output_transcription.text
-                        if ai_text.strip():
+                        # Protection contre les valeurs None
+                        if ai_text and ai_text.strip():
                             log_info(f"🤖 Transcription Gemini: {ai_text}")
                             print(f"{Fore.MAGENTA}🤖 Gemini: {Style.BRIGHT}{ai_text}")
                             
-                    # Lecture de l'audio de réponse
+                    # Gestion des interruptions - Vider buffer et continuer
+                    if message.server_content.interrupted:
+                        log_info("⏸️ Interruption détectée - Vidage du buffer, conversation continue")
+                        print(f"{Fore.YELLOW}⏸️  Interruption détectée - Prêt pour nouvelle question")
+                        # Vider le buffer mais ne pas fermer le stream
+                        audio_buffer.clear()
+                        # Continuer la boucle pour permettre une nouvelle conversation
+                        continue
+                            
+                    # Lecture de l'audio de réponse avec buffering
                     if message.server_content.model_turn:
                         log_debug("🎵 Réception de données audio")
                         for part_idx, part in enumerate(message.server_content.model_turn.parts):
                             if part.inline_data and part.inline_data.data:
                                 try:
                                     audio_size = len(part.inline_data.data)
-                                    log_debug(f"🔊 Lecture audio part #{part_idx} ({audio_size} bytes)")
-                                    output_stream.write(part.inline_data.data)
-                                    await asyncio.sleep(0.001)
+                                    log_debug(f"🔊 Buffering audio part #{part_idx} ({audio_size} bytes)")
+                                    
+                                    # Ajouter au buffer
+                                    audio_buffer.extend(part.inline_data.data)
+                                    
+                                    # Jouer quand on a assez de données (au moins 2 chunks)
+                                    min_buffer_size = CHUNK * 4  # 4 chunks minimum pour fluidité
+                                    while len(audio_buffer) >= min_buffer_size:
+                                        # Extraire un chunk du buffer
+                                        chunk_to_play = bytes(audio_buffer[:min_buffer_size])
+                                        audio_buffer = audio_buffer[min_buffer_size:]
+                                        
+                                        # Jouer le chunk
+                                        if output_stream and running:
+                                            output_stream.write(chunk_to_play)
+                                            await asyncio.sleep(0.001)
+                                        
                                 except Exception as e:
                                     if running:
                                         log_error(f"⚠️ Erreur lecture audio part #{part_idx}", e)
-                                        
-                    # Gestion des interruptions
-                    if message.server_content.interrupted:
-                        log_info("⏸️ Interruption détectée")
-                        print(f"{Fore.YELLOW}⏸️  Interruption détectée")
+                        
+                        # Jouer le reste du buffer à la fin
+                        if len(audio_buffer) > 0 and output_stream and running:
+                            try:
+                                # Compléter avec du silence si nécessaire
+                                while len(audio_buffer) % 2 != 0:
+                                    audio_buffer.append(0)
+                                output_stream.write(bytes(audio_buffer))
+                                audio_buffer.clear()
+                            except Exception as e:
+                                if running:
+                                    log_error("⚠️ Erreur lecture buffer final", e)
                         
         except Exception as e:
             if running:
                 log_error("❌ Erreur réception audio", e)
         finally:
+            # Jouer le buffer restant avant fermeture
+            if len(audio_buffer) > 0 and output_stream:
+                try:
+                    while len(audio_buffer) % 2 != 0:
+                        audio_buffer.append(0)
+                    output_stream.write(bytes(audio_buffer))
+                except:
+                    pass
+                    
             if output_stream:
                 log_debug("🔐 Fermeture du stream sortie audio")
                 output_stream.stop_stream()

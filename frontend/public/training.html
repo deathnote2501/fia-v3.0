@@ -1622,13 +1622,13 @@
                 console.log('📖📖📖 [MARKDOWN] markdown IS STRING?:', typeof markdown === 'string');
                 console.log('📖📖📖 [MARKDOWN] markdown PREVIEW (300 chars):');
                 console.log('📖📖📖 [MARKDOWN] ---START PREVIEW---');
-                console.log(markdown ? markdown.substring(0, 300) : 'NULL');
+                console.log(markdown && typeof markdown === 'string' ? markdown.substring(0, 300) : 'NOT_STRING:', typeof markdown, markdown);
                 console.log('📖📖📖 [MARKDOWN] ---END PREVIEW---');
                 console.log('📖📖📖 [MARKDOWN] marked DISPONIBLE?:', typeof marked !== 'undefined');
                 console.log('📖📖📖 [MARKDOWN] marked.parse DISPONIBLE?:', typeof marked?.parse === 'function');
                 
                 // Analyse détaillée du contenu
-                if (markdown) {
+                if (markdown && typeof markdown === 'string') {
                     console.log('🔍🔍🔍 [MARKDOWN] ANALYSE DÉTAILLÉE DU CONTENU:');
                     console.log('🔍🔍🔍 [MARKDOWN] Contient des # (titres)?', markdown.includes('#'));
                     console.log('🔍🔍🔍 [MARKDOWN] Contient des * (listes)?', markdown.includes('*'));
@@ -1664,8 +1664,38 @@
                     console.log('🔄🔄🔄 [MARKDOWN] DÉBUT PARSING avec marked.parse...');
                     console.log('🔄🔄🔄 [MARKDOWN] Input exact pour marked.parse:');
                     console.log('🔄🔄🔄 [MARKDOWN] ---START INPUT---');
-                    console.log(markdown.substring(0, 500));
+                    console.log(typeof markdown === 'string' ? markdown.substring(0, 500) : 'NOT_STRING:', typeof markdown, markdown);
                     console.log('🔄🔄🔄 [MARKDOWN] ---END INPUT---');
+                    
+                    // Vérifier et traiter le contenu markdown
+                    if (typeof markdown !== 'string') {
+                        console.error('❌ [MARKDOWN] markdown n\'est pas une string:', typeof markdown, markdown);
+                        // Essayer de convertir en string
+                        if (typeof markdown === 'object' && markdown !== null) {
+                            markdown = JSON.stringify(markdown);
+                            console.log('🔄 [MARKDOWN] Conversion objet -> JSON string:', markdown.substring(0, 200));
+                        } else {
+                            markdown = String(markdown);
+                            console.log('🔄 [MARKDOWN] Conversion forcée -> string:', markdown.substring(0, 200));
+                        }
+                    }
+                    
+                    // Vérifier si le contenu est un JSON avec un champ "markdown"
+                    if (markdown.startsWith('{') && markdown.includes('"markdown"')) {
+                        console.log('🔍 [MARKDOWN] JSON détecté avec champ markdown - extraction...');
+                        try {
+                            const jsonData = JSON.parse(markdown);
+                            if (jsonData.markdown) {
+                                markdown = jsonData.markdown;
+                                console.log('✅ [MARKDOWN] Markdown extrait du JSON:', markdown.substring(0, 300));
+                            } else if (jsonData.slide_content) {
+                                markdown = jsonData.slide_content;
+                                console.log('✅ [MARKDOWN] Slide content extrait du JSON:', markdown.substring(0, 300));
+                            }
+                        } catch (e) {
+                            console.error('❌ [MARKDOWN] Erreur parsing JSON:', e);
+                        }
+                    }
                     
                     // KISS: Use marked.js for proper markdown parsing
                     const htmlResult = marked.parse(markdown);

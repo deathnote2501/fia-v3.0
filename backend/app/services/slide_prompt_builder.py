@@ -64,8 +64,7 @@ Créer le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}. Cette [SL
 - Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # ## ### - > ** *
-- Utilise la structure suivante : titre, sous-titres, points clés sous forme de liste à puces, textes courts (5 à 15 mots)
-- La slide devra contenir en tout entre 50 et 100 mots maximum
+- Utilise la structure suivante : 1 titre, entre 2 et 4 sous-titres MAXIMUM, entre 1 et 5 points clés MAXIMUM sous forme de liste à puces avec pour chaque puce 5 à 15 mots MAXIMUM
 
 Génère maintenant le contenu de la [SLIDE DE FORMATION] qui respecte les [CONTRAINTES]."""
         
@@ -230,8 +229,8 @@ Créer une introduction personnalisée pour le module "{module_name}" selon le [
 - Sous-modules inclus : {submodules_list}
 
 [CONTRAINTES] :
-- Réponds UNIQUEMENT avec le texte d'introduction (pas de markdown)
-- 2-3 phrases maximum (30-50 mots)
+- Réponds UNIQUEMENT avec le texte d'introduction (pas de Markdown)
+- 2-3 phrases maximum (20-30 mots)
 - Explique l'objectif et ce que l'apprenant va découvrir
 - Adapte au profil professionnel de l'apprenant
 - Ton engageant et motivant
