@@ -12,7 +12,7 @@ import logging
 # Ajouter le répertoire parent au path pour les imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.slide_generation_service import SlideGenerationService
+from app.services.slide_content_modifier import SlideContentModifier
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)

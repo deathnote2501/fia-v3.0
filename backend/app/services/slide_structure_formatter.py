@@ -60,7 +60,11 @@ class SlideStructureFormatter:
                 
                 submodules = module.get("submodules", [])
                 for submodule in submodules:
-                    submodule_name = submodule.get("submodule_name", "Sous-module sans nom")
+                    # Les sous-modules peuvent être des chaînes ou des dictionnaires
+                    if isinstance(submodule, str):
+                        submodule_name = submodule
+                    else:
+                        submodule_name = submodule.get("submodule_name", "Sous-module sans nom")
                     
                     # Sous-module en liste
                     markdown_lines.append(f"- {submodule_name}")

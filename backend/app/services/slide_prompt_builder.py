@@ -65,6 +65,10 @@ Créer le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}. Cette [SL
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # ## ### - > ** *
 - Utilise la structure suivante : 1 titre, entre 2 et 4 sous-titres MAXIMUM, entre 1 et 5 points clés MAXIMUM sous forme de liste à puces avec pour chaque puce 5 à 15 mots MAXIMUM
+- JAMAIS de format JSON comme {{"slide": ...}}, UNIQUEMENT du Markdown
+- JAMAIS de backticks ```markdown ou ```, commence directement par #
+- JAMAIS d'objets JSON, JAMAIS de guillemets JSON, JAMAIS de crochets ou accolades
+- FORMAT ATTENDU : # Titre\\n\\n## Sous-titre\\n- Point 1\\n- Point 2
 
 Génère maintenant le contenu de la [SLIDE DE FORMATION] qui respecte les [CONTRAINTES]."""
         
@@ -113,8 +117,11 @@ Créer le contenu de la [SLIDE DE FORMATION] de type quiz. Cette [SLIDE DE FORMA
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # et -
 - Utilise la structure suivante : titre, questions de connaissance sous forme de liste à puces, textes courts (5 à 15 mots)
-- La slide devra contenir en tout entre 50 et 100 mots maximum
 - Rappelle que l'apprenant peut répondre en utilisant le chat IA à gauche qui corrigera ses réponses
+- JAMAIS de format JSON comme {{"slide": ...}}, UNIQUEMENT du Markdown
+- JAMAIS de backticks ```markdown ou ```, commence directement par #
+- JAMAIS d'objets JSON, JAMAIS de guillemets JSON, JAMAIS de crochets ou accolades
+- FORMAT ATTENDU : # Titre Quiz\\n\\n- Question 1 ?\\n- Question 2 ?
 
 Génère maintenant le contenu de la [SLIDE DE FORMATION] de type quiz qui respecte les [CONTRAINTES]."""
         

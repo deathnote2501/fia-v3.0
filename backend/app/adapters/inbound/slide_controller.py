@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 from pydantic import BaseModel
 
-from app.services.slide_generation_service import SlideGenerationService
+from app.services.slide_generation_service_orchestrator import SlideGenerationServiceOrchestrator
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def get_current_slide(
             )
         
         # Initialize slide generation service
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Get current slide content
         result = await slide_service.get_current_slide_content(learner_session_id)
@@ -102,7 +102,7 @@ async def generate_first_slide(
             )
         
         # Initialize slide generation service
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Generate first slide content
         result = await slide_service.generate_first_slide_content(learner_session_id)
@@ -159,7 +159,7 @@ async def simplify_slide_content(
             )
         
         # Initialize slide generation service
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Simplify slide content
         result = await slide_service.simplify_slide_content(
@@ -219,7 +219,7 @@ async def more_details_slide_content(
             )
         
         # Initialize slide generation service
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Enhance slide content with more details
         result = await slide_service.more_details_slide_content(
@@ -272,7 +272,7 @@ async def get_next_slide(
             )
         
         # Initialize slide generation service
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Get next slide content
         result = await slide_service.get_next_slide_content(
@@ -327,7 +327,7 @@ async def get_previous_slide(
         logger.info(f"🎯 SLIDE API [PREV] Getting previous slide before {current_slide_id} for session {learner_session_id}")
         
         # Initialize slide generation service (no rate limiting for going back)
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         
         # Get previous slide content
         result = await slide_service.get_previous_slide_content(
@@ -379,7 +379,7 @@ async def get_current_slide_legacy(learner_session_id: str) -> Dict[str, Any]:
         logger.info(f"🎯 SLIDE API [CURRENT_LEGACY] Getting current slide for session {learner_session_id}")
         
         # Use the new current slide functionality
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         result = await slide_service.get_current_slide_content(learner_session_id)
         
         logger.info(f"✅ SLIDE API [CURRENT_LEGACY] Current slide retrieved for session {learner_session_id}")
@@ -405,7 +405,7 @@ async def get_current_slide_legacy(learner_session_id: str) -> Dict[str, Any]:
 async def slide_service_health() -> Dict[str, Any]:
     """Health check for slide generation service"""
     try:
-        slide_service = SlideGenerationService()
+        slide_service = SlideGenerationServiceOrchestrator()
         stats = slide_service.get_stats()
         
         return {

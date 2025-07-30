@@ -294,17 +294,62 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Generate a quiz based on the current slide to evaluate comprehension"""
-        prompt = self.prompt_builder.build_comprehension_question_prompt(
-            slide_content=slide_content,
-            slide_title=slide_title,
-            learner_profile=learner_profile
-        )
-        
-        return await self._generate_ai_response(
-            prompt=prompt,
-            prompt_type="quiz",
-            action_type="quiz"
-        )
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self.prompt_builder.build_comprehension_question_prompt(
+                slide_content=slide_content,
+                slide_title=slide_title,
+                learner_profile=learner_profile
+            )
+            
+            generation_config = {
+                "temperature": 0.4,  # Lower temperature for more structured quiz
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1500,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [QUIZ] Generated quiz for slide comprehension")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [QUIZ] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "Let me test your understanding: What are the main concepts covered in this slide? Can you explain them in your own words?",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Think about the key points", "Try to explain in your own words"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Let me test your understanding of this slide."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "quiz_generation",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [QUIZ] Failed to generate quiz: {str(e)}")
+            return {
+                "response": "Let me test your understanding: What are the most important points from this slide? Try explaining them in your own words.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Review the content", "Think about key concepts"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
     
     async def provide_examples(
         self,
@@ -313,17 +358,62 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Provide practical examples to illustrate the slide content"""
-        prompt = self.prompt_builder.build_example_generation_prompt(
-            slide_content=slide_content,
-            slide_title=slide_title,
-            learner_profile=learner_profile
-        )
-        
-        return await self._generate_ai_response(
-            prompt=prompt,
-            prompt_type="examples",
-            action_type="examples"
-        )
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self.prompt_builder.build_example_generation_prompt(
+                slide_content=slide_content,
+                slide_title=slide_title,
+                learner_profile=learner_profile
+            )
+            
+            generation_config = {
+                "temperature": 0.7,  # Higher temperature for creative examples
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1200,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [EXAMPLES] Generated practical examples")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [EXAMPLES] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "Here are some practical examples to illustrate these concepts: Consider how these ideas apply in real-world situations relevant to your work.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Think of your own examples", "Apply to your work context"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Let me provide some practical examples to illustrate these concepts."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "examples_generation",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [EXAMPLES] Failed to provide examples: {str(e)}")
+            return {
+                "response": "Let me give you some examples: Think about how these concepts apply in your daily work or professional context.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Consider real-world applications", "Think of similar situations"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
     
     async def extract_key_points(
         self,
@@ -332,17 +422,62 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Extract the 1-3 most important points to remember from the slide"""
-        prompt = self.prompt_builder.build_key_points_prompt(
-            slide_content=slide_content,
-            slide_title=slide_title,
-            learner_profile=learner_profile
-        )
-        
-        return await self._generate_ai_response(
-            prompt=prompt,
-            prompt_type="key_points",
-            action_type="key_points"
-        )
+        try:
+            await gemini_rate_limiter.acquire()
+            
+            prompt = self.prompt_builder.build_key_points_prompt(
+                slide_content=slide_content,
+                slide_title=slide_title,
+                learner_profile=learner_profile
+            )
+            
+            generation_config = {
+                "temperature": 0.3,  # Lower temperature for focused key points
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 800,
+                "response_mime_type": "application/json"
+            }
+            
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=generation_config
+            )
+            
+            logger.info(f"🤖 CONVERSATION [KEY_POINTS] Generated key points to remember")
+            
+            try:
+                response_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"❌ CONVERSATION [KEY_POINTS] Invalid JSON response: {str(e)}")
+                response_data = {
+                    "response": "If you remember just one thing from this slide, focus on the main concept that connects to your learning objectives.",
+                    "confidence_score": 0.7,
+                    "suggested_actions": ["Focus on the main concept", "Connect to previous learning"],
+                    "related_concepts": []
+                }
+            
+            return {
+                "response": response_data.get("response", "Here are the most important points to remember from this slide."),
+                "confidence_score": response_data.get("confidence_score", 0.8),
+                "suggested_actions": response_data.get("suggested_actions", []),
+                "related_concepts": response_data.get("related_concepts", []),
+                "metadata": {
+                    "model_used": "gemini-2.0-flash-exp",
+                    "action_type": "key_points_extraction",
+                    "adapter": "vertex_ai"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ CONVERSATION [KEY_POINTS] Failed to extract key points: {str(e)}")
+            return {
+                "response": "The most important takeaway from this slide is understanding the core concept and how it applies to your learning goals.",
+                "confidence_score": 0.5,
+                "suggested_actions": ["Focus on core concepts", "Review main ideas"],
+                "related_concepts": [],
+                "metadata": {"error": str(e), "fallback": True}
+            }
     
     
     

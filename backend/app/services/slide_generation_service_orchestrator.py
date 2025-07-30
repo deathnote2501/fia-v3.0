@@ -13,6 +13,8 @@ from app.infrastructure.database import AsyncSessionLocal
 from app.adapters.repositories.learner_training_plan_repository import LearnerTrainingPlanRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
+from app.services.slide_structure_formatter import SlideStructureFormatter
+from app.services.slide_content_generator import SlideContentGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,9 @@ class SlideGenerationServiceOrchestrator:
     
     def __init__(self):
         """Initialize slide generation orchestrator"""
-        logger.info("🎯 SLIDE ORCHESTRATOR [SERVICE] Initialized")
+        self.structure_formatter = SlideStructureFormatter()
+        self.content_generator = SlideContentGenerator()
+        logger.info("🎯 SLIDE ORCHESTRATOR [SERVICE] Initialized with specialized services")
     
     async def generate_first_slide_content(self, learner_session_id: str) -> Dict[str, Any]:
         """
@@ -97,7 +101,7 @@ class SlideGenerationServiceOrchestrator:
                 
                 # 7. Construire la réponse
                 result = await self._build_slide_response(
-                    slide_repo, first_slide, time.time() - start_time
+                    slide_repo, first_slide, training_plan.id, time.time() - start_time
                 )
                 
                 logger.info(f"✅ SLIDE ORCHESTRATOR [SUCCESS] First slide generated in {time.time() - start_time:.2f}s")
@@ -142,8 +146,8 @@ class SlideGenerationServiceOrchestrator:
                     raise ValueError(f"Training plan not found for session: {learner_session_id}")
                 
                 # 3. Récupérer la slide courante
-                current_slide = await slide_repo.get_slide_by_number(
-                    training_plan.id, learner_session.current_slide_number or 1
+                current_slide = await slide_repo.get_slide_by_global_number(
+                    learner_session.current_slide_number or 1, training_plan.id
                 )
                 if not current_slide:
                     raise ValueError(f"Current slide not found for session: {learner_session_id}")
@@ -165,7 +169,7 @@ class SlideGenerationServiceOrchestrator:
                 
                 # 5. Construire la réponse
                 result = await self._build_slide_response(
-                    slide_repo, current_slide, time.time() - start_time
+                    slide_repo, current_slide, training_plan.id, time.time() - start_time
                 )
                 
                 logger.info(f"✅ SLIDE ORCHESTRATOR [SUCCESS] Current slide retrieved in {time.time() - start_time:.2f}s")
@@ -238,7 +242,7 @@ class SlideGenerationServiceOrchestrator:
                 
                 # 5. Construire la réponse
                 result = await self._build_slide_response(
-                    slide_repo, next_slide, time.time() - start_time
+                    slide_repo, next_slide, training_plan.id, time.time() - start_time
                 )
                 result["has_next"] = True
                 
@@ -312,7 +316,7 @@ class SlideGenerationServiceOrchestrator:
                 
                 # 5. Construire la réponse
                 result = await self._build_slide_response(
-                    slide_repo, previous_slide, time.time() - start_time
+                    slide_repo, previous_slide, training_plan.id, time.time() - start_time
                 )
                 result["has_previous"] = True
                 
@@ -346,17 +350,83 @@ class SlideGenerationServiceOrchestrator:
         Returns:
             Generated slide content
         """
-        # TODO: Implémenter la coordination selon le type de slide
-        # - PLAN: Utiliser le formatage de plan JSON
-        # - STAGE: Utiliser le formatage d'étape JSON
-        # - MODULE: Utiliser le formatage de module + intro IA
-        # - CONTENT: Utiliser le générateur de contenu IA
-        # - QUIZ: Utiliser le générateur de quiz IA
-        
         logger.info(f"🔄 SLIDE ORCHESTRATOR [COORDINATE] Slide type: {slide.slide_type}, Title: {slide.title}")
         
-        # Temporaire : retourner un contenu par défaut
-        return f"# {slide.title}\n\nContenu en cours de génération..."
+        try:
+            # Coordination selon le type de slide
+            if slide.slide_type == "plan":
+                # Slides PLAN : utiliser le formatage de structure
+                logger.info("📋 SLIDE ORCHESTRATOR [PLAN] Using structure formatter for PLAN slide")
+                return self.structure_formatter.format_plan_slide(
+                    training_plan=training_plan,
+                    slide_title=slide.title
+                )
+                
+            elif slide.slide_type == "stage":
+                # Slides STAGE : utiliser le formatage de structure  
+                logger.info("🎯 SLIDE ORCHESTRATOR [STAGE] Using structure formatter for STAGE slide")
+                return self.structure_formatter.format_stage_slide(
+                    training_plan=training_plan,
+                    slide_title=slide.title
+                )
+                
+            elif slide.slide_type == "module":
+                # Slides MODULE : utiliser le formatage de structure + intro IA
+                logger.info("📚 SLIDE ORCHESTRATOR [MODULE] Using structure formatter for MODULE slide")
+                return self.structure_formatter.format_module_slide(
+                    training_plan=training_plan,
+                    slide_title=slide.title,
+                    learner_profile=learner_session
+                )
+                
+            elif slide.slide_type == "content":
+                # Slides CONTENT : utiliser le générateur de contenu IA
+                logger.info("📝 SLIDE ORCHESTRATOR [CONTENT] Using content generator for CONTENT slide")
+                
+                # ========== LOGS AVANT GÉNÉRATION CONTENU ==========
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] ========== AVANT GÉNÉRATION CONTENU ==========")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Slide title: {slide.title}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Learner profile ID: {learner_session.id if learner_session else 'N/A'}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Training plan ID: {training_plan.id if training_plan else 'N/A'}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Slide position: {slide_position}")
+                
+                generated_content = await self.content_generator.generate_content_slide(
+                    slide_title=slide.title,
+                    learner_profile=learner_session,
+                    training_plan=training_plan,
+                    slide_position=slide_position
+                )
+                
+                # ========== LOGS APRÈS GÉNÉRATION CONTENU ==========
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] ========== APRÈS GÉNÉRATION CONTENU ==========")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Generated content TYPE: {type(generated_content)}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Generated content LENGTH: {len(generated_content) if generated_content else 'N/A'}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] Generated content PREVIEW (300 chars):")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] ---START GENERATED CONTENT---")
+                logger.info(f"{generated_content[:300] + '...' if generated_content and len(generated_content) > 300 else generated_content}")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] ---END GENERATED CONTENT---")
+                logger.info(f"🎼🎼🎼 SLIDE ORCHESTRATOR [CONTENT] ========== FIN LOGS GÉNÉRATION CONTENU ==========")
+                
+                return generated_content
+                
+            elif slide.slide_type == "quiz":
+                # Slides QUIZ : utiliser le générateur de contenu IA
+                logger.info("❓ SLIDE ORCHESTRATOR [QUIZ] Using content generator for QUIZ slide")
+                return await self.content_generator.generate_quiz_slide(
+                    slide_title=slide.title,
+                    learner_profile=learner_session,
+                    previous_content=None
+                )
+                
+            else:
+                # Type de slide non reconnu : fallback
+                logger.warning(f"⚠️ SLIDE ORCHESTRATOR [UNKNOWN] Unknown slide type: {slide.slide_type}")
+                return f"# {slide.title}\n\nContenu en cours de développement pour le type: {slide.slide_type}"
+                
+        except Exception as e:
+            logger.error(f"❌ SLIDE ORCHESTRATOR [ERROR] Failed to generate content for {slide.slide_type} slide: {e}")
+            # Fallback en cas d'erreur
+            return f"# {slide.title}\n\nErreur lors de la génération du contenu. Veuillez réessayer."
     
     async def _get_session_and_plan(
         self, 
@@ -407,6 +477,7 @@ class SlideGenerationServiceOrchestrator:
         self,
         slide_repo: TrainingSlideRepository,
         slide: Any,
+        training_plan_id: Any,
         duration: float
     ) -> Dict[str, Any]:
         """Construire la réponse standardisée pour une slide"""
@@ -421,7 +492,7 @@ class SlideGenerationServiceOrchestrator:
             "generated_at": slide.generated_at.isoformat() if slide.generated_at else None,
             "generation_duration": round(duration, 2),
             "breadcrumb": breadcrumb_info,
-            "slide_number": await slide_repo.get_slide_global_number(slide.id, slide.submodule.module.plan_id)
+            "slide_number": await slide_repo.get_slide_global_number(slide.id, training_plan_id)
         }
     
     def _fix_corrupted_content(self, content: str) -> str:

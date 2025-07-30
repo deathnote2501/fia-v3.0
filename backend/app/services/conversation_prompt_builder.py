@@ -44,10 +44,10 @@ class ConversationPromptBuilder:
         history_text = self._format_conversation_history(conversation_history)
         
         prompt = f"""[ROLE] :
-Tu es un formateur IA spécialisé dans l'accompagnement pédagogique personnalisé en [FORMATION INTERACTIVE].
+Tu es un formateur pédagogue spécialisé dans la réponse aux [MESSAGE] d'un apprenant dans le cadre d'une session de formation interactive.
 
 [OBJECTIF] :
-Répondre au [MESSAGE APPRENANT] en adaptant ta pédagogie selon le [PROFIL APPRENANT] et enrichir continuellement ce profil pour personnaliser les futures slides.
+Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone en s'adaptant au contenu du [SLIDE COURANT], à la [CONVERSATION RECENTE] et à son [PROFIL APPRENANT].
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -107,15 +107,11 @@ Génère maintenant la réponse au format JSON selon la [STRUCTURE JSON ATTENDUE
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] :
-Tu es un formateur IA spécialisé dans l'analyse pédagogique de [SLIDE DE FORMATION].
+        prompt = f"""[ROLE] : 
+Tu es un formateur pédagogue spécialisé dans l'explication ou le fait de commenter oralement un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Commenter et analyser la [SLIDE DE FORMATION] ci-dessous en adaptant ton analyse selon le [PROFIL APPRENANT].
-
-[SLIDE DE FORMATION] :
-Titre : {slide_title}
-Contenu : {slide_content[:1500]}...
+Expliquer et commenter à l'oral le [SLIDE DE FORMATION] en s'adaptant au [PROFIL APPRENANT].
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -124,14 +120,14 @@ Contenu : {slide_content[:1500]}...
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
 
+[SLIDE DE FORMATION] :
+Titre : {slide_title}
+Contenu : {slide_content}
+
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Ton commentaire pédagogique personnalisé sur cette slide",
-  "confidence_score": 0.85,
-  "suggested_actions": ["Action 1", "Action 2"],
-  "related_concepts": ["Concept 1", "Concept 2"],
-  "generation_time_ms": 1200
+  "response": "Ton commentaire pédagogique personnalisé sur cette slide"
 }}
 
 Génère maintenant le commentaire au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
@@ -162,15 +158,10 @@ Génère maintenant le commentaire au format JSON selon la [STRUCTURE JSON ATTEN
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] :
-Tu es un formateur IA spécialisé dans la création d'[EXEMPLES PRATIQUES] personnalisés.
+        prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de donner des exemples sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Fournir des [EXEMPLES PRATIQUES] concrets qui illustrent la [SLIDE DE FORMATION] en les adaptant au [PROFIL APPRENANT].
-
-[SLIDE DE FORMATION] :
-Titre : {slide_title}
-Contenu : {slide_content[:1500]}...
+Donner un exemple adapté au poste et secteur d'activité de l'apprenant : {learner_profile.get('job_position', 'professional')}, pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -179,14 +170,14 @@ Contenu : {slide_content[:1500]}...
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
 
+[SLIDE DE FORMATION] :
+Titre : {slide_title}
+Contenu : {slide_content}
+
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Tes exemples pratiques personnalisés (2-3 exemples concrets)",
-  "confidence_score": 0.85,
-  "suggested_actions": ["Action 1", "Action 2"],
-  "related_concepts": ["Concept 1", "Concept 2"],
-  "generation_time_ms": 1200
+  "response": "Tes exemples pratiques personnalisés (2-3 exemples concrets)"
 }}
 
 Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
@@ -217,15 +208,10 @@ Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDU
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] :
-Tu es un formateur IA spécialisé dans l'évaluation de [COMPRÉHENSION APPRENANT].
+        prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de poser des questions de compréhension sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Créer des [QUESTIONS DE COMPRÉHENSION] pour évaluer l'assimilation de la [SLIDE DE FORMATION] selon le [PROFIL APPRENANT].
-
-[SLIDE DE FORMATION] :
-Titre : {slide_title}
-Contenu : {slide_content[:1500]}...
+Pose une question de compréhention adapté au [PROFIL APPRENANT] à l'apprenant pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -234,14 +220,14 @@ Contenu : {slide_content[:1500]}...
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
 
+[SLIDE DE FORMATION] :
+Titre : {slide_title}
+Contenu : {slide_content}
+
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Tes questions de compréhension personnalisées (2-3 questions adaptées)",
-  "confidence_score": 0.85,
-  "suggested_actions": ["Action 1", "Action 2"],
-  "related_concepts": ["Concept 1", "Concept 2"],
-  "generation_time_ms": 1200
+  "response": "T question de compréhension personnalisées (5 à 25 mots)"
 }}
 
 Génère maintenant les questions au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
@@ -273,14 +259,10 @@ Génère maintenant les questions au format JSON selon la [STRUCTURE JSON ATTEND
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
         prompt = f"""[ROLE] :
-Tu es un formateur IA spécialisé dans l'identification des [POINTS CLÉS ESSENTIELS].
+Tu es un formateur pédagogue spécialisé dans le fait d'extraire le plus importants d'un  [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 
 [OBJECTIF] :
-Identifier les [POINTS CLÉS ESSENTIELS] de la [SLIDE DE FORMATION] - ce qui est LE PLUS IMPORTANT à retenir selon le [PROFIL APPRENANT].
-
-[SLIDE DE FORMATION] :
-Titre : {slide_title}
-Contenu : {slide_content[:1500]}...
+Extrait de manière très synthétique le plus important à retenir sur ce [SLIDE DE FORMATION] adapté au [PROFIL APPRENANT].
 
 [PROFIL APPRENANT] :
 - Niveau d'expérience : {profile_info['niveau']}
@@ -289,14 +271,14 @@ Contenu : {slide_content[:1500]}...
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
 
+[SLIDE DE FORMATION] :
+Titre : {slide_title}
+Contenu : {slide_content}
+
 [STRUCTURE JSON ATTENDUE] :
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Les 1-3 points ESSENTIELS à retenir absolument de cette slide",
-  "confidence_score": 0.90,
-  "suggested_actions": ["Action 1", "Action 2"],
-  "related_concepts": ["Concept 1", "Concept 2"],
-  "generation_time_ms": 1200
+  "response": "Les 1-3 points ESSENTIELS à retenir absolument de cette slide"
 }}
 
 Génère maintenant les points clés au format JSON selon la [STRUCTURE JSON ATTENDUE]."""

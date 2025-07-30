@@ -1591,17 +1591,116 @@
                 // Mettre à jour le fil d'Ariane (breadcrumb)
                 this.updateBreadcrumb(slideData);
                 
+                // ========== LOGS DÉTAILLÉS TRANSFORMATION MARKDOWN ==========
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ========== DÉBUT TRANSFORMATION MARKDOWN POUR AFFICHAGE ==========');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] Content brut reçu TYPE:', typeof content);
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] Content brut reçu LONGUEUR:', content ? content.length : 'N/A');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] Content brut reçu PREVIEW (500 chars):');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ---START RAW CONTENT---');
+                console.log(content ? content.substring(0, 500) + '...' : 'CONTENT NULL');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ---END RAW CONTENT---');
+                
+                // ========== NETTOYAGE AUTOMATIQUE DES BACKTICKS ==========
+                let cleanedContent = content;
+                if (content.includes('```markdown') || content.includes('```')) {
+                    console.log('🧹🧹🧹 [SLIDE DISPLAY] DÉTECTION BACKTICKS - Nettoyage automatique');
+                    
+                    // Nettoyer les backticks markdown
+                    cleanedContent = content
+                        .replace(/^```markdown\s*\n?/i, '')  // Supprimer ```markdown au début
+                        .replace(/\n?```\s*$/i, '')         // Supprimer ``` à la fin
+                        .trim();
+                    
+                    console.log('🧹🧹🧹 [SLIDE DISPLAY] Content AVANT nettoyage:', content.substring(0, 100));
+                    console.log('🧹🧹🧹 [SLIDE DISPLAY] Content APRÈS nettoyage:', cleanedContent.substring(0, 100));
+                }
+                
+                // ========== CONVERSION AUTOMATIQUE JSON → MARKDOWN ==========
+                if (cleanedContent.trim().startsWith('{') && cleanedContent.includes('"slide"')) {
+                    console.log('🔄🔄🔄 [SLIDE DISPLAY] DÉTECTION JSON - Conversion automatique vers Markdown');
+                    
+                    try {
+                        const jsonData = JSON.parse(cleanedContent);
+                        console.log('🔄🔄🔄 [SLIDE DISPLAY] JSON parsé avec succès:', jsonData);
+                        
+                        if (jsonData.slide) {
+                            const slide = jsonData.slide;
+                            let markdownContent = '';
+                            
+                            // Titre principal
+                            if (slide.title) {
+                                markdownContent += `# ${slide.title}\n\n`;
+                            }
+                            
+                            // Si c'est un quiz avec questions
+                            if (slide.questions && Array.isArray(slide.questions)) {
+                                slide.questions.forEach((q, index) => {
+                                    markdownContent += `- ${q.question}\n`;
+                                });
+                                
+                                if (slide.instructions || slide.instruction) {
+                                    markdownContent += `\n*${slide.instructions || slide.instruction}*\n`;
+                                }
+                            }
+                            // Si c'est du contenu structuré
+                            else if (slide.content) {
+                                markdownContent += slide.content;
+                            }
+                            
+                            cleanedContent = markdownContent;
+                            console.log('🔄🔄🔄 [SLIDE DISPLAY] Conversion JSON → Markdown réussie');
+                            console.log('🔄🔄🔄 [SLIDE DISPLAY] Markdown généré:', cleanedContent.substring(0, 200));
+                        }
+                    } catch (e) {
+                        console.error('❌❌❌ [SLIDE DISPLAY] Erreur conversion JSON:', e);
+                        // Garder le contenu original si la conversion échoue
+                    }
+                }
+                
+                // Transformer avec markdownToHtml
+                const htmlTransformed = this.markdownToHtml(cleanedContent);
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] HTML transformé TYPE:', typeof htmlTransformed);
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] HTML transformé LONGUEUR:', htmlTransformed ? htmlTransformed.length : 'N/A');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] HTML transformé PREVIEW (500 chars):');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ---START HTML TRANSFORMED---');
+                console.log(htmlTransformed ? htmlTransformed.substring(0, 500) + '...' : 'HTML NULL');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ---END HTML TRANSFORMED---');
+                console.log('🔧🔧🔧 [SLIDE DISPLAY] ========== FIN TRANSFORMATION MARKDOWN POUR AFFICHAGE ==========');
+                
                 this.container.innerHTML = `
                     <div class="row">
                         <!-- Main slide content (full width) -->
                         <div class="col-lg-12">
                             <!-- Slide content in markdown format -->
                             <div id="slide-content" class="slide-content">
-                                ${this.markdownToHtml(content)}
+                                ${htmlTransformed}
                             </div>
                         </div>
                     </div>
                 `;
+                
+                // ========== LOGS VÉRIFICATION INJECTION HTML ==========
+                console.log('🎯🎯🎯 [SLIDE DISPLAY] ========== VÉRIFICATION INJECTION HTML ==========');
+                const slideContentEl = document.getElementById('slide-content');
+                if (slideContentEl) {
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Element slide-content trouvé:', !!slideContentEl);
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Element innerHTML LONGUEUR:', slideContentEl.innerHTML.length);
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Element innerHTML PREVIEW (500 chars):');
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] ---START ELEMENT INNERHTML---');
+                    console.log(slideContentEl.innerHTML.substring(0, 500) + '...');
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] ---END ELEMENT INNERHTML---');
+                    
+                    // Vérifier les balises HTML
+                    const innerHTML = slideContentEl.innerHTML;
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Contient <h1>?', innerHTML.includes('<h1>'));
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Contient <h2>?', innerHTML.includes('<h2>'));
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Contient <ul>?', innerHTML.includes('<ul>'));
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Contient <li>?', innerHTML.includes('<li>'));
+                    console.log('🎯🎯🎯 [SLIDE DISPLAY] Contient <p>?', innerHTML.includes('<p>'));
+                } else {
+                    console.error('❌❌❌ [SLIDE DISPLAY] Element slide-content NOT FOUND!');
+                }
+                console.log('🎯🎯🎯 [SLIDE DISPLAY] ========== FIN VÉRIFICATION INJECTION HTML ==========');
                 
                 // Ajouter event listeners pour le chat
                 this.setupChatFunctionality();
