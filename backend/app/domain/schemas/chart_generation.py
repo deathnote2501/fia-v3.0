@@ -68,13 +68,26 @@ class ChartConfig(BaseModel):
     
     @validator('data')
     def flatten_data(cls, v):
-        """Flatten nested data arrays from VertexAI"""
+        """Flatten and extract data from various VertexAI response formats"""
         if not v:
             return []
         
         flattened = []
         for item in v:
-            if isinstance(item, list):
+            if isinstance(item, dict):
+                # Handle object format like {'team': 'Marketing', 'values': [78, 82, 85, 85]}
+                if 'values' in item:
+                    values = item['values']
+                    if isinstance(values, list):
+                        for val in values:
+                            if isinstance(val, (int, float)):
+                                flattened.append(float(val))
+                # Handle other dict structures that might contain numeric values
+                elif 'value' in item:
+                    val = item['value']
+                    if isinstance(val, (int, float)):
+                        flattened.append(float(val))
+            elif isinstance(item, list):
                 # Flatten nested list
                 for subitem in item:
                     if isinstance(subitem, (int, float)):
@@ -106,9 +119,7 @@ class ChartGenerationResponse(BaseModel):
 
 class ChartAnalysisResult(BaseModel):
     """Internal model for VertexAI structured output"""
-    charts_possible: bool = Field(..., description="Whether meaningful charts can be generated from this content")
     recommended_charts: List[ChartConfig] = Field(
         default_factory=list, 
         description="List of recommended chart configurations"
     )
-    reasoning: str = Field(..., description="Explanation of chart choices and data interpretation")

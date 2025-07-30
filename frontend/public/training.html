@@ -1690,9 +1690,6 @@
                             
                             <!-- Chart container (hidden by default) -->
                             <div id="chart-container" class="mt-4" style="display: none;">
-                                <h5 class="text-primary mb-3">
-                                    <i class="bi bi-graph-up me-2"></i>Visual Representations
-                                </h5>
                                 <div id="charts-display" class="row">
                                     <!-- Charts will be rendered here -->
                                 </div>
@@ -3444,15 +3441,6 @@
                 // Show container
                 chartContainer.style.display = 'block';
                 
-                // Add description message
-                if (message) {
-                    const messageEl = document.createElement('div');
-                    const isCached = message.includes('(cached)');
-                    messageEl.className = `alert ${isCached ? 'alert-success' : 'alert-info'} mb-3`;
-                    const icon = isCached ? 'lightning-charge' : 'info-circle';
-                    messageEl.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
-                    chartsDisplay.appendChild(messageEl);
-                }
                 
                 // Render each chart
                 charts.forEach((chartConfig, index) => {
@@ -3466,8 +3454,7 @@
             renderChart(chartConfig, index, container) {
                 // Create chart wrapper
                 const chartWrapper = document.createElement('div');
-                const totalCharts = container.querySelectorAll('.col-lg-6, .col-lg-12').length + 1;
-                chartWrapper.className = `col-lg-${totalCharts === 1 ? '12' : '6'} mb-4`;
+                chartWrapper.className = 'col-12 mb-4';
                 
                 // Create chart card
                 const chartCard = document.createElement('div');

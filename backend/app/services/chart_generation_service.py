@@ -28,12 +28,14 @@ class ChartGenerationService:
         self.vertex_adapter = VertexAIAdapter()
         logger.info("🎯 CHART GENERATION [SERVICE] Initialized with VertexAI adapter")
     
-    async def generate_charts(self, request: ChartGenerationRequest) -> ChartGenerationResponse:
+    async def generate_charts(self, request: ChartGenerationRequest, profile_info: dict = None, enriched_profile: str = None) -> ChartGenerationResponse:
         """
         Generate chart configurations from slide content
         
         Args:
             request: Chart generation request with slide content
+            profile_info: Learner profile information (niveau, poste_et_secteur, objectifs)
+            enriched_profile: Enriched learner profile data
             
         Returns:
             Chart generation response with configurations
@@ -44,7 +46,7 @@ class ChartGenerationService:
             logger.info(f"🎯 CHART GENERATION [START] Analyzing content: {len(request.slide_content)} chars")
             
             # Build prompt for VertexAI
-            prompt = self._build_chart_generation_prompt(request)
+            prompt = self._build_chart_generation_prompt(request, profile_info, enriched_profile)
             
             # Generate with structured output
             generation_config = {
@@ -67,23 +69,24 @@ class ChartGenerationService:
             # Build response
             processing_time = time.time() - start_time
             
-            if not chart_analysis.charts_possible:
+            # Validate and clean chart configurations
+            validated_charts = self._validate_chart_configs(chart_analysis.recommended_charts)
+            
+            # Check if any charts were generated
+            if not validated_charts:
                 return ChartGenerationResponse(
                     success=False,
                     charts=[],
-                    message="No meaningful charts can be generated from this content",
+                    message="No meaningful charts could be generated from this content",
                     processing_time_seconds=round(processing_time, 2)
                 )
-            
-            # Validate and clean chart configurations
-            validated_charts = self._validate_chart_configs(chart_analysis.recommended_charts)
             
             logger.info(f"✅ CHART GENERATION [SUCCESS] Generated {len(validated_charts)} charts in {processing_time:.2f}s")
             
             return ChartGenerationResponse(
                 success=True,
                 charts=validated_charts,
-                message=f"Generated {len(validated_charts)} chart(s) successfully. {chart_analysis.reasoning}",
+                message=f"Generated {len(validated_charts)} chart(s) successfully",
                 processing_time_seconds=round(processing_time, 2)
             )
             
@@ -98,35 +101,45 @@ class ChartGenerationService:
                 processing_time_seconds=round(processing_time, 2)
             )
     
-    def _build_chart_generation_prompt(self, request: ChartGenerationRequest) -> str:
+    def _build_chart_generation_prompt(self, request: ChartGenerationRequest, profile_info: dict = None, enriched_profile: str = None) -> str:
         """Build optimized prompt for chart generation"""
         
-        prompt = f"""Tu es un expert en visualisation de données éducatives. 
+        # Handle default values for profile data
+        if profile_info is None:
+            profile_info = {
+                'niveau': 'Non spécifié',
+                'poste_et_secteur': 'Non spécifié', 
+                'objectifs': 'Non spécifié'
+            }
+        
+        if enriched_profile is None:
+            enriched_profile = 'Aucun profil enrichi disponible'
+        
+        prompt = f"""[ROLE] :
+Tu es un formateur pédagogue spécialisé dans la création de graphiques pour illustrer et enrichir un [SLIDE DE FORMATION].
 
-Analyse le contenu de formation suivant et détermine s'il est possible de créer des graphiques pertinents pour améliorer la compréhension.
+[OBJECTIF] :
+Créer un ou plusieurs graphiques personnalisés pour le [PROFIL APPRENANT] pour illustrer et enrichir le [SLIDE DE FORMATION] qu'il est en train de consulter ci-dessous.
 
-CONTENU À ANALYSER:
+[PROFIL APPRENANT] :
+- Niveau : {profile_info['niveau']}
+- Poste et secteur : {profile_info['poste_et_secteur']}
+- Objectifs : {profile_info['objectifs']}
+- Profil enrichi : {enriched_profile}
+
+[SLIDE DE FORMATION] : 
 Titre: {request.slide_title or "Non spécifié"}
-Contenu: {request.slide_content}
+Contenu:
+{request.slide_content}
 
 INSTRUCTIONS:
-1. Détermine si le contenu contient des informations qui peuvent être visualisées (données numériques, comparaisons, évolutions, répartitions, etc.)
-2. Si OUI, propose jusqu'à {request.max_charts} graphiques pertinents
-3. Utilise UNIQUEMENT ces types: "line" (évolution), "pie" (répartition), "radar" (comparaison multi-critères)
-4. Crée des données réalistes et éducatives basées sur le contenu
-5. Choisis des titres clairs et pédagogiques
-
-TYPES DE DONNÉES VISUALISABLES:
-- Statistiques, pourcentages, scores
-- Évolutions temporelles
-- Comparaisons entre éléments
-- Répartitions ou distributions
-- Performance, évaluations
-- Concepts avec dimensions multiples
+- En fonction du contenu de [SLIDE DE FORMATION], propose jusqu'à {request.max_charts} graphiques pertinents pour illustrer et enrichir ce slide en privilégie la qualité à la quantité 
+- Si le [SLIDE DE FORMATION] ne contient pas de données chiffrées, base-toi sur tes connaissances générales pour créer des données réalistes, utiles pour la compréhension du sujet
+- Utilise UNIQUEMENT ces types: "line" (évolution), "pie" (répartition), "radar" (comparaison multi-critères)
+- Choisis des titres clairs et pédagogiques
 
 RÉPONSE ATTENDUE (JSON uniquement):
 {{
-  "charts_possible": true/false,
   "recommended_charts": [
     {{
       "type": "line|pie|radar",
@@ -136,15 +149,9 @@ RÉPONSE ATTENDUE (JSON uniquement):
       "data": [valeur1, valeur2, valeur3],
       "color_palette": "default"
     }}
-  ],
-  "reasoning": "Explication détaillée des choix de visualisation"
+  ]
 }}
-
-IMPORTANT: 
-- Si aucune visualisation pertinente n'est possible, retourne charts_possible: false
-- Les données doivent être cohérentes avec le contenu éducatif
-- Maximum {request.max_charts} graphiques
-- Privilégie la qualité à la quantité"""
+"""
 
         return prompt
     
