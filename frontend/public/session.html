@@ -204,6 +204,7 @@
                                         <div class="mb-3">
                                             <label for="objectives" class="form-label">Training Objectives *</label>
                                             <textarea class="form-control" id="objectives" name="objectives" rows="3" required 
+                                                      minlength="5" maxlength="1000"
                                                       placeholder="What do you hope to achieve with this training? What specific skills or knowledge are you looking to gain?"></textarea>
                                             <div class="form-text">Help us personalize your learning experience (minimum 5 characters)</div>
                                         </div>
@@ -307,6 +308,11 @@
                             training_duration: formData.get('training_duration'),
                             language: formData.get('language') || 'fr'
                         };
+                        
+                        // Validate objectives length
+                        if (!profileData.objectives || profileData.objectives.trim().length < 5) {
+                            throw new Error('Training objectives must be at least 5 characters long');
+                        }
                         
                         // Debug: Log the data being sent
                         console.log('Sending profile data:', profileData);

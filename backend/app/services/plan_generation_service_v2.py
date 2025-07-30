@@ -155,8 +155,8 @@ class PlanGenerationService:
             Generated training plan
         """
         try:
-            # Validate and normalize profile
-            normalized_profile = self.prompt_builder.validate_profile(learner_profile)
+            # Extract and normalize profile
+            normalized_profile = self.prompt_builder.extract_learner_profile(learner_profile)
             
             # Process document
             document_content = await self.document_processor.process_document(file_path)
