@@ -57,14 +57,32 @@ class ChartGenerationService:
                 "response_mime_type": "application/json"
             }
             
-            # Call VertexAI
-            response_text = await self.vertex_adapter.generate_content(
+            # Call VertexAI with Google Search grounding
+            response_text, grounding_metadata = await self.vertex_adapter.generate_content_with_grounding(
                 prompt=prompt,
-                generation_config=generation_config
+                generation_config=generation_config,
+                use_google_search=True  # Enable Google Search for enriched chart data
             )
+            
+            # Log grounding information
+            if grounding_metadata:
+                if hasattr(grounding_metadata, 'grounding_chunks'):
+                    sources_count = len(grounding_metadata.grounding_chunks) if grounding_metadata.grounding_chunks else 0
+                    logger.info(f"🔍 CHART GENERATION [GROUNDING] Found {sources_count} web sources for chart enrichment")
+                else:
+                    logger.info("🔍 CHART GENERATION [GROUNDING] No grounding_chunks found")
+            else:
+                logger.info("🔍 CHART GENERATION [GROUNDING] Using fallback source extraction")
             
             # Parse structured output
             chart_analysis = self._parse_vertex_response(response_text)
+            
+            # Extract and add sources to charts
+            if grounding_metadata:
+                chart_analysis = self._add_sources_to_charts(chart_analysis, grounding_metadata)
+            else:
+                # Fallback : extraire les sources depuis les descriptions 
+                chart_analysis = self._extract_sources_from_descriptions(chart_analysis)
             
             # Build response
             processing_time = time.time() - start_time
@@ -116,10 +134,10 @@ class ChartGenerationService:
             enriched_profile = 'Aucun profil enrichi disponible'
         
         prompt = f"""[ROLE] :
-Tu es un formateur pédagogue spécialisé dans la création de graphiques pour illustrer et enrichir un [SLIDE DE FORMATION].
+Tu es un formateur pédagogue expert en visualisation de données avec accès à Google Search pour créer des graphiques factuels et pédagogiques.
 
 [OBJECTIF] :
-Créer un ou plusieurs graphiques personnalisés pour le [PROFIL APPRENANT] pour illustrer et enrichir le [SLIDE DE FORMATION] qu'il est en train de consulter ci-dessous.
+Créer {min(request.max_charts, 2)} graphiques personnalisés basés sur des données récentes et vérifiées pour enrichir le [SLIDE DE FORMATION] selon le [PROFIL APPRENANT].
 
 [PROFIL APPRENANT] :
 - Niveau : {profile_info['niveau']}
@@ -132,19 +150,30 @@ Titre: {request.slide_title or "Non spécifié"}
 Contenu:
 {request.slide_content}
 
-INSTRUCTIONS:
-- En fonction du contenu de [SLIDE DE FORMATION], propose jusqu'à {request.max_charts} graphiques pertinents pour illustrer et enrichir ce slide en privilégie la qualité à la quantité 
-- Si le [SLIDE DE FORMATION] ne contient pas de données chiffrées, base-toi sur tes connaissances générales pour créer des données réalistes, utiles pour la compréhension du sujet
-- Utilise UNIQUEMENT ces types: "line" (évolution), "pie" (répartition), "radar" (comparaison multi-critères)
-- Choisis des titres clairs et pédagogiques
+[STRATÉGIE DE RECHERCHE] :
+1. ANALYSE le contenu du slide pour identifier les sujets nécessitant des données chiffrées
+2. RECHERCHE sur Google des statistiques récentes (2023-2025) et des sources fiables 
+3. PRIVILÉGIE les sources officielles : instituts statistiques, études sectorielles, rapports gouvernementaux
+4. ADAPTE les données au niveau de compréhension du [PROFIL APPRENANT]
+
+[INSTRUCTIONS DE CRÉATION] :
+- Propose EXACTEMENT {min(request.max_charts, 2)} graphiques pertinents et complémentaires
+- RECHERCHE OBLIGATOIREMENT des données actuelles si le slide manque de chiffres précis
+- Utilise UNIQUEMENT ces types: "line" (évolution temporelle), "pie" (répartitions %), "radar" (comparaisons multi-critères)
+- Crée des données RÉALISTES basées sur tes recherches web récentes
+- INCLUS SYSTEMATIQUEMENT les sources dans la description de chaque graphique
+- Adapte la complexité des données au niveau du [PROFIL APPRENANT]
+
+[FORMAT DESCRIPTION OBLIGATOIRE] :
+"[Explication pédagogique du graphique]. Données basées sur [Source précise + année]. Cette visualisation permet à l'apprenant de [valeur pédagogique]."
 
 RÉPONSE ATTENDUE (JSON uniquement):
 {{
   "recommended_charts": [
     {{
       "type": "line|pie|radar",
-      "title": "Titre explicite du graphique",
-      "description": "Explication de ce que montre le graphique",
+      "title": "Titre explicite et pédagogique",
+      "description": "Explication + Source précise + Valeur pédagogique",
       "labels": ["Label1", "Label2", "Label3"],
       "data": [valeur1, valeur2, valeur3],
       "color_palette": "default"
@@ -160,10 +189,18 @@ RÉPONSE ATTENDUE (JSON uniquement):
         try:
             # Clean response text
             cleaned_response = response_text.strip()
-            if cleaned_response.startswith('```json'):
+            
+            # Remove prefixes like "Here is the JSON requested:"
+            if "```json" in cleaned_response:
+                start_index = cleaned_response.find("```json") + 7
+                cleaned_response = cleaned_response[start_index:]
+            elif cleaned_response.startswith('```json'):
                 cleaned_response = cleaned_response[7:]
+            
+            # Remove markdown suffixes
             if cleaned_response.endswith('```'):
                 cleaned_response = cleaned_response[:-3]
+            
             cleaned_response = cleaned_response.strip()
             
             # Parse JSON
@@ -175,6 +212,7 @@ RÉPONSE ATTENDUE (JSON uniquement):
         except json.JSONDecodeError as e:
             logger.error(f"❌ CHART GENERATION [JSON_ERROR] Failed to parse response: {e}")
             logger.error(f"❌ CHART GENERATION [JSON_ERROR] Raw response: {response_text[:500]}...")
+            logger.error(f"❌ CHART GENERATION [JSON_ERROR] Cleaned response: {cleaned_response[:500]}...")
             raise ValueError(f"Invalid JSON response from VertexAI: {e}")
             
         except Exception as e:
@@ -218,6 +256,97 @@ RÉPONSE ATTENDUE (JSON uniquement):
         
         logger.info(f"✅ CHART GENERATION [VALIDATION] Validated {len(validated_charts)} charts")
         return validated_charts
+    
+    def _add_sources_to_charts(self, chart_analysis: ChartAnalysisResult, grounding_metadata) -> ChartAnalysisResult:
+        """Add web sources from grounding metadata to chart configurations"""
+        try:
+            if not hasattr(grounding_metadata, 'grounding_chunks') or not grounding_metadata.grounding_chunks:
+                logger.info("🔍 CHART GENERATION [SOURCES] No grounding chunks found")
+                return chart_analysis
+            
+            # Extract sources from grounding metadata
+            sources = []
+            for chunk in grounding_metadata.grounding_chunks:
+                if hasattr(chunk, 'web') and chunk.web:
+                    source = {
+                        "title": chunk.web.title or "Source web",
+                        "url": chunk.web.uri or ""
+                    }
+                    sources.append(source)
+                    logger.info(f"🔗 CHART GENERATION [SOURCES] Found source: {source['title']}")
+            
+            # Add sources to all charts
+            for chart in chart_analysis.recommended_charts:
+                chart.sources = sources
+                logger.info(f"📊 CHART GENERATION [SOURCES] Added {len(sources)} sources to chart: {chart.title}")
+            
+            logger.info(f"✅ CHART GENERATION [SOURCES] Successfully added sources to {len(chart_analysis.recommended_charts)} charts")
+            return chart_analysis
+            
+        except Exception as e:
+            logger.error(f"❌ CHART GENERATION [SOURCES] Failed to add sources: {str(e)}")
+            # Return original chart_analysis if source extraction fails
+            return chart_analysis
+    
+    def _extract_sources_from_descriptions(self, chart_analysis: ChartAnalysisResult) -> ChartAnalysisResult:
+        """Fallback method to extract sources mentioned in chart descriptions"""
+        try:
+            import re
+            
+            # Common patterns for source extraction
+            source_patterns = [
+                r'Données basées sur (.+?)(\.|\s|$)',
+                r'Source[s]?\s*:\s*(.+?)(\.|\s|$)',
+                r'Selon (.+?)(\.|\s|$)',
+                r'D\'après (.+?)(\.|\s|$)',
+                r'Rapport (.+?)(\.|\s|$)'
+            ]
+            
+            for chart in chart_analysis.recommended_charts:
+                sources = []
+                
+                if chart.description:
+                    for pattern in source_patterns:
+                        matches = re.findall(pattern, chart.description, re.IGNORECASE)
+                        for match in matches:
+                            source_text = match[0] if isinstance(match, tuple) else match
+                            
+                            # Nettoyer et créer la source
+                            clean_source = source_text.strip()
+                            if len(clean_source) > 5:  # Éviter les matches trop courts
+                                source = {
+                                    "title": clean_source,
+                                    "url": ""  # Pas d'URL disponible depuis le texte
+                                }
+                                sources.append(source)
+                                logger.info(f"🔗 CHART GENERATION [FALLBACK_SOURCES] Extracted source: {clean_source}")
+                
+                # Ajouter une source générique si mentionnée dans la description
+                if 'IRENA' in chart.description:
+                    sources.append({
+                        "title": "IRENA - International Renewable Energy Agency",
+                        "url": "https://www.irena.org"
+                    })
+                elif 'Statista' in chart.description:
+                    sources.append({
+                        "title": "Statista - Market Research",
+                        "url": "https://www.statista.com"
+                    })
+                elif 'McKinsey' in chart.description:
+                    sources.append({
+                        "title": "McKinsey & Company",
+                        "url": "https://www.mckinsey.com"
+                    })
+                
+                chart.sources = sources
+                if sources:
+                    logger.info(f"📊 CHART GENERATION [FALLBACK_SOURCES] Added {len(sources)} fallback sources to chart: {chart.title}")
+            
+            return chart_analysis
+            
+        except Exception as e:
+            logger.error(f"❌ CHART GENERATION [FALLBACK_SOURCES] Failed to extract sources from descriptions: {str(e)}")
+            return chart_analysis
     
     def is_available(self) -> bool:
         """Check if chart generation service is available"""

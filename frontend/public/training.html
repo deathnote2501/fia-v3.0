@@ -3459,6 +3459,25 @@
                 // Create chart card
                 const chartCard = document.createElement('div');
                 chartCard.className = 'card shadow-sm';
+                // Generate sources HTML if available
+                let sourcesHtml = '';
+                if (chartConfig.sources && chartConfig.sources.length > 0) {
+                    const sourceLinks = chartConfig.sources.map(source => 
+                        `<a href="${source.url}" target="_blank" class="text-decoration-none small">
+                            <i class="bi bi-link-45deg me-1"></i>${source.title}
+                        </a>`
+                    ).join('<br>');
+                    
+                    sourcesHtml = `
+                        <div class="mt-2 pt-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i><strong>Sources :</strong><br>
+                                ${sourceLinks}
+                            </small>
+                        </div>
+                    `;
+                }
+
                 chartCard.innerHTML = `
                     <div class="card-body">
                         <h6 class="card-title text-primary">
@@ -3469,6 +3488,7 @@
                         <div class="chart-canvas-wrapper" style="position: relative; height: 300px;">
                             <canvas id="chart-${index}" width="400" height="300"></canvas>
                         </div>
+                        ${sourcesHtml}
                     </div>
                 `;
                 

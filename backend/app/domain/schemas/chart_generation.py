@@ -65,6 +65,10 @@ class ChartConfig(BaseModel):
         "default", 
         description="Bootstrap color palette to use"
     )
+    sources: Optional[List[Dict[str, str]]] = Field(
+        default_factory=list,
+        description="List of web sources used for chart data with title and url"
+    )
     
     @validator('data')
     def flatten_data(cls, v):

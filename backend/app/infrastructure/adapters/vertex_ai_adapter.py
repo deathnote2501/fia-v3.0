@@ -193,6 +193,108 @@ class VertexAIAdapter:
             logger.error(f"❌ VERTEX AI [FILE] Failed to read {Path(file_path).name}: {str(e)}")
             raise VertexAIError(f"File reading failed: {str(e)}", original_error=e)
     
+    async def generate_content_with_grounding(self, prompt, generation_config: Optional[Dict[str, Any]] = None, use_google_search: bool = False) -> tuple[str, Optional[Dict[str, Any]]]:
+        """Generate content with optional Google Search grounding using genai.Client"""
+        if not VERTEX_AI_AVAILABLE or not genai:
+            raise VertexAIError("Vertex AI with grounding not available - missing dependencies")
+        
+        start_time = time.time()
+        
+        try:
+            # Get project and location from settings
+            project_id = settings.google_cloud_project
+            location = settings.google_cloud_region or "europe-west1"
+            
+            if not project_id:
+                raise VertexAIError("GOOGLE_CLOUD_PROJECT not configured for grounding")
+            
+            # Initialize Gemini client for grounding with proper Vertex AI configuration
+            client = genai.Client(vertexai=True, project=project_id, location=location)
+            
+            # Prepare tools and config
+            tools = []
+            if use_google_search:
+                grounding_tool = types.Tool(google_search=types.GoogleSearch())
+                tools.append(grounding_tool)
+                logger.info("🔍 VERTEX AI [GROUNDING] Google Search tool enabled")
+            
+            # Prepare generation config
+            config_dict = generation_config or {
+                "temperature": 0.3,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 4096,
+                "response_mime_type": "application/json"
+            }
+            
+            # Create GenerateContentConfig with tools passed separately
+            if tools:
+                config = types.GenerateContentConfig(
+                    tools=tools,
+                    **config_dict
+                )
+            else:
+                config = types.GenerateContentConfig(**config_dict)
+            
+            logger.info(f"🚀 VERTEX AI [GROUNDING] Starting content generation with grounding...")
+            logger.info(f"🔍 VERTEX AI [GROUNDING] Use search: {use_google_search}")
+            logger.info(f"🔍 VERTEX AI [GROUNDING] Project: {project_id}, Location: {location}")
+            logger.info(f"🔍 VERTEX AI [GROUNDING] Prompt length: {len(str(prompt))} characters")
+            
+            # Generate content with grounding
+            response = await asyncio.to_thread(
+                client.models.generate_content,
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=config
+            )
+            
+            duration = time.time() - start_time
+            result = response.text
+            
+            # Extract grounding metadata if available
+            grounding_metadata = None
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'grounding_metadata'):
+                    grounding_metadata = candidate.grounding_metadata
+                    sources_count = len(grounding_metadata.grounding_chunks) if hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks else 0
+                    logger.info(f"🔍 VERTEX AI [GROUNDING] Grounding metadata found with {sources_count} sources")
+            
+            # Clean response like in regular generate_content
+            if result:
+                result_cleaned = result.strip()
+                if result_cleaned.startswith('```json'):
+                    result_cleaned = result_cleaned[7:]
+                if result_cleaned.endswith('```'):
+                    result_cleaned = result_cleaned[:-3]
+                result = result_cleaned.strip()
+            
+            self._log_api_call(
+                "content_generation_with_grounding",
+                {"prompt": str(prompt)[:100] + "...", "generation_config": config_dict, "use_google_search": use_google_search},
+                {"response": result[:100] + "...", "has_grounding": grounding_metadata is not None},
+                duration
+            )
+            
+            logger.info(f"✅ VERTEX AI [GROUNDING] Success - {len(result)} characters generated with grounding")
+            return result, grounding_metadata
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ VERTEX AI [GROUNDING] Exception: {str(e)}")
+            
+            self._log_api_call(
+                "content_generation_with_grounding",
+                {"prompt": str(prompt)[:100] + "...", "generation_config": generation_config, "use_google_search": use_google_search},
+                {},
+                duration,
+                success=False,
+                error=str(e)
+            )
+            
+            raise VertexAIError(f"Content generation with grounding failed: {str(e)}", original_error=e)
+
     async def generate_content(self, prompt, generation_config: Optional[Dict[str, Any]] = None) -> str:
         """Generate content using Vertex AI with Structured Output"""
         if not self.client:
