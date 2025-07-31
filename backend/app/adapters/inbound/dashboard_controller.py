@@ -14,6 +14,10 @@ from app.infrastructure.models.trainer_model import TrainerModel
 from app.infrastructure.models.training_model import TrainingModel
 from app.infrastructure.models.training_session_model import TrainingSessionModel
 from app.infrastructure.models.learner_session_model import LearnerSessionModel
+from app.infrastructure.models.training_slide_model import TrainingSlideModel
+from app.infrastructure.models.training_submodule_model import TrainingSubmoduleModel
+from app.infrastructure.models.training_module_model import TrainingModuleModel
+from app.infrastructure.models.learner_training_plan_model import LearnerTrainingPlanModel
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -35,6 +39,7 @@ async def get_dashboard_stats(
     """
     try:
         trainer_id = current_trainer.id
+        logger.info(f"Getting dashboard stats for trainer {trainer_id}")
         
         # Count trainings for this trainer
         trainings_result = await db.execute(
@@ -42,6 +47,7 @@ async def get_dashboard_stats(
             .where(TrainingModel.trainer_id == trainer_id)
         )
         trainings_count = trainings_result.scalar() or 0
+        logger.info(f"Trainings count: {trainings_count}")
         
         # Count active training sessions for this trainer's trainings
         active_sessions_result = await db.execute(
@@ -53,32 +59,71 @@ async def get_dashboard_stats(
             )
         )
         active_sessions_count = active_sessions_result.scalar() or 0
+        logger.info(f"Active sessions count: {active_sessions_count}")
         
-        # Count total learners across all trainer's sessions
-        learners_result = await db.execute(
-            select(func.count(LearnerSessionModel.id))
+        # Count unique learners by email across all trainer's sessions
+        unique_learners_result = await db.execute(
+            select(func.count(func.distinct(LearnerSessionModel.email)))
             .join(TrainingSessionModel, LearnerSessionModel.training_session_id == TrainingSessionModel.id)
             .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
             .where(TrainingModel.trainer_id == trainer_id)
         )
-        total_learners = learners_result.scalar() or 0
+        unique_learners_count = unique_learners_result.scalar() or 0
+        logger.info(f"Unique learners count: {unique_learners_count}")
         
-        # Calculate average session time (simplified to minutes)
-        avg_time_result = await db.execute(
-            select(func.avg(LearnerSessionModel.total_time_spent))
+        # Calculate total time spent by all learners (in hours)
+        total_time_result = await db.execute(
+            select(func.sum(LearnerSessionModel.total_time_spent))
             .join(TrainingSessionModel, LearnerSessionModel.training_session_id == TrainingSessionModel.id)
             .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
             .where(TrainingModel.trainer_id == trainer_id)
         )
-        avg_time_seconds = avg_time_result.scalar() or 0
-        avg_time_minutes = int(avg_time_seconds / 60) if avg_time_seconds else 0
-        avg_session_time = f"{avg_time_minutes}m"
+        total_time_seconds = total_time_result.scalar() or 0
+        total_time_hours = int(total_time_seconds / 3600) if total_time_seconds else 0
+        total_time_spent = f"{total_time_hours}h"
+        logger.info(f"Total time spent: {total_time_seconds} seconds = {total_time_hours} hours")
+        
+        # Calculate total slides viewed (sum of current_slide_number)
+        slides_viewed_result = await db.execute(
+            select(func.sum(LearnerSessionModel.current_slide_number))
+            .join(TrainingSessionModel, LearnerSessionModel.training_session_id == TrainingSessionModel.id)
+            .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
+            .where(TrainingModel.trainer_id == trainer_id)
+        )
+        total_slides_viewed = slides_viewed_result.scalar() or 0
+        logger.info(f"Total slides viewed: {total_slides_viewed}")
+        
+        # Count total slides with content for all trainer's trainings
+        # Simplified approach: get slides for this trainer via learner sessions
+        try:
+            total_slides_result = await db.execute(
+                select(func.count(TrainingSlideModel.id))
+                .join(TrainingSubmoduleModel, TrainingSlideModel.submodule_id == TrainingSubmoduleModel.id)
+                .join(TrainingModuleModel, TrainingSubmoduleModel.module_id == TrainingModuleModel.id)
+                .join(LearnerTrainingPlanModel, TrainingModuleModel.plan_id == LearnerTrainingPlanModel.id)
+                .join(LearnerSessionModel, LearnerTrainingPlanModel.learner_session_id == LearnerSessionModel.id)
+                .join(TrainingSessionModel, LearnerSessionModel.training_session_id == TrainingSessionModel.id)
+                .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
+                .where(
+                    TrainingModel.trainer_id == trainer_id,
+                    TrainingSlideModel.content.isnot(None)
+                )
+            )
+            total_slides_count = total_slides_result.scalar() or 0
+            logger.info(f"Total slides count: {total_slides_count}")
+        except Exception as slides_error:
+            logger.error(f"Error counting total slides: {slides_error}")
+            total_slides_count = 0
+        
+        logger.info(f"Dashboard stats for trainer {trainer_id}: trainings={trainings_count}, sessions={active_sessions_count}, learners={unique_learners_count}, time={total_time_hours}h, slides_viewed={total_slides_viewed}, total_slides={total_slides_count}")
         
         return {
             "trainings_count": trainings_count,
             "active_sessions_count": active_sessions_count,
-            "total_learners": total_learners,
-            "avg_session_time": avg_session_time
+            "unique_learners_count": unique_learners_count,
+            "total_time_spent": total_time_spent,
+            "total_slides_viewed": total_slides_viewed,
+            "total_slides_count": total_slides_count
         }
         
     except Exception as e:
@@ -87,8 +132,10 @@ async def get_dashboard_stats(
         return {
             "trainings_count": 0,
             "active_sessions_count": 0,
-            "total_learners": 0,
-            "avg_session_time": "0m"
+            "unique_learners_count": 0,
+            "total_time_spent": "0h",
+            "total_slides_viewed": 0,
+            "total_slides_count": 0
         }
 
 

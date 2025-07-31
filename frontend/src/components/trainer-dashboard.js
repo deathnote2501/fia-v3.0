@@ -325,12 +325,14 @@ class TrainerDashboard {
             // Load dashboard statistics
             const stats = await apiClient.get('/api/dashboard/stats');
             
-            // Update stat cards
+            // Update stat cards with new metrics
             const statElements = {
                 'trainings-count': stats.trainings_count || 0,
                 'sessions-count': stats.active_sessions_count || 0,
-                'learners-count': stats.total_learners || 0,
-                'avg-time': stats.avg_session_time || '0m'
+                'learners-count': stats.unique_learners_count || 0,
+                'total-time': stats.total_time_spent || '0h',
+                'slides-viewed': stats.total_slides_viewed || 0,
+                'total-slides': stats.total_slides_count || 0
             };
 
             Object.entries(statElements).forEach(([id, value]) => {
