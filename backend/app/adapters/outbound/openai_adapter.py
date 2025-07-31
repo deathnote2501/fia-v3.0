@@ -58,7 +58,7 @@ class OpenAIAdapter(ImageGenerationServicePort):
                 model="dall-e-3",
                 prompt=prompt,
                 size="1024x1024",
-                quality="standard",  # standard or hd
+                quality="hd",  # standard or hd
                 n=1,
                 response_format="b64_json"
             )
@@ -115,7 +115,7 @@ class OpenAIAdapter(ImageGenerationServicePort):
         # Base prompt for educational infographic
         base_prompt = f"""
 <OBJECTIVE>
-Design a square infographic (1:1 ratio) using **flat design** to visually explain the content of the [SLIDE_CONTENT] provided below.
+Design a **square infographic (1:1 ratio) using **flat design** to visually explain the content of the [SLIDE_CONTENT] provided below.
 </OBJECTIVE>
 
 <SPECIFICATIONS>
@@ -144,7 +144,6 @@ The infographic should:
 </STYLE TONE>
 
 Create the infographic strictly following these instructions.
-
 """
         
         # Add personalization if learner profile is available

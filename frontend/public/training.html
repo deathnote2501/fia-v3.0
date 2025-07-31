@@ -198,8 +198,8 @@
         .tts-switch {
             position: relative;
             display: inline-block;
-            width: 40px;
-            height: 22px;
+            width: 51px;
+            height: 31px;
         }
         
         .tts-switch input {
@@ -223,9 +223,9 @@
         .tts-slider:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
-            left: 2px;
+            height: 23px;
+            width: 23px;
+            left: 4px;
             bottom: 4px;
             background-color: white;
             transition: 0.3s;
@@ -238,7 +238,7 @@
         }
         
         input:checked + .tts-slider:before {
-            transform: translateX(18px);
+            transform: translateX(20px);
         }
         
         .tts-label {
@@ -431,6 +431,43 @@
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
             padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .progress-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 300px;
+        }
+
+        .progress-section .progress {
+            flex: 1;
+            height: 25px;
+            position: relative;
+        }
+
+        /* Ensure percentage text is always visible */
+        .progress-section .progress-bar {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 50px;
+        }
+        
+        /* Fallback for very low percentages - show text outside */
+        .progress-section .progress[data-percentage="1"] .progress-bar::after,
+        .progress-section .progress[data-percentage="2"] .progress-bar::after {
+            content: attr(aria-valuenow) '%';
+            position: absolute;
+            left: 8px;
+            color: #6c757d;
+            font-weight: 500;
         }
         
         .progress-breadcrumb {
@@ -495,6 +532,14 @@
     <div class="progress-bar-container">
         <div id="progress-breadcrumb" class="progress-breadcrumb">
             <span class="progress-text">Training Plan</span>
+        </div>
+        <div class="progress-section">
+            <div class="progress">
+                <div id="training-progress-bar" class="progress-bar" role="progressbar" 
+                     style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    0%
+                </div>
+            </div>
         </div>
     </div>
     
@@ -572,7 +617,7 @@
             <!-- Navigation Bar (fixed at bottom) -->
             <div class="navigation-bar">
                 <button id="new-previous-btn" class="btn btn-primary" disabled>
-                    <i class="bi bi-arrow-left-circle-fill me-1"></i>Previous
+                    <i class="bi bi-chevron-left me-1"></i>Previous
                 </button>
                 
                 <div class="interaction-buttons">
@@ -591,7 +636,7 @@
                 </div>
                 
                 <button id="new-next-btn" class="btn btn-primary">
-                    Next<i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                    Next<i class="bi bi-chevron-right ms-1"></i>
                 </button>
             </div>
         </div>
@@ -3067,9 +3112,34 @@
                     }
                 }
                 
-                // Show progress info
+                // Show progress info and update progress bar
                 if (position.current_position && position.total_slides) {
-                    console.log(`🔄 [NAVIGATION] Progress: ${position.current_position}/${position.total_slides} slides`);
+                    const progressPercentage = Math.round((position.current_position / position.total_slides) * 100);
+                    console.log(`🔄 [NAVIGATION] Progress: ${position.current_position}/${position.total_slides} slides (${progressPercentage}%)`);
+                    
+                    // Update progress bar
+                    this.updateProgressBar(progressPercentage);
+                }
+            }
+            
+            /**
+             * Update the progress bar with the current percentage
+             */
+            updateProgressBar(percentage) {
+                const progressBar = document.getElementById('training-progress-bar');
+                const progressContainer = progressBar?.parentElement;
+                if (progressBar && progressContainer) {
+                    // Ensure minimum width for visibility
+                    const displayWidth = Math.max(percentage, 4); // Minimum 4% width for visibility
+                    
+                    progressBar.style.width = `${displayWidth}%`;
+                    progressBar.setAttribute('aria-valuenow', percentage);
+                    progressBar.textContent = `${percentage}%`;
+                    
+                    // Add data attribute for CSS targeting
+                    progressContainer.setAttribute('data-percentage', percentage);
+                    
+                    console.log(`📊 [PROGRESS] Progress bar updated to ${percentage}% (display width: ${displayWidth}%)`);
                 }
             }
             
