@@ -692,22 +692,27 @@ export class SlideControls {
         const chartsContainer = document.createElement('div');
         chartsContainer.className = 'generated-charts-container mt-4 mb-4';
         
+        // Generate unique timestamp for all charts in this batch
+        const timestamp = Date.now();
+        
         let chartsHtml = `
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title">📊 Generated Charts</h6>
-                    <div class="row">
         `;
         
+        // Display each chart at full width, one below the other
         charts.forEach((chart, index) => {
-            const chartId = `chart-${Date.now()}-${index}`;
+            const chartId = `chart-${timestamp}-${index}`;
             chartsHtml += `
-                <div class="col-md-6 mb-3">
+                <div class="mb-4">
                     <div class="card border-secondary">
                         <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">${chart.title}</h6>
-                            <canvas id="${chartId}" width="300" height="200"></canvas>
-                            ${chart.description ? `<p class="card-text mt-2 small">${chart.description}</p>` : ''}
+                            <h6 class="card-subtitle mb-3 text-muted">${chart.title}</h6>
+                            <div class="chart-wrapper" style="position: relative; height: 400px; width: 100%;">
+                                <canvas id="${chartId}" style="width: 100%; height: 100%;"></canvas>
+                            </div>
+                            ${chart.description ? `<p class="card-text mt-3 small">${chart.description}</p>` : ''}
                         </div>
                     </div>
                 </div>
@@ -715,7 +720,6 @@ export class SlideControls {
         });
         
         chartsHtml += `
-                    </div>
                     <p class="card-text mt-2 text-muted small">
                         <i class="bi bi-info-circle"></i> ${charts.length} chart(s) generated from slide content
                     </p>
@@ -728,8 +732,8 @@ export class SlideControls {
         // Add the charts container to the slide content
         slideContentEl.appendChild(chartsContainer);
         
-        // Render the actual charts using Chart.js if available
-        this.renderCharts(charts);
+        // Render the actual charts using Chart.js if available - pass timestamp to ensure consistency
+        this.renderCharts(charts, timestamp);
         
         console.log(`✅ [SLIDE-CONTROLS] ${charts.length} charts displayed successfully in slide content`);
     }
@@ -737,17 +741,18 @@ export class SlideControls {
     /**
      * Render charts using Chart.js library
      * @param {Array} charts - Array of chart configurations
+     * @param {number} timestamp - Timestamp used for chart IDs
      */
-    renderCharts(charts) {
+    renderCharts(charts, timestamp) {
         // Check if Chart.js is loaded
         if (typeof Chart === 'undefined') {
             console.warn('⚠️ [SLIDE-CONTROLS] Chart.js not loaded, displaying chart data as text');
-            this.displayChartsAsText(charts);
+            this.displayChartsAsText(charts, timestamp);
             return;
         }
         
         charts.forEach((chart, index) => {
-            const chartId = `chart-${Date.now()}-${index}`;
+            const chartId = `chart-${timestamp}-${index}`;
             const canvas = document.getElementById(chartId);
             
             if (!canvas) {
@@ -796,10 +801,11 @@ export class SlideControls {
     /**
      * Display charts as text when Chart.js is not available
      * @param {Array} charts - Array of chart configurations
+     * @param {number} timestamp - Timestamp used for chart IDs
      */
-    displayChartsAsText(charts) {
+    displayChartsAsText(charts, timestamp) {
         charts.forEach((chart, index) => {
-            const chartId = `chart-${Date.now()}-${index}`;
+            const chartId = `chart-${timestamp}-${index}`;
             const canvas = document.getElementById(chartId);
             
             if (canvas) {
