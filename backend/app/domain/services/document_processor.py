@@ -36,7 +36,8 @@ class DocumentProcessor:
     SUPPORTED_MIME_TYPES = {
         '.pdf': 'application/pdf',
         '.ppt': 'application/vnd.ms-powerpoint',
-        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.md': 'text/markdown'
     }
     
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
@@ -114,12 +115,66 @@ class DocumentProcessor:
         - Estimation durée : [heures/jours]
         """
     
+    async def _process_markdown_file(self, file_path: str, file_info: Dict[str, Any]) -> str:
+        """Process markdown file by reading its content directly"""
+        try:
+            start_time = time.time()
+            
+            # Read markdown file content
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            if not content or len(content.strip()) < 10:
+                raise DocumentProcessingError(
+                    "Markdown file is empty or too short",
+                    file_path
+                )
+            
+            duration = time.time() - start_time
+            
+            # Create analysis based on markdown content
+            analysis = f"""
+            - Sujet principal : {file_info['file_name'].replace('.md', '').replace('_', ' ').title()}
+            - Objectifs : Formation basée sur contenu markdown personnalisé
+            - Concepts clés : Contenu défini dans le document markdown
+            - Structure : Organisation selon le format du document markdown
+            - Niveau : Adaptatif selon le profil de l'apprenant
+            - Exemples pratiques : Intégrés dans le contenu markdown
+            - Public cible : Défini selon les besoins spécifiques
+            - Estimation durée : 1-3 heures selon la complexité
+            
+            Contenu du document :
+            {content}
+            """
+            
+            logger.info(f"✅ DOCUMENT [MARKDOWN] {file_info['file_name']} - "
+                       f"{len(content)} chars read in {duration:.2f}s")
+            
+            return analysis.strip()
+            
+        except FileNotFoundError:
+            raise DocumentProcessingError(
+                f"Markdown file not found: {file_path}",
+                file_path
+            )
+        except UnicodeDecodeError:
+            raise DocumentProcessingError(
+                f"Unable to read markdown file (encoding issue): {file_path}",
+                file_path
+            )
+        except Exception as e:
+            raise DocumentProcessingError(
+                f"Error processing markdown file: {str(e)}",
+                file_path,
+                e
+            )
+    
     async def process_document(self, file_path: str) -> str:
         """
         Process document and extract content for plan generation
         
         Args:
-            file_path: Path to the PDF or PowerPoint file
+            file_path: Path to the PDF, PowerPoint, or Markdown file
             
         Returns:
             Extracted content from the document
@@ -133,6 +188,11 @@ class DocumentProcessor:
         logger.info(f"📄 DOCUMENT [PROCESSING] {file_info['file_name']} "
                    f"(MIME: {file_info['mime_type']}, Size: {file_info['file_size']} bytes)")
         
+        # Handle markdown files directly
+        if file_info['mime_type'] == 'text/markdown':
+            return await self._process_markdown_file(file_path, file_info)
+        
+        # For PDF/PPT/PPTX files, use Vertex AI
         if not self.vertex_ai_adapter:
             raise DocumentProcessingError(
                 "Vertex AI adapter not configured for document processing",

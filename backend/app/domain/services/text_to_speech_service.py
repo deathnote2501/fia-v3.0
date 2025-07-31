@@ -70,8 +70,12 @@ class TextToSpeechService:
             if not cleaned_text:
                 raise ValueError("Text is empty or invalid after cleaning")
             
-            # Select appropriate voice
-            voice_name = self._select_voice(language_code, voice_style, learner_profile)
+            # Select appropriate voice - use specific requested voice if provided
+            if learner_profile and learner_profile.get("requested_voice"):
+                voice_name = learner_profile["requested_voice"]
+                logger.info(f"🎯 TTS [VOICE] Using specifically requested voice: {voice_name}")
+            else:
+                voice_name = self._select_voice(language_code, voice_style, learner_profile)
             
             # Generate speech using the port
             speech_result = await self.tts_port.generate_speech(

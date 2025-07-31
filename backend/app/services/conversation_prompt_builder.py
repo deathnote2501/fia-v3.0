@@ -100,6 +100,8 @@ Réponds en format JSON avec cette structure exacte :
   }}
 }}
 </STRUCTURE_JSON_ATTENDUE>
+
+Répondre maintenant au [MESSAGE] de l'apprenant selon la <STRUCTURE_JSON_ATTENDUE> attendue.
 """
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [MESSAGE] Prompt built - {len(prompt)} characters")
@@ -156,6 +158,8 @@ Réponds en format JSON avec cette structure exacte :
   "response": "Ton commentaire pédagogique personnalisé sur cette slide"
 }}
 </STRUCTURE_JSON_ATTENDUE>
+
+Expliquer et commenter maintenant à l'oral le [SLIDE DE FORMATION] selon la <STRUCTURE_JSON_ATTENDUE>.
 """
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [COMMENTARY] Prompt built - {len(prompt)} characters")
@@ -184,29 +188,37 @@ Réponds en format JSON avec cette structure exacte :
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de donner des exemples sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+        prompt = f"""
+<ROLE>
+Tu es un formateur pédagogue spécialisé dans le fait de donner des exemples sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+</ROLE>
 
-[OBJECTIF] :
-Donner 1 ) 3 exemples adaptés au poste et secteur d'activité de l'apprenant : {learner_profile.get('job_position', 'professional')}, pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
+<OBJECTIF>
+Donner 1 à 3 exemples adaptés au poste et secteur d'activité de l'apprenant : {learner_profile.get('job_position', 'professional')}, pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[SLIDE DE FORMATION] :
+<SLIDE_DE_FORMATION>
 Titre : {slide_title}
 Contenu : {slide_content}
+</SLIDE_DE_FORMATION>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
   "response": "Tes exemples pratiques personnalisés"
 }}
+</STRUCTURE_JSON_ATTENDUE>
 
-Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+Donne maintenant 1 à 3 exemples adaptés au poste et secteur d'activité de l'apprenant selon la <STRUCTURE_JSON_ATTENDUE>.
+"""
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [EXAMPLES] Prompt built - {len(prompt)} characters")
         return prompt
@@ -234,29 +246,37 @@ Génère maintenant les exemples au format JSON selon la [STRUCTURE JSON ATTENDU
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""Tu es un formateur pédagogue spécialisé dans le fait de poser des questions de compréhension sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+        prompt = f"""
+<ROLE>
+Tu es un formateur pédagogue spécialisé dans le fait de poser des questions de compréhension sur un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Pose une seule question de compréhention adapté au [PROFIL APPRENANT] à l'apprenant pour le [SLIDE DE FORMATION] sur lequel l'apprenant est actuellement.
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[SLIDE DE FORMATION] :
+<SLIDE_DE_FORMATION>
 Titre : {slide_title}
 Contenu : {slide_content}
+</SLIDE_DE_FORMATION>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
   "response": "Ta question de compréhension personnalisées (5 à 25 mots)"
 }}
+</STRUCTURE_JSON_ATTENDUE>
 
-Génère maintenant les questions au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+Pose maintenant ta question de compréhention adapté au [PROFIL APPRENANT] selon la <STRUCTURE_JSON_ATTENDUE>.
+"""
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [COMPREHENSION] Prompt built - {len(prompt)} characters")
         return prompt
@@ -284,30 +304,37 @@ Génère maintenant les questions au format JSON selon la [STRUCTURE JSON ATTEND
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] :
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans le fait d'extraire le plus importants d'un  [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Extrait de manière très synthétique le plus important à retenir sur ce [SLIDE DE FORMATION] adapté au [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[SLIDE DE FORMATION] :
+<SLIDE_DE_FORMATION>
 Titre : {slide_title}
 Contenu : {slide_content}
+</SLIDE_DE_FORMATION>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
   "response": "Les 1-3 points ESSENTIELS à retenir absolument de cette slide"
 }}
+</STRUCTURE_JSON_ATTENDUE>
 
-Génère maintenant les points clés au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+Extrait maintanant de manière très synthétique le plus important à retenir sur ce [SLIDE DE FORMATION] selon la <STRUCTURE_JSON_ATTENDUE>.
+"""
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [KEY_POINTS] Prompt built - {len(prompt)} characters")
         return prompt

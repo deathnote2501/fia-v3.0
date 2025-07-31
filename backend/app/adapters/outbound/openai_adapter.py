@@ -113,17 +113,38 @@ class OpenAIAdapter(ImageGenerationServicePort):
         """Build optimized prompt for infographic generation"""
         
         # Base prompt for educational infographic
-        base_prompt = f"""Create a square infographic in a flat design style to explain the content of the [content of the slide] below.
+        base_prompt = f"""
+<ROLE>
+You are a graphic designer specialized in creating educational infographics in flat design style.
+</ROLE>
+
+<OBJECTIVE>
+Create a square infographic in a flat design style to explain the content of the [SLIDE CONTENT] below.
+</OBJECTIVE>
+
+<SPECIFICATIONS>
 The infographic must include:
 - 6 to 8 simple, modern illustrations
 - A clean, educational layout
 - A white background
 - 1 to 5 words in {language} per illustration, using a simple sans-serif font
+</SPECIFICATIONS>
 
-[content of the slide]:
+<SLIDE_CONTENT>
 {slide_content}
+</SLIDE_CONTENT>
 
-IMPORTANT: All text in the infographic must be written in {language}."""
+<CONSTRAINTS>
+- All text in the infographic must be written in {language}
+- Use flat design principles (simple shapes, minimal shadows, bright colors)
+- Maintain visual hierarchy and clear information flow
+- Ensure readability and educational clarity
+- Square format for optimal display
+- Use only these authorized colors: #0d6efd #dc3545 #198754 #000 and #adb5bd
+</CONSTRAINTS>
+
+Create the infographic following these <SPECIFICATIONS> and <CONSTRAINTS>.
+"""
         
         # Add personalization if learner profile is available
         if learner_profile:

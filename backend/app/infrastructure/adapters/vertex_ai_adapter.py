@@ -482,69 +482,287 @@ class VertexAIAdapter:
         language_code: str = "fr"
     ) -> tuple[bytes, Dict[str, Any]]:
         """
-        Generate speech audio using Vertex AI Gemini 2.5 TTS
+        Generate speech audio using Gemini 2.5 Flash Preview TTS with Google Cloud TTS fallback
         
         Args:
             text: Text to convert to speech
-            voice_name: Voice name (e.g., 'Kore', 'Puck', 'Aoede')
+            voice_name: Voice name from official Gemini TTS voices
             language_code: Language code (e.g., 'fr', 'en', 'es')
             
         Returns:
             Tuple of (audio_data_bytes, metadata_dict)
         """
-        if not VERTEX_AI_AVAILABLE or not genai:
-            raise VertexAIError("Vertex AI TTS not available - missing dependencies")
-        
         start_time = time.time()
         
-        try:
-            # Initialize Gemini client for TTS
-            client = genai.Client()
-            
-            # Prepare TTS prompt with voice style guidance
-            tts_prompt = self._build_tts_prompt(text, voice_name, language_code)
-            
-            logger.info(f"🔊 VERTEX AI [TTS] Generating speech - Voice: {voice_name}, Lang: {language_code}, Text: {len(text)} chars")
-            
-            # Generate speech using Gemini 2.5 TTS
-            response = await asyncio.to_thread(
-                client.models.generate_content,
-                model="gemini-2.5-flash-preview-tts",
-                contents=tts_prompt,
-                config=types.GenerateContentConfig(
-                    response_modalities=["AUDIO"],
-                    speech_config=types.SpeechConfig(
-                        voice_config=types.VoiceConfig(
-                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name=voice_name
+        # First, try Gemini 2.5 Flash Preview TTS
+        if VERTEX_AI_AVAILABLE and genai:
+            try:
+                return await self._generate_speech_with_gemini_tts(text, voice_name, language_code, start_time)
+            except VertexAIError as e:
+                logger.warning(f"⚠️ VERTEX AI [TTS] Gemini TTS failed, falling back to Google Cloud TTS: {str(e)}")
+                # Continue to fallback
+        
+        # Fallback to Google Cloud Text-to-Speech
+        return await self._generate_speech_with_google_cloud_tts(text, voice_name, language_code, start_time)
+    
+    async def _generate_speech_with_gemini_tts(
+        self,
+        text: str,
+        voice_name: str,
+        language_code: str,
+        start_time: float
+    ) -> tuple[bytes, Dict[str, Any]]:
+        """
+        Generate speech using Gemini 2.5 Flash Preview TTS
+        """
+        project_id = settings.google_cloud_project
+        
+        if not project_id:
+            raise VertexAIError("GOOGLE_CLOUD_PROJECT not configured for TTS")
+        
+        # Try multiple regions for Gemini 2.5 Flash Preview TTS availability
+        regions_to_try = [
+            "us-central1",    # Primary US region for TTS preview
+            "us-east1",       # Alternative US region
+            "us-west1",       # West coast US
+            "europe-west1",   # Current configured region
+            "asia-southeast1" # Asia Pacific region
+        ]
+        
+        # Start with user-configured region if specified
+        configured_region = settings.google_cloud_region
+        if configured_region and configured_region not in regions_to_try:
+            regions_to_try.insert(0, configured_region)
+        elif configured_region:
+            # Move configured region to front
+            regions_to_try.remove(configured_region)
+            regions_to_try.insert(0, configured_region)
+        
+        last_error = None
+        
+        for location in regions_to_try:
+            try:
+                logger.info(f"🔊 VERTEX AI [GEMINI_TTS] Trying region: {location}")
+                
+                # Initialize Gemini client for TTS with current region
+                client = genai.Client(vertexai=True, project=project_id, location=location)
+                
+                # Validate voice name (ensure it's from the official list)
+                official_voices = [
+                    "Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Leda", "Orus", "Aoede", 
+                    "Callirrhoe", "Autonoe", "Enceladus", "Iapetus", "Umbriel", "Algieba", 
+                    "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar", 
+                    "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi", 
+                    "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat"
+                ]
+                
+                # Use the voice name directly if it's official, otherwise fallback to Kore
+                final_voice = voice_name if voice_name in official_voices else "Kore"
+                
+                # Build TTS prompt with style guidance based on language
+                if language_code == "fr":
+                    tts_prompt = f"Dis de manière claire et naturelle : {text}"
+                elif language_code == "en":
+                    tts_prompt = f"Say clearly and naturally: {text}"
+                elif language_code == "es":
+                    tts_prompt = f"Di de manera clara y natural: {text}"
+                elif language_code == "de":
+                    tts_prompt = f"Sage klar und natürlich: {text}"
+                else:
+                    # Fallback to French
+                    tts_prompt = f"Dis de manière claire et naturelle : {text}"
+                
+                logger.info(f"🔊 VERTEX AI [GEMINI_TTS] Generating speech - Region: {location}, Voice: {final_voice}, Lang: {language_code}, Text: {len(text)} chars")
+                
+                # Generate speech using Gemini 2.5 Flash Preview TTS
+                response = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model="gemini-2.5-flash-preview-tts",
+                    contents=[{"parts": [{"text": tts_prompt}]}],
+                    config=types.GenerateContentConfig(
+                        response_modalities=["AUDIO"],
+                        speech_config=types.SpeechConfig(
+                            voice_config=types.VoiceConfig(
+                                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                    voice_name=final_voice
+                                )
                             )
                         )
                     )
                 )
+                
+                # If we reach here, the request was successful
+                logger.info(f"✅ VERTEX AI [GEMINI_TTS] Success with region: {location}")
+                break
+                
+            except Exception as region_error:
+                last_error = region_error
+                logger.warning(f"⚠️ VERTEX AI [GEMINI_TTS] Failed in region {location}: {str(region_error)}")
+                
+                # Check if it's an allowlist error (project not enabled for TTS)
+                if "allowlisted" in str(region_error).lower() or "not allowed" in str(region_error).lower():
+                    raise VertexAIError(f"Project not allowlisted for Gemini TTS audio output: {str(region_error)}")
+                
+                # If it's a 404 model not found, try next region
+                if "404" in str(region_error) and "not found" in str(region_error).lower():
+                    continue
+                else:
+                    # For other errors, break and raise
+                    raise VertexAIError(str(region_error))
+        
+        # If we tried all regions and still failed
+        if last_error and "404" in str(last_error):
+            raise VertexAIError(f"Gemini 2.5 Flash Preview TTS not available in any tested region")
+        elif last_error:
+            raise VertexAIError(str(last_error))
+        
+        # Extract audio data from response
+        if not response.candidates or not response.candidates[0].content.parts:
+            raise VertexAIError("No audio data in TTS response")
+        
+        audio_part = response.candidates[0].content.parts[0]
+        if not hasattr(audio_part, 'inline_data') or not audio_part.inline_data:
+            raise VertexAIError("No inline audio data in TTS response")
+        
+        # Get base64 encoded PCM data from Gemini TTS
+        audio_b64_data = audio_part.inline_data.data
+        
+        # Decode base64 to get raw PCM audio data
+        import base64
+        pcm_data = base64.b64decode(audio_b64_data)
+        
+        # Convert PCM to WAV format for browser compatibility
+        audio_data = self._pcm_to_wav(pcm_data)
+        
+        duration = time.time() - start_time
+        
+        # Log API call
+        self._log_api_call(
+            "gemini_tts_generation",
+            {
+                "text_length": len(text),
+                "voice_name": voice_name,
+                "final_voice": final_voice,
+                "language_code": language_code,
+                "successful_region": location
+            },
+            {
+                "audio_size_bytes": len(audio_data),
+                "success": True
+            },
+            duration
+        )
+        
+        metadata = {
+            "voice_used": final_voice,
+            "original_voice_requested": voice_name,
+            "language": language_code,
+            "generation_time_seconds": round(duration, 3),
+            "audio_format": "wav",
+            "sample_rate": 24000,
+            "audio_size_bytes": len(audio_data),
+            "model": "gemini-2.5-flash-preview-tts",
+            "service": "gemini_tts",
+            "region_used": location,
+            "regions_tried": regions_to_try[:regions_to_try.index(location) + 1]
+        }
+        
+        logger.info(f"✅ VERTEX AI [GEMINI_TTS] Speech generated - {len(audio_data)} bytes in {duration:.2f}s using region {location}")
+        return audio_data, metadata
+    
+    async def _generate_speech_with_google_cloud_tts(
+        self,
+        text: str,
+        voice_name: str,
+        language_code: str,
+        start_time: float
+    ) -> tuple[bytes, Dict[str, Any]]:
+        """
+        Generate speech using Google Cloud Text-to-Speech API as fallback
+        """
+        try:
+            from google.cloud import texttospeech
+            import io
+            
+            logger.info(f"🔊 VERTEX AI [CLOUD_TTS] Using Google Cloud TTS fallback - Voice: {voice_name}, Lang: {language_code}")
+            
+            # Initialize Google Cloud TTS client
+            client = texttospeech.TextToSpeechClient()
+            
+            # Map Gemini voice names to Google Cloud TTS voices with similar characteristics
+            voice_mapping = {
+                # French voices
+                "Kore": {"name": "fr-FR-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE},  # Firm
+                "Aoede": {"name": "fr-FR-Standard-C", "gender": texttospeech.SsmlVoiceGender.FEMALE},  # Breezy
+                "Orus": {"name": "fr-FR-Standard-B", "gender": texttospeech.SsmlVoiceGender.MALE},    # Firm
+                "Zephyr": {"name": "fr-FR-Wavenet-A", "gender": texttospeech.SsmlVoiceGender.FEMALE}, # Bright
+                "Algieba": {"name": "fr-FR-Wavenet-C", "gender": texttospeech.SsmlVoiceGender.FEMALE}, # Smooth
+                
+                # English voices
+                "Puck": {"name": "en-US-Standard-D", "gender": texttospeech.SsmlVoiceGender.MALE},    # Upbeat
+                "Charon": {"name": "en-US-Standard-A", "gender": texttospeech.SsmlVoiceGender.MALE},  # Informative
+                "Fenrir": {"name": "en-US-Standard-B", "gender": texttospeech.SsmlVoiceGender.MALE},  # Excitable
+                "Leda": {"name": "en-US-Standard-C", "gender": texttospeech.SsmlVoiceGender.FEMALE},  # Youthful
+                "Laomedeia": {"name": "en-US-Wavenet-D", "gender": texttospeech.SsmlVoiceGender.MALE}, # Upbeat
+                "Rasalgethi": {"name": "en-US-Wavenet-A", "gender": texttospeech.SsmlVoiceGender.MALE}, # Informative
+                
+                # Spanish voices  
+                "Despina": {"name": "es-ES-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE}, # Smooth
+                
+                # German voices
+                "Autonoe": {"name": "de-DE-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE} # Bright
+            }
+            
+            # Get voice configuration
+            if voice_name in voice_mapping:
+                voice_config = voice_mapping[voice_name]
+            else:
+                # Default fallback based on language
+                if language_code == "en":
+                    voice_config = {"name": "en-US-Standard-A", "gender": texttospeech.SsmlVoiceGender.MALE}
+                elif language_code == "es":
+                    voice_config = {"name": "es-ES-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE}
+                elif language_code == "de":
+                    voice_config = {"name": "de-DE-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE}
+                else:  # French default
+                    voice_config = {"name": "fr-FR-Standard-A", "gender": texttospeech.SsmlVoiceGender.FEMALE}
+            
+            # Configure synthesis input
+            synthesis_input = texttospeech.SynthesisInput(text=text)
+            
+            # Configure voice
+            voice = texttospeech.VoiceSelectionParams(
+                language_code=f"{language_code}-{language_code.upper()}" if len(language_code) == 2 else language_code,
+                name=voice_config["name"],
+                ssml_gender=voice_config["gender"]
             )
             
-            # Extract audio data
-            if not response.candidates or not response.candidates[0].content.parts:
-                raise VertexAIError("No audio data in TTS response")
+            # Configure audio
+            audio_config = texttospeech.AudioConfig(
+                audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+                sample_rate_hertz=24000
+            )
             
-            audio_part = response.candidates[0].content.parts[0]
-            if not hasattr(audio_part, 'inline_data') or not audio_part.inline_data:
-                raise VertexAIError("No inline audio data in TTS response")
+            # Generate speech
+            response = await asyncio.to_thread(
+                client.synthesize_speech,
+                input=synthesis_input,
+                voice=voice,
+                audio_config=audio_config
+            )
             
-            # Get raw PCM data from Gemini TTS
-            pcm_data = audio_part.inline_data.data
-            
-            # Convert PCM to WAV format for browser compatibility
-            audio_data = self._pcm_to_wav(pcm_data)
+            # Convert PCM to WAV
+            audio_data = self._pcm_to_wav(response.audio_content, sample_rate=24000)
             
             duration = time.time() - start_time
             
             # Log API call
             self._log_api_call(
-                "tts_generation",
+                "google_cloud_tts_generation",
                 {
                     "text_length": len(text),
                     "voice_name": voice_name,
+                    "google_voice": voice_config["name"],
                     "language_code": language_code
                 },
                 {
@@ -555,16 +773,25 @@ class VertexAIAdapter:
             )
             
             metadata = {
-                "voice_used": voice_name,
+                "voice_used": voice_config["name"],
+                "original_voice_requested": voice_name,
                 "language": language_code,
                 "generation_time_seconds": round(duration, 3),
                 "audio_format": "wav",
+                "sample_rate": 24000,
                 "audio_size_bytes": len(audio_data),
-                "model": "gemini-2.5-flash-preview-tts"
+                "model": "google-cloud-tts",
+                "service": "google_cloud_tts",
+                "fallback": True
             }
             
-            logger.info(f"✅ VERTEX AI [TTS] Speech generated - {len(audio_data)} bytes in {duration:.2f}s")
+            logger.info(f"✅ VERTEX AI [CLOUD_TTS] Fallback TTS generated - {len(audio_data)} bytes in {duration:.2f}s")
             return audio_data, metadata
+            
+        except ImportError:
+            raise VertexAIError("Google Cloud Text-to-Speech library not available")
+        except Exception as e:
+            raise VertexAIError(f"Google Cloud TTS fallback failed: {str(e)}")
             
         except Exception as e:
             duration = time.time() - start_time

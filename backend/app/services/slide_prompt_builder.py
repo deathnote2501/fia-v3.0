@@ -43,24 +43,29 @@ class SlidePromptBuilder:
         enriched_profile = self._extract_enriched_profile(learner_profile)
         plan_context = self._extract_plan_context(training_plan)
         
-        prompt = f"""[ROLE] : 
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans la création de [SLIDE DE FORMATION].
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Créer le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}. Cette [SLIDE DE FORMATION] doit être personnalisée pour le [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT]
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}  
 - Profil enrichi au fil de la formation de l'apprenant : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[INFORMATIONS SUPPLÉMENTAIRES SUR LA FORMATION] :
+<INFORMATIONS_SUPPLEMENTAIRES_SUR_LA_FORMATION>
 - Position de la slide dans la formation : {slide_position}
 - Plan de la formation : {plan_context}
+</INFORMATIONS_SUPPLEMENTAIRES_SUR_LA_FORMATION>
 
-[CONTRAINTES] :
+<CONTRAINTES>
 - Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Commence directement par le contenu, pas de préambule
 - Utilise des éléments markdown : # ## ### - > ** *
@@ -69,8 +74,10 @@ Créer le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}. Cette [SL
 - JAMAIS de backticks ```markdown ou ```, commence directement par #
 - JAMAIS d'objets JSON, JAMAIS de guillemets JSON, JAMAIS de crochets ou accolades
 - FORMAT ATTENDU : # Titre\\n\\n## Sous-titre\\n- Point 1\\n- Point 2
+</CONTRAINTES>
 
-Génère maintenant le contenu de la [SLIDE DE FORMATION] qui respecte les [CONTRAINTES]."""
+Créer maintenant le contenu de la [SLIDE DE FORMATION] suivante : {slide_title}.
+"""
         
         logger.info(f"✅ SLIDE PROMPT BUILDER [CONTENT] Prompt built - {len(prompt)} characters")
         return prompt
@@ -98,20 +105,24 @@ Génère maintenant le contenu de la [SLIDE DE FORMATION] qui respecte les [CONT
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] : 
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans la création de [SLIDE DE FORMATION] de type quiz.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Créer le contenu de la [SLIDE DE FORMATION] de type quiz. Cette [SLIDE DE FORMATION] doit être adaptée et personnalisée pour le [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation de l'apprenant : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[CONTRAINTES] :
+<CONTRAINTES>
 - La slide contiendra un titre et entre 3 et 5 questions de connaissance
 - Réponds UNIQUEMENT avec le contenu de la slide en Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Commence directement par le contenu, pas de préambule
@@ -122,8 +133,10 @@ Créer le contenu de la [SLIDE DE FORMATION] de type quiz. Cette [SLIDE DE FORMA
 - JAMAIS de backticks ```markdown ou ```, commence directement par #
 - JAMAIS d'objets JSON, JAMAIS de guillemets JSON, JAMAIS de crochets ou accolades
 - FORMAT ATTENDU : # Titre Quiz\\n\\n- Question 1 ?\\n- Question 2 ?
+</CONTRAINTES>
 
-Génère maintenant le contenu de la [SLIDE DE FORMATION] de type quiz qui respecte les [CONTRAINTES]."""
+Créer maintenant le contenu de la [SLIDE DE FORMATION] de type quiz
+"""
         
         logger.info(f"✅ SLIDE PROMPT BUILDER [QUIZ] Prompt built - {len(prompt)} characters")
         return prompt
@@ -160,23 +173,28 @@ Génère maintenant le contenu de la [SLIDE DE FORMATION] de type quiz qui respe
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] : 
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans la réécriture de [SLIDE DE FORMATION].
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 {objective_map[action]}
+</OBJECTIF>
 
-[SLIDE DE FORMATION] :
+<SLIDE_DE_FORMATION>
 {current_content}
+</SLIDE_DE_FORMATION>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}  
 - Profil enrichi au fil de la formation de l'apprenant : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 - Réponds en format JSON avec la structure suivante :
 {{
   "slide_content": "Le contenu Markdown {action} ici"
@@ -184,8 +202,10 @@ Tu es un formateur pédagogue spécialisé dans la réécriture de [SLIDE DE FOR
 - Le contenu dans slide_content doit être du Markdown pur (en insérant quelques emojis si cela est pertinent)
 - Garde la même structure Markdown (titres, listes, etc.) mais adapte le texte
 - Reste professionnel et pédagogique
+</STRUCTURE_JSON_ATTENDUE>
 
-Génère maintenant la réponse au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+Créé maintenant ta réponse au format JSON selon la <STRUCTURE_JSON_ATTENDUE>.
+"""
         
         logger.info(f"✅ SLIDE PROMPT BUILDER [MODIFY] {action.capitalize()} prompt built - {len(prompt)} characters")
         return prompt
@@ -219,30 +239,37 @@ Génère maintenant la réponse au format JSON selon la [STRUCTURE JSON ATTENDUE
         else:
             submodules_list = "Les sous-modules de ce module"
         
-        prompt = f"""[ROLE] :
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans la création d'introductions de modules.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Créer une introduction personnalisée pour le module "{module_name}" selon le [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs : {profile_info['objectifs']}
 - Profil enrichi : {enriched_profile}
+</PROFIL_APPRENANT>
 
-[CONTEXTE DU MODULE] :
+<CONTEXTE_DU_MODULE>
 - Module : {module_name}
 - Sous-modules inclus : {submodules_list}
+</CONTEXTE_DU_MODULE>
 
-[CONTRAINTES] :
+<CONTRAINTES>
 - Réponds UNIQUEMENT avec le texte d'introduction (pas de Markdown) (en insérant quelques emojis si cela est pertinent)
 - 2-3 phrases maximum (20-30 mots)
 - Explique l'objectif et ce que l'apprenant va découvrir
 - Adapte au profil professionnel de l'apprenant
 - Ton engageant et motivant
+</CONTRAINTES>
 
-Génère maintenant l'introduction du module."""
+Créer maintenant l'introduction personnalisée pour le module "{module_name}".
+"""
         
         logger.info(f"✅ SLIDE PROMPT BUILDER [MODULE] Introduction prompt built - {len(prompt)} characters")
         return prompt

@@ -51,72 +51,37 @@ class AITrainingGenerationService:
         Returns:
             Formatted prompt for VertexAI
         """
-        prompt = f"""Tu es un expert pédagogue et créateur de contenu de formation professionnelle.
+        prompt = f"""
+<ROLE>
+Tu es un expert pédagogue ecréateur de contenu de formation professionnelle.
+</ROLE>
 
-**MISSION :** Créer un contenu de formation complet et structuré au format Markdown.
+<OBJECTIF>
+Créer une [BASE DE CONNAISSANCE] qui sera utilisée pour créer une formation complete.
+</OBJECTIF>
 
-**INFORMATIONS DE LA FORMATION :**
-- **Nom :** {name}
-- **Description/Sujet :** {description}
+<INFORMATIONS_BASE_DE_CONNAISSANCE>
+- Nom : {name}
+- Description/Sujet : {description}
+</INFORMATIONS_BASE_DE_CONNAISSANCE>
 
-**INSTRUCTIONS IMPORTANTES :**
-1. **Structure obligatoire :** Utilise la structure Markdown avec titres hiérarchiques (# ## ###)
-2. **Contenu pédagogique :** Crée du contenu détaillé, pratique et engageant
-3. **Exemples concrets :** Inclus des exemples réels et des cas pratiques
-4. **Progression logique :** Organise le contenu de manière progressive (débutant → intermédiaire → avancé)
-5. **Interactivité :** Ajoute des exercices, questions de réflexion et points clés
-6. **Longueur appropriée :** Génère suffisamment de contenu pour une formation complète (minimum 1500 mots)
+<INSTRUCTIONS>
+1. Structure obligatoire : Utilise la structure Markdown avec titres hiérarchiques (# ## ###)
+2. Contenu pédagogique : Crée du contenu détaillé, pratique et engageant
+3. Exemples concrets : Inclus des exemples réels et des cas pratiques
+4. Interactivité : Ajoute des exercices, questions de réflexion et points clés
+5. Longueur appropriée : Génère suffisamment de contenu pour une formation complète (minimum 1500 mots)
+</INSTRUCTIONS>
 
-**FORMAT DE SORTIE ATTENDU :**
-```markdown
-# {name}
+<RECAP>
+POINTS ESSENTIELS À RESPECTER :
+- Formation complète sur : {name} - {description}
+- Structure Markdown hiérarchique obligatoire
+- Contenu minimum 1500 mots
+- Format Markdown pur sans balises de code
+</RECAP>
 
-## Introduction
-[Introduction engageante au sujet]
-
-## Objectifs pédagogiques
-- Objectif 1
-- Objectif 2
-- Objectif 3
-
-## Prérequis
-[Connaissances nécessaires]
-
-## Module 1 : [Titre du module]
-### Concepts fondamentaux
-[Contenu théorique]
-
-### Exemples pratiques
-[Exemples concrets avec code/cas d'usage]
-
-### Points clés à retenir
-- Point 1
-- Point 2
-- Point 3
-
-### Exercice pratique
-[Exercice à réaliser]
-
-## Module 2 : [Titre du module]
-[Structure similaire...]
-
-## Module 3 : [Titre du module]
-[Structure similaire...]
-
-## Synthèse et conclusion
-[Récapitulatif des apprentissages]
-
-## Pour aller plus loin
-[Ressources supplémentaires et recommandations]
-```
-
-**CONSIGNES SPÉCIALES :**
-- Adapte le niveau de complexité au contenu demandé
-- Utilise un ton professionnel mais accessible
-- Intègre des éléments visuels suggérés (tableaux, listes, encadrés)
-- Assure-toi que le contenu soit actionnable et pratique
-
-Génère maintenant le contenu de formation complet au format Markdown pur (sans balises ```markdown)."""
+Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."""
 
         return prompt
     

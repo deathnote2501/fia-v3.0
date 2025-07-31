@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Audio TTS</title>
+</head>
+<body>
+    <h1>Test Audio TTS</h1>
+    <button onclick="testTTS()">Test TTS</button>
+    <div id="result"></div>
+    <audio id="audioPlayer" controls style="width: 100%; margin: 20px 0;"></audio>
+
+    <script>
+        async function testTTS() {
+            const resultDiv = document.getElementById('result');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            resultDiv.innerHTML = 'Generating audio...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/tts/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Bonjour, ceci est un test de synthèse vocale avec Gemini TTS',
+                        voice: 'Kore',
+                        language: 'fr'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p><strong>Status:</strong> Success</p>
+                    <p><strong>Format:</strong> ${data.mime_type}</p>
+                    <p><strong>Duration:</strong> ${data.duration}s</p>
+                    <p><strong>Voice:</strong> ${data.voice_used}</p>
+                    <p><strong>Audio size:</strong> ${data.audio_data.length} chars</p>
+                    <p><strong>First 100 chars:</strong> ${data.audio_data.substring(0, 100)}...</p>
+                `;
+                
+                // Create audio URL
+                const audioUrl = `data:${data.mime_type};base64,${data.audio_data}`;
+                audioPlayer.src = audioUrl;
+                audioPlayer.load();
+                
+                // Try to play
+                try {
+                    await audioPlayer.play();
+                    resultDiv.innerHTML += '<p><strong>Playback:</strong> ✅ Started successfully</p>';
+                } catch (playError) {
+                    resultDiv.innerHTML += `<p><strong>Playback:</strong> ❌ ${playError.message}</p>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+            }
+        }
+
+        // Add event listeners for audio events
+        document.getElementById('audioPlayer').addEventListener('loadstart', () => {
+            console.log('🎵 Audio loadstart');
+        });
+        
+        document.getElementById('audioPlayer').addEventListener('loadeddata', () => {
+            console.log('✅ Audio loadeddata - can start playing');
+        });
+        
+        document.getElementById('audioPlayer').addEventListener('error', (e) => {
+            console.error('❌ Audio error:', e);
+            document.getElementById('result').innerHTML += `<p><strong>Audio Error:</strong> ${e.target.error?.message || 'Unknown error'}</p>`;
+        });
+        
+        document.getElementById('audioPlayer').addEventListener('canplay', () => {
+            console.log('✅ Audio can play');
+        });
+    </script>
+</body>
+</html>

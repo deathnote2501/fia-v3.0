@@ -109,102 +109,105 @@ class PromptBuilder:
         example_structure = self.build_example_structure()
         
         # Construct the personalized prompt
-        prompt = f"""# [ROLE] :
+        prompt = f"""
+<ROLE>
 Tu es un formateur en ingénierie pédagogique spécialisé dans la création de plans de formation personnalisés.
+</ROLE>
 
-# [OBJECTIF] :
+<OBJECTIF>
 Créer un [PLAN DE FORMATION PERSONNALISE] selon la [STRUCTURE DU PLAN] pour le [PROFIL DE L'APPRENANT] basé sur le [CONTENU DU SUPPORT DE FORMATION] qui doit durer {training_duration}. Ta réponse respectera la [STRUCTURE JSON ATTENDUE].
+</OBJECTIF>
 
-[PROFIL_DE_L'APPRENANT] :
+<PROFIL_DE_L_APPRENANT>
 - Niveau d'expérience: {experience_level}
 - Poste et secteur: {job_and_sector}
 - Objectifs de formation: {objectives}
 - Langue: {language}
+</PROFIL_DE_L_APPRENANT>
 
-[STRUCTURE DU PLAN] :
+<STRUCTURE_DU_PLAN>
 Le [PLAN DE FORMATION PERSONNALISE] est découpé en 5 étapes ci-dessous :
 - Étape 1 : "Mise en contexte" - Introduction, enjeux et objectifs
 - Étape 2 : "Acquisition des fondamentaux" - Concepts de base essentiels
 - Étape 3 : "Construction progressive" - Approfondissement par étapes
 - Étape 4 : "Maîtrise" - Approfondissement et pratique autonome
 - Étape 5 : "Validation" - Évaluation finale et consolidation
+</STRUCTURE_DU_PLAN>
 
-Il devra respecter les contraintes ci-dessous :
+<INSTRUCTIONS>
+1. ANALYSER le profil de l'apprenant pour adapter le niveau et le vocabulaire
+2. ÉTUDIER le contenu du support pour identifier les concepts clés
+3. STRUCTURER le plan selon les 5 étapes obligatoires
+4. RESPECTER toutes les contraintes de slides et de structure JSON
+5. ADAPTER la complexité selon le niveau d'expérience
+6. INTÉGRER des éléments spécifiques au poste et secteur de l'apprenant
+7. VÉRIFIER que chaque sous-module a exactement le bon nombre de slides
+</INSTRUCTIONS>
+
+<CONSTRAINTS>
 - 1 slide "plan" au début avec le plan global de formation
 - 1 slide "stage" avant chaque étape avec introduction de l'étape
 - 1 slide "module" avant chaque module avec introduction du module  
 - 1 slide "quiz" après chaque sous-module (quiz_slide)
 - 1 slide "quiz" après chaque module (module_quiz_slide)
 - 1 slide "quiz" après chaque étape (stage_quiz_slide)
+- OBLIGATOIRE: Chaque sous-module DOIT avoir entre 2 et 8 slides (slide_count entre 2 et 8)
 - Chaque sous-module DOIT inclure "slide_titles": tableau avec le titre exact de chaque slide
 - Chaque sous-module DOIT inclure "slide_types": tableau avec "content" pour chaque slide
 - Le nombre de titres dans slide_titles DOIT égaler slide_count
 - Le nombre d'éléments dans slide_types DOIT égaler slide_count
+- JAMAIS de slide_count inférieur à 2 ou supérieur à 8
+- Tous les tableaux slide_titles et slide_types doivent avoir la même longueur que slide_count
+</CONSTRAINTS>
 
-[CONTENU DU SUPPORT DE FORMATION] :
+<CONTENU_DU_SUPPORT_DE_FORMATION>
 {document_content}
+</CONTENU_DU_SUPPORT_DE_FORMATION>
 
-[STRUCTURE JSON ATTENDUE] :
+<EXAMPLES>
+<EXAMPLE_SOUS_MODULE>
+{{
+  "submodule_name": "Introduction aux concepts de base",
+  "slide_count": 4,
+  "slide_titles": [
+    "Qu'est-ce que l'IA Générative ?",
+    "Les différents types de modèles",
+    "Applications dans votre secteur",
+    "Enjeux et opportunités"
+  ],
+  "slide_types": ["content", "content", "content", "content"]
+}}
+Remarque: slide_count = 4, slide_titles contient 4 éléments, slide_types contient 4 éléments ✅
+</EXAMPLE_SOUS_MODULE>
+
+<EXAMPLE_MAUVAIS>
+{{
+  "submodule_name": "Exemple incorrect",
+  "slide_count": 3,
+  "slide_titles": ["Titre 1", "Titre 2"],
+  "slide_types": ["content", "content", "content", "content"]
+}}
+Remarque: Incohérence - slide_count=3 mais slide_titles=2 éléments et slide_types=4 éléments ❌
+</EXAMPLE_MAUVAIS>
+</EXAMPLES>
+
+<STRUCTURE_JSON_ATTENDUE>
 {example_structure}
+</STRUCTURE_JSON_ATTENDUE>
 
-GÉNÈRE le plan de formation personnalisé en JSON strictement conforme au schéma [STRUCTURE JSON ATTENDUE]."""
+<RECAP>
+POINTS CRITIQUES À RESPECTER ABSOLUMENT :
+- Plan en 5 étapes obligatoires selon la structure définie
+- Adaptation au niveau {experience_level} et secteur {job_and_sector}
+- Chaque sous-module : slide_count entre 2 et 8 (jamais 1, jamais 9+)
+- Cohérence parfaite : slide_count = longueur de slide_titles = longueur de slide_types
+- Structure JSON strictement conforme à l'exemple fourni
+- Contenu personnalisé selon les objectifs : {objectives}
+- Respect de la durée : {training_duration}
+</RECAP>
+
+Créer maintenant le [PLAN DE FORMATION PERSONNALISE]."""
         
         logger.info(f"🎯 PROMPT [BUILT] Level: {experience_level}, Duration: {training_duration}, Context: {job_and_sector}")
-        
-        return prompt
-    
-    def build_slide_content_prompt(self, slide_title: str, learner_profile: Dict[str, Any], 
-                                  context: Dict[str, Any]) -> str:
-        """
-        Build prompt for generating individual slide content
-        
-        Args:
-            slide_title: Title of the slide to generate
-            learner_profile: Learner profile for personalization
-            context: Additional context (module, submodule, stage info)
-            
-        Returns:
-            Prompt for slide content generation
-        """
-        experience_level = learner_profile.get('experience_level', 'beginner')
-        job_and_sector = learner_profile.get('job_and_sector', 'professionnel')
-        objectives = learner_profile.get('objectives', 'développer mes compétences')
-        
-        prompt = f"""Tu es un expert formateur créant du contenu pédagogique personnalisé.
-
-CONTEXTE:
-- Titre de la slide: {slide_title}
-- Module: {context.get('module_name', 'N/A')}
-- Sous-module: {context.get('submodule_name', 'N/A')}
-- Étape: {context.get('stage_title', 'N/A')}
-
-PROFIL APPRENANT:
-- Niveau: {experience_level}
-- Contexte professionnel: {job_and_sector}
-- Objectifs: {objectives}
-
-CONSIGNES:
-1. Contenu adapté au niveau {experience_level}
-2. Exemples adaptés au contexte {job_and_sector}
-3. Contenu engageant et interactif
-4. Aligné avec les objectifs: {objectives}
-
-Créé le contenu de cette slide en format structuré avec:
-- Introduction du concept
-- Explication principale
-- Exemple concret adapté au contexte {job_and_sector}
-- Point clé à retenir
-- Question ou exercice d'engagement
-
-Format JSON attendu:
-{{
-  "slide_content": {{
-    "introduction": "...",
-    "main_content": "...",
-    "example": "...",
-    "key_point": "...",
-    "engagement": "..."
-  }}
-}}"""
         
         return prompt

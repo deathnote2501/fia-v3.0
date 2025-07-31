@@ -133,41 +133,57 @@ class ChartGenerationService:
         if enriched_profile is None:
             enriched_profile = 'Aucun profil enrichi disponible'
         
-        prompt = f"""[ROLE] :
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue expert en visualisation de données avec accès à Google Search pour créer des graphiques factuels et pédagogiques.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Créer {min(request.max_charts, 2)} graphiques personnalisés basés sur des données récentes et vérifiées pour enrichir le [SLIDE DE FORMATION] selon le [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs : {profile_info['objectifs']}
 - Profil enrichi : {enriched_profile}
+</PROFIL_APPRENANT>
 
-[SLIDE DE FORMATION] : 
+<SLIDE_DE_FORMATION>
 Titre: {request.slide_title or "Non spécifié"}
 Contenu:
 {request.slide_content}
+</SLIDE_DE_FORMATION>
 
-[STRATÉGIE DE RECHERCHE] :
+<STRATEGIE_DE_RECHERCHE>
 1. ANALYSE le contenu du slide pour identifier les sujets nécessitant des données chiffrées
 2. RECHERCHE sur Google des statistiques récentes (2023-2025) et des sources fiables 
 3. PRIVILÉGIE les sources officielles : instituts statistiques, études sectorielles, rapports gouvernementaux
 4. ADAPTE les données au niveau de compréhension du [PROFIL APPRENANT]
+</STRATEGIE_DE_RECHERCHE>
 
-[INSTRUCTIONS DE CRÉATION] :
+<INSTRUCTIONS>
 - Propose EXACTEMENT {min(request.max_charts, 2)} graphiques pertinents et complémentaires
 - RECHERCHE OBLIGATOIREMENT des données actuelles si le slide manque de chiffres précis
 - Utilise UNIQUEMENT ces types: "line" (évolution temporelle), "pie" (répartitions %), "radar" (comparaisons multi-critères)
 - Crée des données RÉALISTES basées sur tes recherches web récentes
 - INCLUS SYSTEMATIQUEMENT les sources dans la description de chaque graphique
 - Adapte la complexité des données au niveau du [PROFIL APPRENANT]
+</INSTRUCTIONS>
 
-[FORMAT DESCRIPTION OBLIGATOIRE] :
+<CONSTRAINTS>
+- Types de graphiques autorisés: "line", "pie", "radar" uniquement
+- Sources obligatoires et récentes (2023-2025)
+- Données factuelles et vérifiables
+- Adaptation au niveau de l'apprenant
+- Format JSON strict obligatoire
+</CONSTRAINTS>
+
+<FORMAT_DESCRIPTION_OBLIGATOIRE>
 "[Explication pédagogique du graphique]. Données basées sur [Source précise + année]. Cette visualisation permet à l'apprenant de [valeur pédagogique]."
+</FORMAT_DESCRIPTION_OBLIGATOIRE>
 
-RÉPONSE ATTENDUE (JSON uniquement):
+<STRUCTURE_JSON_ATTENDUE>
 {{
   "recommended_charts": [
     {{
@@ -180,6 +196,19 @@ RÉPONSE ATTENDUE (JSON uniquement):
     }}
   ]
 }}
+</STRUCTURE_JSON_ATTENDUE>
+
+<RECAP>
+POINTS CRITIQUES À RESPECTER :
+- Exactement {min(request.max_charts, 2)} graphiques requis
+- Recherche web obligatoire pour données récentes
+- Sources précises dans chaque description
+- Types autorisés: line, pie, radar uniquement
+- Adaptation au profil {profile_info['niveau']} - {profile_info['poste_et_secteur']}
+- Format JSON strict selon la structure attendue
+</RECAP>
+
+Génère maintenant les graphiques au format JSON selon la <STRUCTURE_JSON_ATTENDUE>.
 """
 
         return prompt

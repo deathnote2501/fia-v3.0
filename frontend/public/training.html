@@ -904,9 +904,14 @@
                 this.updateToggleUI(enabled);
                 this.updateMessageAudioControls(enabled);
                 
-                // Stop current playback if disabling
-                if (!enabled && this.currentAudio) {
-                    this.stopAudio();
+                if (enabled) {
+                    // When enabling TTS, generate audio for existing assistant messages
+                    this.generateAudioForExistingMessages();
+                } else {
+                    // Stop current playback if disabling
+                    if (this.currentAudio) {
+                        this.stopAudio();
+                    }
                 }
             }
             
@@ -939,6 +944,65 @@
                         controls.style.display = enabled ? 'block' : 'none';
                     }
                 });
+            }
+            
+            /**
+             * Generate audio for existing assistant messages when TTS is enabled
+             */
+            async generateAudioForExistingMessages() {
+                console.log('🔊 TTS [MANAGER] Generating audio for existing assistant messages...');
+                
+                const assistantMessages = document.querySelectorAll('.message.assistant');
+                let processedCount = 0;
+                
+                for (const messageElement of assistantMessages) {
+                    // Skip if audio already exists
+                    if (messageElement.ttsAudio) {
+                        console.log('🔊 TTS [MANAGER] Skipping message - audio already exists');
+                        continue;
+                    }
+                    
+                    try {
+                        // Extract text content from the message
+                        const contentElement = messageElement.querySelector('.message-content p');
+                        if (!contentElement) {
+                            console.log('🔊 TTS [MANAGER] Skipping message - no content element found');
+                            continue;  
+                        }
+                        
+                        const textContent = contentElement.textContent || contentElement.innerText;
+                        if (!textContent || textContent.trim().length === 0) {
+                            console.log('🔊 TTS [MANAGER] Skipping message - empty text content');
+                            continue;
+                        }
+                        
+                        console.log(`🔊 TTS [MANAGER] Processing message ${processedCount + 1}: ${textContent.substring(0, 50)}...`);
+                        
+                        // Generate audio without auto-playing (autoPlay = false)
+                        await this.generateAndPlaySpeech(textContent, messageElement, false);
+                        processedCount++;
+                        
+                        // Add a small delay to avoid overwhelming the API
+                        if (processedCount % 3 === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                        
+                    } catch (error) {
+                        console.error('🔊 TTS [MANAGER] Failed to generate audio for existing message:', error);
+                        // Continue with other messages even if one fails
+                    }
+                }
+                
+                console.log(`✅ TTS [MANAGER] Processed ${processedCount} existing messages`);
+                
+                // Auto-play the last assistant message if any were processed
+                if (processedCount > 0 && assistantMessages.length > 0) {
+                    const lastMessage = assistantMessages[assistantMessages.length - 1];
+                    if (lastMessage.ttsAudio) {
+                        console.log('🔊 TTS [MANAGER] Auto-playing last assistant message');
+                        await this.playAudio(lastMessage);
+                    }
+                }
             }
             
             /**
@@ -983,19 +1047,17 @@
                     
                     const ttsData = await response.json();
                     
-                    // Convert base64 to audio blob
-                    const audioBlob = this.base64ToBlob(ttsData.audio_data, ttsData.mime_type);
-                    const audioUrl = URL.createObjectURL(audioBlob);
+                    // Create data URL from base64 audio (more reliable than blobs)
+                    const audioUrl = `data:${ttsData.mime_type};base64,${ttsData.audio_data}`;
                     
                     // Create audio element with proper settings
                     const audio = new Audio();
                     audio.preload = 'auto';
-                    audio.crossOrigin = 'anonymous';
                     
                     // Set up error handling before setting src
                     audio.onerror = (e) => {
                         console.error('❌ TTS [MANAGER] Audio load error:', e);
-                        URL.revokeObjectURL(audioUrl);
+                        console.error('❌ TTS [MANAGER] Audio URL:', audioUrl.substring(0, 100) + '...');
                     };
                     
                     // Set src after error handler

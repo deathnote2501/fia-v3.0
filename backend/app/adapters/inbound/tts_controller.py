@@ -5,6 +5,7 @@ FastAPI routes for TTS service using Vertex AI Gemini 2.5 TTS
 
 import base64
 import logging
+import time
 from typing import Dict, Any, List, Optional
 
 from fastapi import APIRouter, HTTPException, status
@@ -79,23 +80,47 @@ async def generate_speech(request: TTSGenerateRequest):
         tts_adapter = TTSAdapter()
         tts_service = TextToSpeechService(tts_adapter)
         
-        # Generate speech
+        # Generate speech - use the specific voice requested, not voice_style selection
         speech_result = await tts_service.generate_speech_for_message(
             text=request.message,
             language_code=request.language,
             voice_style=request.voice_style,
             learner_profile={
                 "language": request.language,
-                "voice_preference": request.voice
+                "voice_preference": request.voice,
+                "requested_voice": request.voice  # Ensure specific voice is used
             }
         )
         
-        # Encode audio data as base64 for JSON transport
-        audio_b64 = base64.b64encode(speech_result["audio_data"]).decode('utf-8')
+        # Audio data from Gemini is already base64 encoded
+        audio_data = speech_result["audio_data"]
+        if isinstance(audio_data, bytes):
+            # If it's bytes, encode it
+            audio_b64 = base64.b64encode(audio_data).decode('utf-8')
+            logger.info("🔊 TTS [API] Encoded bytes to base64")
+        else:
+            # If it's already a string (base64), use it as-is
+            audio_b64 = audio_data
+            logger.info("🔊 TTS [API] Using existing base64 string")
+        
+        # Use detected format from TTS service
+        metadata = speech_result.get("metadata", {})
+        actual_format = metadata.get("format", "wav")
+        mime_type_from_response = metadata.get("mime_type_from_response", f"audio/{actual_format}")
+        
+        # Try different MIME types for better browser compatibility
+        if actual_format == "unknown":
+            # Default to WAV for unknown formats
+            mime_type = "audio/wav"
+            actual_format = "wav"
+        else:
+            mime_type = f"audio/{actual_format}"
+        
+        logger.info(f"🔊 TTS [API] Audio format: {actual_format}, MIME type: {mime_type}, Response MIME: {mime_type_from_response}")
         
         response = TTSGenerateResponse(
             audio_data=audio_b64,
-            mime_type="audio/wav",  # Gemini 2.5 TTS returns WAV format
+            mime_type=mime_type,
             duration=speech_result.get("duration_seconds", 0.0),
             voice_used=speech_result["metadata"].get("voice_selected", request.voice),
             language=request.language,
@@ -218,6 +243,71 @@ async def tts_health_check():
 # ============================================================================
 # UTILITY ROUTES
 # ============================================================================
+
+@router.post("/api/tts/debug/save-audio", status_code=status.HTTP_200_OK)
+async def save_audio_debug(request: TTSGenerateRequest):
+    """
+    Debug endpoint to save generated audio to file for testing
+    """
+    try:
+        logger.info(f"🔍 TTS [DEBUG] Saving audio for debugging")
+        
+        # Initialize TTS service
+        tts_adapter = TTSAdapter()
+        tts_service = TextToSpeechService(tts_adapter)
+        
+        # Generate speech
+        speech_result = await tts_service.generate_speech_for_message(
+            text=request.message,
+            language_code=request.language,
+            voice_style=request.voice_style,
+            learner_profile={
+                "language": request.language,
+                "voice_preference": request.voice,
+                "requested_voice": request.voice
+            }
+        )
+        
+        # Save to file for debugging
+        import base64
+        import os
+        
+        audio_data = speech_result["audio_data"]
+        if isinstance(audio_data, str):
+            # Decode base64
+            audio_bytes = base64.b64decode(audio_data)
+        else:
+            audio_bytes = audio_data
+            
+        # Determine format
+        metadata = speech_result.get("metadata", {})
+        actual_format = metadata.get("format", "wav")
+        
+        # Save to temp file
+        temp_dir = "/tmp"
+        filename = f"tts_debug_{int(time.time())}.{actual_format}"
+        filepath = os.path.join(temp_dir, filename)
+        
+        with open(filepath, 'wb') as f:
+            f.write(audio_bytes)
+            
+        logger.info(f"🔍 TTS [DEBUG] Audio saved to: {filepath} ({len(audio_bytes)} bytes)")
+        
+        return {
+            "status": "saved",
+            "filepath": filepath,
+            "size_bytes": len(audio_bytes),
+            "format": actual_format,
+            "metadata": metadata
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ TTS [DEBUG] Failed to save audio: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Debug save failed: {str(e)}"
+        )
+
 
 @router.get("/api/tts/voices/recommendations", status_code=status.HTTP_200_OK)
 async def get_voice_recommendations(
