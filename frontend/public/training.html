@@ -165,6 +165,14 @@
             padding: 1rem;
             background: white;
         }
+
+        /* Auto-expanding textarea */
+        #chat-input {
+            min-height: calc(1.5em + 0.75rem + 2px); /* Single line height */
+            max-height: calc(4.5em + 0.75rem + 2px); /* 3 lines max */
+            line-height: 1.5;
+            transition: height 0.1s ease;
+        }
         
         .chat-status {
             font-size: 0.75rem;
@@ -175,7 +183,6 @@
         .tts-controls {
             padding: 0.75rem 1rem;
             background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -191,8 +198,8 @@
         .tts-switch {
             position: relative;
             display: inline-block;
-            width: 51px;
-            height: 31px;
+            width: 40px;
+            height: 22px;
         }
         
         .tts-switch input {
@@ -216,9 +223,9 @@
         .tts-slider:before {
             position: absolute;
             content: "";
-            height: 23px;
-            width: 23px;
-            left: 4px;
+            height: 18px;
+            width: 18px;
+            left: 2px;
             bottom: 4px;
             background-color: white;
             transition: 0.3s;
@@ -227,11 +234,11 @@
         }
         
         input:checked + .tts-slider {
-            background-color: #34c759;
+            background-color: #198754;
         }
         
         input:checked + .tts-slider:before {
-            transform: translateX(20px);
+            transform: translateX(18px);
         }
         
         .tts-label {
@@ -264,27 +271,17 @@
         }
         
         .audio-pause-btn {
-            background-color: #fd7e14;
-            border-color: #fd7e14;
+            background-color: transparent;
+            border-color: #0d6efd;
+            color: #0d6efd;
             color: white;
         }
         
         .audio-stop-btn {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: white;
+            /* Using Bootstrap outline classes */
         }
         
-        /* Audio Loading States */
-        .message.playing-audio .message-content {
-            background-color: #e7f3ff;
-            border-left: 4px solid #0d6efd;
-        }
-        
-        .message.loading-audio .message-content {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-        }
+        /* Audio Loading States - Removed */
         
         .audio-loading-indicator {
             display: none;
@@ -293,9 +290,7 @@
             margin-top: 0.25rem;
         }
         
-        .message.loading-audio .audio-loading-indicator {
-            display: block;
-        }
+        /* Audio loading indicator removed */
         
         /* Voice Chat Button States */
         .voice-chat-btn {
@@ -544,8 +539,9 @@
             <!-- Chat Input (fixed at bottom) -->
             <div class="chat-input">
                 <div class="input-group">
-                    <input type="text" class="form-control" id="chat-input" 
-                           placeholder="Ask your AI trainer..." maxlength="500">
+                    <textarea class="form-control" id="chat-input" 
+                              placeholder="Ask your AI trainer..." maxlength="500"
+                              rows="1" style="resize: none; overflow: hidden;"></textarea>
                     
                     <!-- Voice Chat Button (adaptive) -->
                     <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
@@ -575,27 +571,27 @@
             
             <!-- Navigation Bar (fixed at bottom) -->
             <div class="navigation-bar">
-                <button id="new-previous-btn" class="btn btn-outline-secondary" disabled>
-                    <i class="bi bi-chevron-left me-1"></i>Previous
+                <button id="new-previous-btn" class="btn btn-primary" disabled>
+                    <i class="bi bi-arrow-left-circle-fill me-1"></i>Previous
                 </button>
                 
                 <div class="interaction-buttons">
                     <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-arrow-down-circle me-1"></i>Simplify
+                        <i class="bi bi-arrows-collapse me-1"></i>Simplify
                     </button>
                     <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-arrow-up-circle me-1"></i>Deepen
+                        <i class="bi bi-arrows-expand me-1"></i>Deepen
                     </button>
                     <button id="generate-image-btn" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-image me-1"></i>Generate Image
+                        <i class="bi bi-image me-1"></i>Image
                     </button>
-                    <button id="generate-chart-btn" class="btn btn-outline-info">
-                        <i class="bi bi-graph-up me-1"></i>Generate Chart
+                    <button id="generate-chart-btn" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up me-1"></i>Chart
                     </button>
                 </div>
                 
-                <button id="new-next-btn" class="btn btn-outline-primary">
-                    Next<i class="bi bi-chevron-right ms-1"></i>
+                <button id="new-next-btn" class="btn btn-primary">
+                    Next<i class="bi bi-arrow-right-circle-fill ms-1"></i>
                 </button>
             </div>
         </div>
@@ -1222,7 +1218,7 @@
                 messageElement.classList.add('loading-audio');
                 const indicator = messageElement.querySelector('.audio-loading-indicator');
                 if (indicator) {
-                    indicator.textContent = '🔄 Generating speech...';
+                    // Removed generating speech text
                 }
             }
             
@@ -1928,6 +1924,47 @@
                 }
             }
             
+            /**
+             * Setup auto-expanding textarea functionality
+             */
+            setupAutoExpandingTextarea(textarea) {
+                if (!textarea) return;
+                
+                const autoResize = () => {
+                    // Reset height to auto to get the correct scrollHeight
+                    textarea.style.height = 'auto';
+                    
+                    // Calculate new height (max 3 lines)
+                    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight);
+                    const padding = parseFloat(getComputedStyle(textarea).paddingTop) + 
+                                   parseFloat(getComputedStyle(textarea).paddingBottom);
+                    const border = parseFloat(getComputedStyle(textarea).borderTopWidth) + 
+                                  parseFloat(getComputedStyle(textarea).borderBottomWidth);
+                    
+                    const minHeight = lineHeight + padding + border; // 1 line
+                    const maxHeight = (lineHeight * 3) + padding + border; // 3 lines
+                    
+                    let newHeight = Math.min(textarea.scrollHeight, maxHeight);
+                    newHeight = Math.max(newHeight, minHeight);
+                    
+                    textarea.style.height = newHeight + 'px';
+                    
+                    // Enable/disable scrolling based on content
+                    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                };
+                
+                // Auto-resize on input
+                textarea.addEventListener('input', autoResize);
+                
+                // Auto-resize on paste
+                textarea.addEventListener('paste', () => {
+                    setTimeout(autoResize, 0);
+                });
+                
+                // Initial resize
+                autoResize();
+            }
+            
             setupChatFunctionality() {
                 const chatInput = document.getElementById('chat-input');
                 const voiceChatBtn = document.getElementById('voice-chat-btn');
@@ -1935,6 +1972,9 @@
                 const voiceStatus = document.getElementById('voice-status');
                 const chatMessages = document.getElementById('chat-messages');
                 const sendBtnFallback = document.getElementById('send-message-btn-fallback');
+                
+                // Setup auto-expanding textarea
+                this.setupAutoExpandingTextarea(chatInput);
                 
                 // Initialize voice handler based on learner language
                 this.initializeVoiceHandler();
@@ -2447,8 +2487,13 @@
                     // Add user message to chat
                     this.addChatMessage('user', message);
                     
-                    // Clear input
-                    if (chatInput) chatInput.value = '';
+                    // Clear input and trigger resize
+                    if (chatInput) {
+                        chatInput.value = '';
+                        // Trigger resize to return to single line
+                        chatInput.style.height = 'auto';
+                        chatInput.dispatchEvent(new Event('input'));
+                    }
                     
                     // Show typing animation
                     this.showTypingAnimation();
@@ -2594,10 +2639,10 @@
                 let actionTypeBadge = '';
                 if (metadata.action_type) {
                     const badgeConfig = {
-                        'comment': { class: 'bg-primary', icon: 'bi-chat-text', text: 'Comment' },
-                        'quiz': { class: 'bg-secondary', icon: 'bi-question-circle', text: 'Quiz' },
-                        'examples': { class: 'bg-info', icon: 'bi-lightbulb', text: 'Examples' },
-                        'key-points': { class: 'bg-warning text-dark', icon: 'bi-star', text: 'Key Points' }
+                        'comment': { class: 'border border-primary text-primary', icon: 'bi-chat-text', text: 'Comment' },
+                        'quiz': { class: 'border border-primary text-primary', icon: 'bi-question-circle', text: 'Quiz' },
+                        'examples': { class: 'border border-primary text-primary', icon: 'bi-lightbulb', text: 'Examples' },
+                        'key-points': { class: 'border border-primary text-primary', icon: 'bi-star', text: 'Key Points' }
                     };
                     
                     const config = badgeConfig[metadata.action_type];
@@ -2615,15 +2660,15 @@
                     audioControls = `
                         <div class="message-audio-controls" style="display: ${this.ttsManager.enabled ? 'block' : 'none'}">
                             <button class="btn btn-sm audio-play-btn" onclick="app.playMessageAudio('${messageId}')">
-                                <i class="bi bi-play-fill"></i>
+                                <i class="bi bi-play-circle"></i>
                             </button>
-                            <button class="btn btn-sm audio-pause-btn" onclick="app.pauseMessageAudio('${messageId}')" style="display: none;">
-                                <i class="bi bi-pause-fill"></i>
+                            <button class="btn btn-sm btn-outline-primary audio-pause-btn" onclick="app.pauseMessageAudio('${messageId}')" style="display: none;">
+                                <i class="bi bi-pause-circle"></i>
                             </button>
-                            <button class="btn btn-sm audio-stop-btn" onclick="app.stopMessageAudio('${messageId}')" style="display: none;">
-                                <i class="bi bi-stop-fill"></i>
+                            <button class="btn btn-sm btn-outline-warning audio-stop-btn" onclick="app.stopMessageAudio('${messageId}')" style="display: none;">
+                                <i class="bi bi-pause-circle"></i>
                             </button>
-                            <div class="audio-loading-indicator">🔄 Generating speech...</div>
+                            <!-- Audio loading indicator removed -->
                         </div>
                     `;
                 }
@@ -2636,18 +2681,18 @@
                                     <div class="${bubbleClass} p-2 rounded">
                                         ${actionTypeBadge}
                                         <p class="mb-0 small">${content}</p>
-                                        ${metadata.confidence ? `<div class="mt-1"><span class="badge bg-secondary">Confidence: ${Math.round(metadata.confidence * 100)}%</span></div>` : ''}
+                                        <!-- Confidence badge removed -->
                                         ${metadata.suggested_actions && metadata.suggested_actions.length > 0 ? 
                                             `<div class="mt-2">
                                                 <small class="text-muted">Suggestions:</small><br>
-                                                ${metadata.suggested_actions.map(action => `<span class="badge bg-info me-1">${action}</span>`).join('')}
+                                                ${metadata.suggested_actions.map(action => `<span class="badge border border-primary text-primary me-1">${action}</span>`).join('')}
                                             </div>` : ''}
                                         ${metadata.related_concepts && metadata.related_concepts.length > 0 ? 
                                             `<div class="mt-2">
                                                 <small class="text-muted">Related:</small><br>
-                                                ${metadata.related_concepts.map(concept => `<span class="badge bg-success me-1">${concept}</span>`).join('')}
+                                                ${metadata.related_concepts.map(concept => `<span class="badge border border-primary text-primary me-1">${concept}</span>`).join('')}
                                             </div>` : ''}
-                                        ${metadata.error ? `<div class="mt-1"><span class="badge bg-danger">Error</span></div>` : ''}
+                                        ${metadata.error ? `<div class="mt-1"><span class="badge border border-primary text-primary">Error</span></div>` : ''}
                                     </div>
                                     ${audioControls}
                                 </div>

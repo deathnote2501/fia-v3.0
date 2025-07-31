@@ -89,7 +89,7 @@ L'apprenant peut utiliser les boutons du chat pour :
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Ta réponse pédagogique personnalisée à l'apprenant (avec 1 ou 2 emojis uniquement si c'est pertinent)",
+  "response": "Ta réponse personnalisée à l'apprenant en 5 à 50 mots maximum (avec 1 ou 2 emojis uniquement si c'est pertinent)",
   "learner_profile": {{
     "learning_style_observed": "style d'apprentissage observé lors de cette interaction",
     "comprehension_level": "niveau de compréhension détecté",
@@ -155,7 +155,7 @@ Contenu : {slide_content}
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Ton commentaire pédagogique personnalisé sur cette slide"
+  "response": "Ton commentaire personnalisé sur ce slide en 5 à 50 mots maximum"
 }}
 </STRUCTURE_JSON_ATTENDUE>
 
@@ -213,7 +213,7 @@ Contenu : {slide_content}
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Tes exemples pratiques personnalisés"
+  "response": "Tes exemples pratiques personnalisés en 5 à 50 mots maximum"
 }}
 </STRUCTURE_JSON_ATTENDUE>
 
@@ -271,7 +271,7 @@ Contenu : {slide_content}
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Ta question de compréhension personnalisées (5 à 25 mots)"
+  "response": "Ta question de compréhension personnalisées en 5 à 50 mots maximum"
 }}
 </STRUCTURE_JSON_ATTENDUE>
 
@@ -310,7 +310,7 @@ Tu es un formateur pédagogue spécialisé dans le fait d'extraire le plus impor
 </ROLE>
 
 <OBJECTIF>
-Extrait de manière très synthétique le plus important à retenir sur ce [SLIDE DE FORMATION] adapté au [PROFIL APPRENANT].
+Extrait de manière très synthétique entre 1 à 3 points les plus importants à retenir sur ce [SLIDE DE FORMATION] adapté au [PROFIL APPRENANT].
 </OBJECTIF>
 
 <PROFIL_APPRENANT>
@@ -329,7 +329,7 @@ Contenu : {slide_content}
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Les 1-3 points ESSENTIELS à retenir absolument de cette slide"
+  "response": "Les 1 à 3 points à retenir absolument de cette slide en 5 à 50 mots maximum"
 }}
 </STRUCTURE_JSON_ATTENDUE>
 

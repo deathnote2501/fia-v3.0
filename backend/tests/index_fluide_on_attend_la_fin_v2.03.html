@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Live API Chat - PCM Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .chat-container {
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fafafa;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            text-align: right;
+        }
+        
+        .assistant-message {
+            background-color: #e9ecef;
+            color: #333;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #startBtn {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        #startBtn:hover {
+            background-color: #218838;
+        }
+        
+        #stopBtn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        #stopBtn:hover {
+            background-color: #c82333;
+        }
+        
+        #startBtn:disabled, #stopBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.recording {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .audio-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .volume-indicator {
+            width: 200px;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+        
+        .volume-bar {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        .transcript {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .transcript h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .transcript-content {
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .pcm-stats {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Chat avec Gemini Live API (PCM Direct)</h1>
+        
+        <div id="status" class="status disconnected">
+            Déconnecté - Cliquez sur "Démarrer" pour commencer
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">🎤 Démarrer la conversation</button>
+            <button id="stopBtn" disabled>⏹️ Arrêter</button>
+        </div>
+        
+        <div class="audio-controls">
+            <span>Volume:</span>
+            <div class="volume-indicator">
+                <div id="volumeBar" class="volume-bar"></div>
+            </div>
+        </div>
+        
+        <div id="chatContainer" class="chat-container">
+            <div class="message assistant-message">
+                Bonjour ! Je suis Gemini avec capture PCM directe. Cliquez sur "Démarrer la conversation" et parlez-moi !
+            </div>
+        </div>
+        
+        <div class="transcript">
+            <h3>Transcription en temps réel:</h3>
+            <div id="transcriptContent" class="transcript-content">
+                Aucune transcription disponible
+            </div>
+        </div>
+        
+        <div class="pcm-stats">
+            <h4>Statistiques PCM:</h4>
+            <div id="pcmStats">En attente...</div>
+        </div>
+    </div>
+
+  <script type="module">
+/* ============================================================================
+   CONFIG
+============================================================================ */
+const API_KEY = "AIzaSyDFKSG3zQ1kyw99VkW3Bx6XE43V-7FJH94";
+const MODEL   = "gemini-2.5-flash-preview-native-audio-dialog";
+
+/* Lecture : stabilité */
+const AUDIO_CONFIG = {
+  bufferSize: 4096, initialBufferTime: 0.25, scheduleAheadTime: 0.45,
+  scheduleMargin: 80, sentenceTimeout: 1100, fadeTime: 0.006,
+  minCoalesceSec: 0.12, inputSampleRate: 16000, outputSampleRate: 24000
+};
+/* Capture micro */
+const PCM_CONFIG = { captureRate: 48000, sendInterval: 500, bufferSize: 4096 };
+
+/* ============================================================================
+   DOM
+============================================================================ */
+const startBtn=document.getElementById('startBtn'), stopBtn=document.getElementById('stopBtn'),
+      status=document.getElementById('status'), chatContainer=document.getElementById('chatContainer'),
+      volumeBar=document.getElementById('volumeBar'), transcriptContent=document.getElementById('transcriptContent'),
+      pcmStats=document.getElementById('pcmStats');
+
+/* ============================================================================
+   VARIABLES
+============================================================================ */
+let isRecording=false,audioContext=null,analyser=null,session=null,scriptProcessor=null;
+let rawPCMBuffer=[],pcmSendInterval=null,audioProcessingCount=0,successfulAudioSends=0,totalSamplesCaptured=0;
+let playbackContext=null,audioStreamer=null,lastChunkTimeout=null,lastPlayedMessageNo=-1;
+let lastPcmSent=0,audioStreamActive=false;    // <- suivi VAD
+
+/* ============================================================================
+   UTILS
+============================================================================ */
+const log=(c,m,d=null)=>{const t=new Date().toISOString();d?console.log(`[${t}][${c}] ${m}`,d):console.log(`[${t}][${c}] ${m}`);}
+const addMessage=(txt,u=false)=>{const el=document.createElement('div');el.className=`message ${u?'user':'assistant'}-message`;el.textContent=txt;chatContainer.appendChild(el);chatContainer.scrollTop=chatContainer.scrollHeight;}
+const updateStatus=(txt,cls)=>{status.textContent=txt;status.className=`status ${cls}`;}
+const updateTranscript=t=>{transcriptContent.textContent=t||"Aucune transcription disponible";}
+const updatePCMStats=()=>{const sr=audioContext?.sampleRate||PCM_CONFIG.captureRate;pcmStats.textContent=`Buffer: ${rawPCMBuffer.length}  |  Samples: ${totalSamplesCaptured}  |  Durée: ${(totalSamplesCaptured/sr).toFixed(2)} s`;};
+
+/* ============================================================================
+   AUDIO CAPTURE
+============================================================================ */
+async function initAudio(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{sampleRate:{ideal:PCM_CONFIG.captureRate},channelCount:{exact:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    audioContext=new AudioContext();const source=audioContext.createMediaStreamSource(stream);
+    analyser=audioContext.createAnalyser();analyser.fftSize=256;source.connect(analyser);
+    scriptProcessor=audioContext.createScriptProcessor(PCM_CONFIG.bufferSize,1,1);
+    const muteGain=audioContext.createGain();muteGain.gain.value=0;
+    source.connect(scriptProcessor);scriptProcessor.connect(muteGain);muteGain.connect(audioContext.destination);
+    scriptProcessor.onaudioprocess=e=>{
+      if(!isRecording)return;
+      const s=e.inputBuffer.getChannelData(0), pcm16=new Int16Array(s.length);
+      for(let i=0;i<s.length;i++){const v=Math.max(-1,Math.min(1,s[i]));pcm16[i]=v<0?v*0x8000:v*0x7FFF;}
+      rawPCMBuffer.push(pcm16);totalSamplesCaptured+=s.length;audioProcessingCount++;
+    };
+    return true;
+  }catch(e){updateStatus('Erreur micro','disconnected');return false;}
+}
+
+/* Resample Int16 linéaire */
+const resample=(data,inRate,outRate)=>{
+  if(inRate===outRate)return data;
+  const r=inRate/outRate,len=Math.floor(data.length/r),out=new Int16Array(len);
+  for(let i=0;i<len;i++){const p=i*r,i0=Math.floor(p),i1=Math.min(i0+1,data.length-1),f=p-i0;out[i]=(data[i0]*(1-f)+data[i1]*f)|0;}
+  return out;
+};
+
+/* Envoi PCM + gestion timer audioStreamEnd */
+function processPCMBuffer(){
+  if(rawPCMBuffer.length===0||!session)return;
+  const combinedLength=rawPCMBuffer.reduce((a,b)=>a+b.length,0);
+  const combined=new Int16Array(combinedLength);let off=0;
+  for(const c of rawPCMBuffer) {combined.set(c,off);off+=c.length;}
+  rawPCMBuffer.length=0;
+  const rs=resample(combined,audioContext.sampleRate,AUDIO_CONFIG.inputSampleRate);
+  const bin=String.fromCharCode(...new Uint8Array(rs.buffer)),b64=btoa(bin);
+  session.sendRealtimeInput({audio:{data:b64,mimeType:`audio/pcm;rate=${AUDIO_CONFIG.inputSampleRate}`}});
+  lastPcmSent=Date.now();audioStreamActive=true;successfulAudioSends++;
+}
+
+/* silence watchdog -> audioStreamEnd */
+setInterval(()=>{if(!isRecording||!session)return;
+  if(audioStreamActive && Date.now()-lastPcmSent>1200){session.sendRealtimeInput({audioStreamEnd:true});audioStreamActive=false;log('VAD','⏹️ audioStreamEnd envoyé');}
+},200);
+
+/* ============================================================================
+   GEMINI LIVE (Automatic VAD ON)
+============================================================================ */
+async function connectToGemini(){
+  const {GoogleGenAI,Modality,StartSensitivity,EndSensitivity}=await import('https://esm.run/@google/genai');
+  const ai=new GoogleGenAI({apiKey:API_KEY});
+  const cfg={
+    responseModalities:[Modality.AUDIO],
+    systemInstruction:"Assistant vocal empathique français.",
+    realtimeInputConfig:{
+      automaticActivityDetection:{
+        disabled:false,
+        startOfSpeechSensitivity:StartSensitivity.START_SENSITIVITY_LOW,
+        endOfSpeechSensitivity:EndSensitivity.END_SENSITIVITY_LOW,
+        prefixPaddingMs:20,
+        silenceDurationMs:100
+      }
+    },
+    inputAudioTranscription:{}, outputAudioTranscription:{}
+  };
+  session=await ai.live.connect({
+    model:MODEL,
+    config:cfg,
+    callbacks:{
+      onopen:()=>updateStatus('Connecté','connected'),
+      onmessage:msg=>handleGeminiResponse(msg),
+      onerror:e=>updateStatus('Erreur','disconnected'),
+      onclose:()=>updateStatus('Fermé','disconnected')
+    }
+  });
+}
+
+/* ============================================================================
+   HANDLE RESPONSES
+============================================================================ */
+function handleGeminiResponse(m){
+  /* interruption → stop lecture + clear */
+  if(m?.serverContent?.interrupted && audioStreamer){
+    log('VAD','⛔ Interruption détectée, arrêt lecture');
+    audioStreamer.stop();
+  }
+  if(m?.data) playAudioResponse(m.data);
+  if(m?.serverContent?.outputTranscription?.text) addMessage(m.serverContent.outputTranscription.text,false);
+}
+
+/* ============================================================================
+   AUDIO STREAMER (identique à ta version précédente)
+   – méthodes addChunk / flush / stop conservées
+============================================================================ */
+class AudioStreamer{/* … même implémentation que plus haut, inchangée … */}
+/* ---- pour gagner de la place dans l'exemple, réutilise exactement la classe
+   AudioStreamer déjà fournie dans ton script précédent ---- */
+
+function initPlayback(){if(!playbackContext){playbackContext=new AudioContext();audioStreamer=new AudioStreamer(playbackContext);}}
+function playAudioResponse(b64){
+  initPlayback();
+  const bin=atob(b64),pcm=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+  audioStreamer.addChunk(pcm);
+  clearTimeout(lastChunkTimeout);
+  lastChunkTimeout=setTimeout(()=>audioStreamer.flush(),AUDIO_CONFIG.sentenceTimeout);
+}
+
+/* ============================================================================
+   FLOW
+============================================================================ */
+async function startConversation(){
+  if(isRecording)return;
+  updateStatus('Init…','recording');if(!await initAudio())return;if(!await connectToGemini())return;
+  isRecording=true;pcmSendInterval=setInterval(()=>{if(rawPCMBuffer.length>0)processPCMBuffer();},PCM_CONFIG.sendInterval);
+  startBtn.disabled=true;stopBtn.disabled=false;updateStatus('🎙️ Parlez !','recording');addMessage("Je vous écoute !",false);
+}
+function stopConversation(){
+  if(!isRecording)return;isRecording=false;
+  clearInterval(pcmSendInterval);pcmSendInterval=null;
+  if(scriptProcessor)scriptProcessor.disconnect();
+  if(session)session.close();
+  if(audioStreamer)audioStreamer.stop();
+  if(playbackContext)playbackContext.close();
+  if(audioContext)audioContext.close();
+  startBtn.disabled=false;stopBtn.disabled=true;updateStatus('Arrêté','disconnected');addMessage("Fin de conversation.",false);
+}
+
+/* ============================================================================
+   EVENTS
+============================================================================ */
+startBtn.addEventListener('click',startConversation);
+stopBtn.addEventListener('click',stopConversation);
+if(!navigator.mediaDevices?.getUserMedia){updateStatus('Micro non supporté','disconnected');startBtn.disabled=true;}
+</script>
+
+
+
+</body>
+</html>
