@@ -15,6 +15,7 @@ from app.adapters.repositories.learner_session_repository import LearnerSessionR
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
 from app.services.slide_structure_formatter import SlideStructureFormatter
 from app.services.slide_content_generator import SlideContentGenerator
+from app.services.slide_content_modifier import SlideContentModifier
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class SlideGenerationServiceOrchestrator:
         """Initialize slide generation orchestrator"""
         self.structure_formatter = SlideStructureFormatter()
         self.content_generator = SlideContentGenerator()
+        self.content_modifier = SlideContentModifier()
         logger.info("🎯 SLIDE ORCHESTRATOR [SERVICE] Initialized with specialized services")
     
     async def generate_first_slide_content(self, learner_session_id: str) -> Dict[str, Any]:
@@ -538,3 +540,75 @@ class SlideGenerationServiceOrchestrator:
                 logger.warning(f"⚠️ SLIDE ORCHESTRATOR [FIX] Failed to fix content: {e}")
         
         return content
+    
+    async def simplify_slide_content(self, learner_session_id: str, current_slide_content: str) -> Dict[str, Any]:
+        """
+        Simplify slide content for better accessibility
+        
+        Args:
+            learner_session_id: ID of the learner session
+            current_slide_content: Current slide content to simplify
+            
+        Returns:
+            Dict containing simplified slide content
+        """
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🔧 SLIDE ORCHESTRATOR [SIMPLIFY] Starting for session {learner_session_id}")
+                
+                # Get learner session and profile
+                learner_session_repo = LearnerSessionRepository(session)
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Use content modifier to simplify
+                result = await self.content_modifier.simplify_slide_content(
+                    current_content=current_slide_content,
+                    learner_profile=learner_session,
+                    learner_session_id=learner_session_id
+                )
+                
+                logger.info(f"✅ SLIDE ORCHESTRATOR [SIMPLIFY] Completed for session {learner_session_id}")
+                return result
+                
+            except Exception as e:
+                logger.error(f"❌ SLIDE ORCHESTRATOR [SIMPLIFY] Error: {e}")
+                raise
+    
+    async def more_details_slide_content(self, learner_session_id: str, current_slide_content: str) -> Dict[str, Any]:
+        """
+        Add more details to slide content
+        
+        Args:
+            learner_session_id: ID of the learner session
+            current_slide_content: Current slide content to enhance
+            
+        Returns:
+            Dict containing enhanced slide content with more details
+        """
+        async with AsyncSessionLocal() as session:
+            try:
+                logger.info(f"🔧 SLIDE ORCHESTRATOR [MORE_DETAILS] Starting for session {learner_session_id}")
+                
+                # Get learner session and profile
+                learner_session_repo = LearnerSessionRepository(session)
+                learner_session = await learner_session_repo.get_by_id(learner_session_id)
+                
+                if not learner_session:
+                    raise ValueError(f"Learner session not found: {learner_session_id}")
+                
+                # Use content modifier to add more details
+                result = await self.content_modifier.add_more_details_to_slide(
+                    current_content=current_slide_content,
+                    learner_profile=learner_session,
+                    learner_session_id=learner_session_id
+                )
+                
+                logger.info(f"✅ SLIDE ORCHESTRATOR [MORE_DETAILS] Completed for session {learner_session_id}")
+                return result
+                
+            except Exception as e:
+                logger.error(f"❌ SLIDE ORCHESTRATOR [MORE_DETAILS] Error: {e}")
+                raise

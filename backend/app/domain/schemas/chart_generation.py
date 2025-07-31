@@ -70,6 +70,16 @@ class ChartConfig(BaseModel):
         description="List of web sources used for chart data with title and url"
     )
     
+    @validator('labels', pre=True)
+    def extract_labels(cls, v, values):
+        """Extract labels from data if they're embedded in dict format"""
+        if not v and 'data' in values:
+            # If no labels provided but data contains dicts with 'name' field, extract them
+            data = values['data']
+            if isinstance(data, list) and data and isinstance(data[0], dict) and 'name' in data[0]:
+                return [item['name'] for item in data if isinstance(item, dict) and 'name' in item]
+        return v
+    
     @validator('data')
     def flatten_data(cls, v):
         """Flatten and extract data from various VertexAI response formats"""
@@ -79,23 +89,48 @@ class ChartConfig(BaseModel):
         flattened = []
         for item in v:
             if isinstance(item, dict):
+                # Handle object format like {'name': 'TikTok', 'value': 1000}
+                if 'value' in item:
+                    val = item['value']
+                    if isinstance(val, (int, float)):
+                        flattened.append(float(val))
+                    elif isinstance(val, list):
+                        # Handle nested values like {'name': 'TikTok', 'value': [1000, 1500, 1700]}
+                        for nested_val in val:
+                            if isinstance(nested_val, (int, float)):
+                                flattened.append(float(nested_val))
                 # Handle object format like {'team': 'Marketing', 'values': [78, 82, 85, 85]}
-                if 'values' in item:
+                elif 'values' in item:
                     values = item['values']
                     if isinstance(values, list):
                         for val in values:
                             if isinstance(val, (int, float)):
                                 flattened.append(float(val))
-                # Handle other dict structures that might contain numeric values
-                elif 'value' in item:
-                    val = item['value']
-                    if isinstance(val, (int, float)):
-                        flattened.append(float(val))
+                # Handle format like {'name': 'Platform', 'data': [1000, 1200]}
+                elif 'data' in item:
+                    data = item['data']
+                    if isinstance(data, list):
+                        for val in data:
+                            if isinstance(val, (int, float)):
+                                flattened.append(float(val))
+                # If dict has numeric keys or just extract any numeric values
+                else:
+                    for key, val in item.items():
+                        if isinstance(val, (int, float)):
+                            flattened.append(float(val))
+                        elif isinstance(val, list):
+                            for nested_val in val:
+                                if isinstance(nested_val, (int, float)):
+                                    flattened.append(float(nested_val))
             elif isinstance(item, list):
                 # Flatten nested list
                 for subitem in item:
                     if isinstance(subitem, (int, float)):
                         flattened.append(float(subitem))
+                    elif isinstance(subitem, dict):
+                        # Recursively handle dicts in lists
+                        if 'value' in subitem and isinstance(subitem['value'], (int, float)):
+                            flattened.append(float(subitem['value']))
                     elif isinstance(subitem, str) and subitem.replace('.', '').replace('-', '').isdigit():
                         flattened.append(float(subitem))
             elif isinstance(item, (int, float)):

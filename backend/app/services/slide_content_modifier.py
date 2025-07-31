@@ -75,7 +75,7 @@ class SlideContentModifier:
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for simplification")
             response = await self.vertex_adapter.generate_content(
                 prompt=prompt,
-                **vertex_config
+                generation_config=vertex_config
             )
             
             # Extraire le contenu du JSON
@@ -158,7 +158,7 @@ class SlideContentModifier:
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for deepening")
             response = await self.vertex_adapter.generate_content(
                 prompt=prompt,
-                **vertex_config
+                generation_config=vertex_config
             )
             
             # Extraire le contenu du JSON
@@ -427,3 +427,97 @@ class SlideContentModifier:
             return False
         
         return True
+    
+    async def add_more_details_to_slide(
+        self,
+        current_content: str,
+        learner_profile: Any,
+        learner_session_id: str
+    ) -> Dict[str, Any]:
+        """
+        Ajouter plus de détails au contenu d'une slide existante
+        
+        Args:
+            current_content: Contenu actuel de la slide
+            learner_profile: Profil de l'apprenant
+            learner_session_id: ID de la session apprenant
+            
+        Returns:
+            Dict contenant le contenu enrichi et les métadonnées
+        """
+        start_time = time.time()
+        
+        try:
+            logger.info(f"🔧 SLIDE CONTENT MODIFIER [MORE_DETAILS] Adding details for session {learner_session_id}")
+            logger.info(f"🔧 SLIDE CONTENT MODIFIER [MORE_DETAILS] Original content length: {len(current_content)} chars")
+            
+            # Valider les paramètres d'entrée
+            if not self.prompt_builder.validate_prompt_input(
+                "modification", 
+                action="approfondir", 
+                current_content=current_content, 
+                learner_profile=learner_profile
+            ):
+                raise ValueError("Invalid parameters for slide enhancement")
+            
+            # Construire le prompt d'approfondissement
+            prompt = self.prompt_builder.build_modification_prompt(
+                action="approfondir",
+                current_content=current_content,
+                learner_profile=learner_profile
+            )
+            
+            # Configurer VertexAI pour approfondissement
+            vertex_config = {
+                "temperature": 0.7,  # Plus de créativité pour enrichir le contenu
+                "max_output_tokens": 2048,  # Plus de tokens pour plus de détails
+                "top_p": 0.9,
+                "top_k": 40,
+                "response_mime_type": "application/json"  # Forcer la réponse JSON
+            }
+            
+            # Générer le contenu enrichi avec VertexAI
+            logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for enhancement")
+            ai_response = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=vertex_config
+            )
+            
+            # Extraire et valider le contenu généré
+            if isinstance(ai_response, str):
+                enhanced_content = ai_response.strip()
+            else:
+                enhanced_content = str(ai_response).strip()
+            
+            if not enhanced_content:
+                raise ValueError("VertexAI returned empty enhanced content")
+            
+            # Tenter de parser le JSON si possible
+            try:
+                content_json = json.loads(enhanced_content)
+                if "slide_content" in content_json:
+                    enhanced_content = content_json["slide_content"]
+            except json.JSONDecodeError:
+                logger.info("🔧 SLIDE CONTENT MODIFIER [PARSE] Content not in JSON format, using as-is")
+            
+            generation_time = time.time() - start_time
+            
+            logger.info(f"✅ SLIDE CONTENT MODIFIER [MORE_DETAILS] Enhanced content generated")
+            logger.info(f"✅ SLIDE CONTENT MODIFIER [MORE_DETAILS] Enhanced content length: {len(enhanced_content)} chars")
+            logger.info(f"✅ SLIDE CONTENT MODIFIER [MORE_DETAILS] Generation time: {generation_time:.2f}s")
+            
+            return {
+                "enhanced_content": enhanced_content,
+                "original_length": len(current_content),
+                "enhanced_length": len(enhanced_content),
+                "generation_time_seconds": generation_time,
+                "action": "add_more_details",
+                "learner_session_id": learner_session_id
+            }
+            
+        except VertexAIError as e:
+            logger.error(f"❌ SLIDE CONTENT MODIFIER [MORE_DETAILS] VertexAI error: {e}")
+            raise RuntimeError(f"AI enhancement failed: {e}")
+        except Exception as e:
+            logger.error(f"❌ SLIDE CONTENT MODIFIER [MORE_DETAILS] Error: {e}")
+            raise

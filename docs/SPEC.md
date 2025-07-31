@@ -58,6 +58,8 @@ Etape
 - **Responsabilité unique** : Un module = une responsabilité
 - **Architecture modulaire** : Organiser le code FastAPI en modules distincts (routes, modèles, services, configuration)
 - **Architecture hexagonale** : Séparation claire entre logique métier, adapters et infrastructure
+- **HTML** : Interdiction d’inclure du JavaScript via <script> et du CSS via <style> dans les fichiers HTML : utiliser uniquement des fichiers externes
+
 - **ArClaude 4 hooks** : Mise en place et activation des hooks claude 4 avant de demarrer le code
 
 ### Stack Technologique Obligatoire
@@ -66,7 +68,7 @@ Etape
 - **Serveur** : FastAPI server
 - **Authentification & Sessions** : FastAPI-Users pour la gestion des sessions formateurs et apprenants + JWT
 - **IA** : VertexAI
-- **Frontend** : HTML5/CSS3/JavaScript ES6 vanilla
+- **Frontend** : HTML5/CSS3/JavaScript ES6 vanilla (pas de <script> ou <style> dans le HTML, uniquement des fichiers externes)
 - **UI** : Bootstrap + Bootstrap Icons uniquement
 - **Infrastructure** : Railway (déploiement) + GitHub (versioning)
 

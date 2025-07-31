@@ -27,8 +27,8 @@ class OpenAIAdapter(ImageGenerationServicePort):
     
     def __init__(self):
         self.client = OpenAI(api_key=settings.openai_api_key)
-        # Initialize image storage path
-        self.image_storage_path = Path("uploads/images/slide_images")
+        # Initialize image storage path - make it absolute to avoid relative path issues
+        self.image_storage_path = Path("uploads/images/slide_images").resolve()
         self.image_storage_path.mkdir(parents=True, exist_ok=True)
         
     async def generate_infographic(
@@ -195,7 +195,17 @@ Create the infographic strictly following these instructions.
                 await f.write(image_bytes)
             
             # Return relative path for database storage
-            relative_path = str(file_path.relative_to(Path.cwd()))
+            try:
+                relative_path = str(file_path.relative_to(Path.cwd()))
+            except ValueError:
+                # If relative_to fails, return the absolute path relative to backend directory
+                backend_path = Path(__file__).parent.parent.parent
+                try:
+                    relative_path = str(file_path.relative_to(backend_path))
+                except ValueError:
+                    # Last resort - return absolute path
+                    relative_path = str(file_path)
+            
             logger.debug(f"Image saved successfully: {relative_path}")
             
             return relative_path
