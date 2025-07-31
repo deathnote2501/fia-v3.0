@@ -43,26 +43,32 @@ class ConversationPromptBuilder:
         enriched_profile = self._extract_enriched_profile(learner_profile)
         history_text = self._format_conversation_history(conversation_history)
         
-        prompt = f"""[ROLE] :
+        prompt =f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans la réponse aux [MESSAGE] d'un apprenant dans le cadre d'une session de formation interactive.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone en s'adaptant au contenu du [SLIDE COURANT], au [PROFIL APPRENANT] et toutes les informations complémentaires ci-dessous.
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[CONTEXTE FORMATION] :
+<CONTEXTE_FORMATION>
 {training_context[:1000]}...
+</CONTEXTE_FORMATION>
 
-[HISTORIQUE CONVERSATION] :
+<HISTORIQUE_CONVERSATION>
 {history_text}
+</HISTORIQUE_CONVERSATION>
 
-[FONCTIONNEMENT FORMATION INTERACTIVE] :
+<FONCTIONNEMENT_FORMATION_INTERACTIVE>
 L'apprenant peut utiliser les boutons en bas des slides pour : 
 - Simplifier ou approfondir le contenu du slide courant 
 - Générer une image pour représenter le contenu du slide sous forme d'infographie
@@ -74,11 +80,13 @@ L'apprenant peut utiliser les boutons du chat pour :
 - Te demander de poser une question de compréhension
 - Te demander un exemple pour illustrer les concepts présents dans le slide
 - Te demander les points clés à retrnir sur ce slide
+</FONCTIONNEMENT_FORMATION_INTERACTIVE>
 
-[MESSAGE APPRENANT] :
+<MESSAGE_APPRENANT>
 {message}
+</MESSAGE_APPRENANT>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
   "response": "Ta réponse pédagogique personnalisée à l'apprenant (avec 1 ou 2 emojis uniquement si c'est pertinent)",
@@ -91,8 +99,8 @@ Réponds en format JSON avec cette structure exacte :
     "engagement_patterns": "patterns d'engagement observés"
   }}
 }}
-
-Génère maintenant la réponse au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+</STRUCTURE_JSON_ATTENDUE>
+"""
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [MESSAGE] Prompt built - {len(prompt)} characters")
         return prompt
@@ -120,30 +128,35 @@ Génère maintenant la réponse au format JSON selon la [STRUCTURE JSON ATTENDUE
         profile_info = self._extract_profile_info(learner_profile)
         enriched_profile = self._extract_enriched_profile(learner_profile)
         
-        prompt = f"""[ROLE] : 
+        prompt = f"""
+<ROLE>
 Tu es un formateur pédagogue spécialisé dans l'explication ou le fait de commenter oralement un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+</ROLE>
 
-[OBJECTIF] :
+<OBJECTIF>
 Expliquer et commenter à l'oral le [SLIDE DE FORMATION] en s'adaptant au [PROFIL APPRENANT].
+</OBJECTIF>
 
-[PROFIL APPRENANT] :
+<PROFIL_APPRENANT>
 - Niveau d'expérience : {profile_info['niveau']}
 - Poste et secteur : {profile_info['poste_et_secteur']}
 - Objectifs de formation : {profile_info['objectifs']}
 - Profil enrichi au fil de la formation : {enriched_profile}
 - Langue : {profile_info['langue']}
+</PROFIL_APPRENANT>
 
-[SLIDE DE FORMATION] :
+<SLIDE_DE_FORMATION>
 Titre : {slide_title}
 Contenu : {slide_content}
+</SLIDE_DE_FORMATION>
 
-[STRUCTURE JSON ATTENDUE] :
+<STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
   "response": "Ton commentaire pédagogique personnalisé sur cette slide"
 }}
-
-Génère maintenant le commentaire au format JSON selon la [STRUCTURE JSON ATTENDUE]."""
+</STRUCTURE_JSON_ATTENDUE>
+"""
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [COMMENTARY] Prompt built - {len(prompt)} characters")
         return prompt

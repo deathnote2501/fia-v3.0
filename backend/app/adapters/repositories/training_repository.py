@@ -58,6 +58,7 @@ class TrainingRepository(TrainingRepositoryPort):
         training_model.file_type = training.file_type.value if training.file_type else None
         training_model.file_size = training.file_size
         training_model.mime_type = training.mime_type
+        training_model.is_ai_generated = training.is_ai_generated
         
         await self.session.commit()
         await self.session.refresh(training_model)
@@ -104,6 +105,7 @@ class TrainingRepository(TrainingRepositoryPort):
             file_type=file_type,
             file_size=model.file_size,
             mime_type=model.mime_type,
+            is_ai_generated=model.is_ai_generated or False,
             training_id=model.id,
             created_at=model.created_at
         )
@@ -120,5 +122,6 @@ class TrainingRepository(TrainingRepositoryPort):
             file_type=entity.file_type.value if entity.file_type else None,
             file_size=entity.file_size,
             mime_type=entity.mime_type,
+            is_ai_generated=entity.is_ai_generated,
             created_at=entity.created_at
         )

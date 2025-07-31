@@ -3,7 +3,7 @@ FIA v3.0 - Training SQLAlchemy Model
 Infrastructure layer model for trainings table
 """
 
-from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, Integer, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -23,9 +23,10 @@ class TrainingModel(Base):
     description = Column(Text)
     file_path = Column(String)  # Path to stored file
     file_name = Column(String)  # Original file name
-    file_type = Column(String)  # Extension: 'pdf', 'ppt', 'pptx'
+    file_type = Column(String)  # Extension: 'pdf', 'ppt', 'pptx', 'md'
     file_size = Column(Integer)  # Size in bytes
-    mime_type = Column(String)  # MIME type: 'application/pdf', etc.
+    mime_type = Column(String)  # MIME type: 'application/pdf', 'text/markdown', etc.
+    is_ai_generated = Column(Boolean, nullable=False, default=False)  # AI-generated training flag
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

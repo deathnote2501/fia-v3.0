@@ -15,6 +15,7 @@ class TrainerDashboard {
         this.loadUserData();
         this.setupLogout();
         this.setupTrainingForm();
+        this.setupAIToggle();
         // this.setupSessionForm(); // Disabled - handled by session-manager.js
         this.setupProfileModal();
         this.setupFileUpload();
@@ -70,30 +71,143 @@ class TrainerDashboard {
         });
     }
 
+    setupAIToggle() {
+        const toggle = document.getElementById('ai-generated-toggle');
+        const toggleIcon = document.getElementById('toggle-icon');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleHelpText = document.getElementById('toggle-help-text');
+        const fileSection = document.getElementById('training-file').closest('.mb-3');
+        const descriptionField = document.getElementById('training-description');
+        const submitBtn = document.getElementById('submit-training-btn');
+
+        if (!toggle) return;
+
+        // Initialize toggle state
+        this.updateToggleUI(false);
+
+        toggle.addEventListener('change', (e) => {
+            const isAIGenerated = e.target.checked;
+            this.updateToggleUI(isAIGenerated);
+            this.updateFormValidation(isAIGenerated);
+        });
+    }
+
+    updateToggleUI(isAIGenerated) {
+        const toggleIcon = document.getElementById('toggle-icon');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleHelpText = document.getElementById('toggle-help-text');
+        const fileSection = document.getElementById('training-file').closest('.mb-3');
+        const fileInput = document.getElementById('training-file');
+        const descriptionField = document.getElementById('training-description');
+        const submitBtn = document.getElementById('submit-training-btn');
+
+        if (isAIGenerated) {
+            // AI mode
+            toggleIcon.className = 'bi bi-toggle-on me-2 text-primary';
+            toggleText.textContent = 'Generated with AI';
+            toggleHelpText.innerHTML = '<i class="bi bi-robot me-1 text-primary"></i>AI will generate comprehensive training content based on your description';
+            
+            // Disable file upload
+            fileSection.style.opacity = '0.5';
+            fileInput.disabled = true;
+            fileInput.required = false;
+            
+            // Make description required
+            descriptionField.required = true;
+            descriptionField.placeholder = 'Describe the training topic in detail for AI generation...';
+            
+            // Update submit button
+            submitBtn.innerHTML = '<i class="bi bi-robot me-2"></i>Generate Training with AI';
+            submitBtn.className = 'btn btn-success';
+            
+        } else {
+            // File upload mode
+            toggleIcon.className = 'bi bi-toggle-off me-2';
+            toggleText.textContent = 'Generated with AI';
+            toggleHelpText.innerHTML = '<i class="bi bi-info-circle me-1"></i>Generate training content automatically using AI instead of uploading a file';
+            
+            // Enable file upload
+            fileSection.style.opacity = '1';
+            fileInput.disabled = false;
+            fileInput.required = true;
+            
+            // Make description optional
+            descriptionField.required = false;
+            descriptionField.placeholder = '';
+            
+            // Reset submit button
+            submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Create Training';
+            submitBtn.className = 'btn btn-primary';
+        }
+    }
+
+    updateFormValidation(isAIGenerated) {
+        const descriptionField = document.getElementById('training-description');
+        const fileInput = document.getElementById('training-file');
+        
+        if (isAIGenerated) {
+            // Clear any file selection
+            fileInput.value = '';
+            // Hide file info if visible
+            const fileInfo = document.getElementById('file-info');
+            if (fileInfo) {
+                fileInfo.classList.add('d-none');
+            }
+        } else {
+            // Clear description requirement styling if any
+            descriptionField.classList.remove('is-invalid');
+        }
+    }
+
     async handleTrainingSubmission(form) {
         const formData = new FormData(form);
         const submitBtn = form.querySelector('button[type="submit"]');
         const progressContainer = document.getElementById('upload-progress');
         const progressBar = progressContainer.querySelector('.progress-bar');
         const statusDiv = document.getElementById('upload-status');
+        const toggle = document.getElementById('ai-generated-toggle');
+        const isAIGenerated = toggle.checked;
 
         try {
-            // Validate form data
-            const file = formData.get('file');
-            if (!file || file.size === 0) {
-                showAlert('Please select a file to upload.', 'error');
-                return;
+            // Validate form data based on mode
+            if (isAIGenerated) {
+                const description = formData.get('description');
+                if (!description || description.trim().length === 0) {
+                    showAlert('Please provide a detailed description for AI generation.', 'error');
+                    return;
+                }
+                // Set AI flag in form data
+                formData.set('is_ai_generated', 'true');
+            } else {
+                const file = formData.get('file');
+                if (!file || file.size === 0) {
+                    showAlert('Please select a file to upload.', 'error');
+                    return;
+                }
+                // Ensure AI flag is false
+                formData.set('is_ai_generated', 'false');
             }
 
             // Show loading state
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
             
-            // Show progress bar
-            progressContainer.classList.remove('d-none');
-            progressBar.style.width = '0%';
-            progressBar.setAttribute('aria-valuenow', '0');
-            statusDiv.textContent = 'Preparing upload...';
+            if (isAIGenerated) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating with AI...';
+                // Show progress bar for AI generation
+                progressContainer.classList.remove('d-none');
+                progressBar.style.width = '30%';
+                progressBar.setAttribute('aria-valuenow', '30');
+                statusDiv.textContent = 'AI is generating your training content...';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+            } else {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+                // Show progress bar for file upload
+                progressContainer.classList.remove('d-none');
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', '0');
+                statusDiv.textContent = 'Preparing upload...';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+            }
 
             // Create XMLHttpRequest for upload progress
             const xhr = new XMLHttpRequest();
@@ -101,7 +215,7 @@ class TrainerDashboard {
                 
                 // Track upload progress
                 xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
+                    if (e.lengthComputable && !isAIGenerated) {
                         const percentComplete = Math.round((e.loaded / e.total) * 100);
                         progressBar.style.width = percentComplete + '%';
                         progressBar.setAttribute('aria-valuenow', percentComplete);
@@ -114,10 +228,22 @@ class TrainerDashboard {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         progressBar.style.width = '100%';
                         progressBar.setAttribute('aria-valuenow', '100');
-                        statusDiv.textContent = 'Upload complete!';
+                        
+                        if (isAIGenerated) {
+                            statusDiv.textContent = 'AI training generated successfully!';
+                        } else {
+                            statusDiv.textContent = 'Upload complete!';
+                        }
+                        
                         resolve(JSON.parse(xhr.responseText));
                     } else {
-                        reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+                        let errorMessage = `Failed: ${xhr.status} ${xhr.statusText}`;
+                        if (xhr.status === 429) {
+                            errorMessage = 'AI service is busy. Please try again in a few minutes.';
+                        } else if (xhr.status === 503) {
+                            errorMessage = 'AI service is temporarily unavailable.';
+                        }
+                        reject(new Error(errorMessage));
                     }
                 });
 
@@ -137,11 +263,20 @@ class TrainerDashboard {
 
             const response = await uploadPromise;
 
-            showAlert('Training created successfully!', 'success');
+            if (isAIGenerated) {
+                showAlert('AI training generated successfully! The AI has created comprehensive training content for you.', 'success');
+            } else {
+                showAlert('Training created successfully!', 'success');
+            }
             
             // Reset form and file info
             form.reset();
             document.getElementById('file-info').classList.add('d-none');
+            
+            // Reset toggle to default state
+            const toggle = document.getElementById('ai-generated-toggle');
+            toggle.checked = false;
+            this.updateToggleUI(false);
             
             // Refresh training list
             this.loadTrainings();
@@ -150,27 +285,55 @@ class TrainerDashboard {
             console.error('Training creation error:', error);
             
             let errorMessage = 'Failed to create training. Please try again.';
-            if (error.message.includes('413')) {
-                errorMessage = 'File too large. Maximum size is 50MB.';
-            } else if (error.message.includes('400')) {
-                errorMessage = 'Invalid file type. Please use PDF, PPT, or PPTX files only.';
-            } else if (error.message.includes('401')) {
-                errorMessage = 'Session expired. Please login again.';
-                authManager.logout();
-                return;
+            
+            if (isAIGenerated) {
+                // AI-specific error messages
+                if (error.message.includes('AI service is busy')) {
+                    errorMessage = 'AI service is currently busy. Please try again in a few minutes.';
+                } else if (error.message.includes('AI service is temporarily unavailable')) {
+                    errorMessage = 'AI generation service is temporarily unavailable. You can try again later or create a training with a file upload.';
+                } else if (error.message.includes('429')) {
+                    errorMessage = 'Too many AI requests. Please wait a moment before trying again.';
+                } else if (error.message.includes('503')) {
+                    errorMessage = 'AI generation service is unavailable. Please try again later.';
+                } else {
+                    errorMessage = 'Failed to generate AI training. Please check your description and try again.';
+                }
+                statusDiv.textContent = 'AI generation failed';
+            } else {
+                // File upload error messages
+                if (error.message.includes('413')) {
+                    errorMessage = 'File too large. Maximum size is 50MB.';
+                } else if (error.message.includes('400')) {
+                    errorMessage = 'Invalid file type. Please use PDF, PPT, or PPTX files only.';
+                } else if (error.message.includes('401')) {
+                    errorMessage = 'Session expired. Please login again.';
+                    authManager.logout();
+                    return;
+                }
+                statusDiv.textContent = 'Upload failed';
             }
             
             showAlert(errorMessage, 'error');
-            statusDiv.textContent = 'Upload failed';
         } finally {
             // Reset button state
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Create Training';
+            
+            // Reset button to current mode
+            const toggle = document.getElementById('ai-generated-toggle');
+            if (toggle.checked) {
+                submitBtn.innerHTML = '<i class="bi bi-robot me-2"></i>Generate Training with AI';
+                submitBtn.className = 'btn btn-success';
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Create Training';
+                submitBtn.className = 'btn btn-primary';
+            }
             
             // Hide progress bar after delay
             setTimeout(() => {
                 progressContainer.classList.add('d-none');
                 statusDiv.textContent = '';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
             }, 3000);
         }
     }

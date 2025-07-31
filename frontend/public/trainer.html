@@ -207,6 +207,21 @@
                                                 <textarea class="form-control" id="training-description" name="description" rows="4"></textarea>
                                             </div>
 
+                                            <!-- AI Generation Toggle -->
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch d-flex align-items-center">
+                                                    <input class="form-check-input me-3" type="checkbox" id="ai-generated-toggle" name="is_ai_generated" value="false">
+                                                    <label class="form-check-label d-flex align-items-center" for="ai-generated-toggle">
+                                                        <i class="bi bi-toggle-off me-2" id="toggle-icon"></i>
+                                                        <span id="toggle-text">Generated with AI</span>
+                                                    </label>
+                                                </div>
+                                                <div class="form-text" id="toggle-help-text">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Generate training content automatically using AI instead of uploading a file
+                                                </div>
+                                            </div>
+
                                             <div class="mb-3">
                                                 <label for="training-file" class="form-label">Upload Training Material</label>
                                                 <input type="file" class="form-control" id="training-file" name="file" accept=".pdf,.ppt,.pptx" required>

@@ -14,6 +14,7 @@ class FileType(Enum):
     PDF = "pdf"
     PPT = "ppt"
     PPTX = "pptx"
+    MARKDOWN = "md"
 
 
 class Training:
@@ -22,7 +23,8 @@ class Training:
     SUPPORTED_MIME_TYPES = {
         FileType.PDF: "application/pdf",
         FileType.PPT: "application/vnd.ms-powerpoint",
-        FileType.PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        FileType.PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        FileType.MARKDOWN: "text/markdown"
     }
     
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
@@ -37,6 +39,7 @@ class Training:
         file_type: Optional[FileType] = None,
         file_size: Optional[int] = None,
         mime_type: Optional[str] = None,
+        is_ai_generated: bool = False,
         training_id: Optional[UUID] = None,
         created_at: Optional[datetime] = None
     ):
@@ -49,6 +52,7 @@ class Training:
         self.file_type = file_type
         self.file_size = file_size
         self.mime_type = mime_type
+        self.is_ai_generated = is_ai_generated
         self.created_at = created_at or datetime.utcnow()
         
         # Domain validation
@@ -64,6 +68,13 @@ class Training:
         
         if self.description and len(self.description) > 2000:
             raise ValueError("Training description cannot exceed 2000 characters")
+        
+        # AI-generated trainings require description
+        if self.is_ai_generated and (not self.description or len(self.description.strip()) == 0):
+            raise ValueError("Description is required for AI-generated trainings")
+        
+        # Non-AI trainings require file information (skip validation during initial creation)
+        # This validation will be handled at the controller level for non-AI trainings
         
         if self.file_size and self.file_size > self.MAX_FILE_SIZE:
             raise ValueError(f"File size cannot exceed {self.MAX_FILE_SIZE // (1024*1024)}MB")
