@@ -162,17 +162,21 @@ async function loadTrainings() {
 /**
  * Load existing sessions
  */
-async function loadSessions() {
-    const sessionsList = document.getElementById('sessions-list');
+async function loadSessions(dateFrom = '', dateTo = '') {
     const tableBody = document.getElementById('sessions-table-body');
-    const totalCount = document.getElementById('sessions-total-count');
     
     try {
         // Show loading
-        sessionsList.innerHTML = '<div class="text-center py-4"><i class="bi bi-hourglass-split"></i> Loading...</div>';
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Loading...</td></tr>';
         
-        const response = await fetch(`${API_BASE}/api/training-sessions`, {
+        // Build query parameters for date filtering
+        let url = `${API_BASE}/api/training-sessions`;
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (params.toString()) url += '?' + params.toString();
+        
+        const response = await fetch(url, {
             headers: getAuthHeaders()
         });
         
@@ -182,32 +186,12 @@ async function loadSessions() {
         
         const sessions = await response.json();
         
-        // Update count
-        totalCount.textContent = sessions.length;
+        // Sort sessions by created_at DESC (most recent first)
+        sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         
         if (sessions.length === 0) {
-            sessionsList.innerHTML = '<div class="text-center py-4"><i class="bi bi-calendar-x display-6"></i><p class="mt-2">No sessions created yet</p></div>';
             tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No sessions found</td></tr>';
-        } else {
-            // Populate list view
-            sessionsList.innerHTML = sessions.map(session => `
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">${escapeHtml(session.name)}</h6>
-                        <small>${formatDate(session.created_at)}</small>
-                    </div>
-                    <p class="mb-1 text-muted small">${session.description || 'No description'}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">
-                            ${session.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            
+        } else {            
             // Populate table view
             tableBody.innerHTML = sessions.map(session => `
                 <tr>
@@ -218,11 +202,11 @@ async function loadSessions() {
                     <td><span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">${session.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" onclick="copySessionLink('${session.session_token}')" title="Copy link">
+                            <button class="btn btn-outline-primary" onclick="copySessionLink('${session.session_token}')" title="Copy session link">
                                 <i class="bi bi-link-45deg"></i>
                             </button>
-                            <button class="btn btn-outline-danger" onclick="deleteSession('${session.id}')" title="Delete">
-                                <i class="bi bi-trash"></i>
+                            <button class="btn btn-outline-info" onclick="showChatHistory('${session.id}', '${escapeHtml(session.name)}')" title="View conversation history">
+                                <i class="bi bi-chat-dots"></i>
                             </button>
                         </div>
                     </td>
@@ -337,6 +321,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Set up date filter
+    const filterDatesBtn = document.getElementById('filter-dates');
+    if (filterDatesBtn) {
+        filterDatesBtn.addEventListener('click', function() {
+            applyDateFilter();
+        });
+    }
+    
     // Load data when Create Session tab is shown
     const createSessionTab = document.querySelector('a[href="#create-session"]');
     if (createSessionTab) {
@@ -354,3 +346,129 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// ============================================================================
+// NEW FUNCTIONS FOR SESSION IMPROVEMENTS
+// ============================================================================
+
+/**
+ * Apply date filter to sessions table
+ */
+function applyDateFilter() {
+    const dateFrom = document.getElementById('date-from').value;
+    const dateTo = document.getElementById('date-to').value;
+    
+    if (!dateFrom && !dateTo) {
+        showAlert('Please select at least one date to filter', 'warning');
+        return;
+    }
+    
+    loadSessions(dateFrom, dateTo);
+}
+
+/**
+ * Show chat history modal for a session
+ */
+async function showChatHistory(sessionId, sessionName) {
+    const modal = new bootstrap.Modal(document.getElementById('chat-history-modal'));
+    const content = document.getElementById('chat-history-content');
+    const modalTitle = document.querySelector('#chat-history-modal .modal-title');
+    
+    // Update modal title
+    modalTitle.innerHTML = `<i class="bi bi-chat-dots me-2"></i>Conversation History - ${escapeHtml(sessionName)}`;
+    
+    // Show loading state
+    content.innerHTML = `
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-hourglass-split display-6"></i>
+            <p class="mt-2">Loading conversation history...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/dashboard/chat-history/${sessionId}`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const chatHistory = await response.json();
+        
+        if (chatHistory.length === 0) {
+            content.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-chat-x display-6"></i>
+                    <p class="mt-2">No conversations found for this session</p>
+                    <small>Learners haven't started chatting yet</small>
+                </div>
+            `;
+            return;
+        }
+        
+        // Group messages by learner
+        const messagesByLearner = {};
+        chatHistory.forEach(msg => {
+            if (!messagesByLearner[msg.learner_email]) {
+                messagesByLearner[msg.learner_email] = [];
+            }
+            messagesByLearner[msg.learner_email].push(msg);
+        });
+        
+        // Render messages
+        let html = '';
+        Object.keys(messagesByLearner).forEach(learnerEmail => {
+            const messages = messagesByLearner[learnerEmail];
+            html += `
+                <div class="mb-4">
+                    <h6 class="text-primary border-bottom pb-2">
+                        <i class="bi bi-person me-2"></i>
+                        ${escapeHtml(learnerEmail)}
+                        <small class="text-muted">(${messages.length} messages)</small>
+                    </h6>
+            `;
+            
+            messages.forEach(msg => {
+                html += `
+                    <div class="mb-3">
+                        <div class="card border-start border-primary border-3">
+                            <div class="card-body py-2">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted fw-bold">Learner Question:</small>
+                                        <p class="mb-1">${escapeHtml(msg.learner_message || 'No message')}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted fw-bold">AI Response:</small>
+                                        <p class="mb-1">${escapeHtml(msg.ai_response || 'No response')}</p>
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    ${msg.created_at || 'Unknown time'}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        });
+        
+        content.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Failed to load chat history:', error);
+        content.innerHTML = `
+            <div class="text-center text-danger py-4">
+                <i class="bi bi-exclamation-triangle display-6"></i>
+                <p class="mt-2">Failed to load conversation history</p>
+                <small>Please try again later</small>
+            </div>
+        `;
+    }
+}

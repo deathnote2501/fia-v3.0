@@ -18,6 +18,7 @@ from app.infrastructure.models.training_slide_model import TrainingSlideModel
 from app.infrastructure.models.training_submodule_model import TrainingSubmoduleModel
 from app.infrastructure.models.training_module_model import TrainingModuleModel
 from app.infrastructure.models.learner_training_plan_model import LearnerTrainingPlanModel
+from app.infrastructure.models.chat_message_model import ChatMessageModel
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -211,4 +212,63 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}")
         # Return empty activity list on error
+        return []
+
+
+@router.get("/chat-history/{session_id}")
+async def get_chat_history(
+    session_id: str,
+    current_trainer: TrainerModel = Depends(get_current_trainer),
+    db: AsyncSession = Depends(get_database_session)
+):
+    """
+    Get chat history for a specific training session
+    
+    Returns:
+        List of chat messages with learner questions and AI responses
+    """
+    try:
+        trainer_id = current_trainer.id
+        logger.info(f"Getting chat history for session {session_id} by trainer {trainer_id}")
+        
+        # Verify the session belongs to this trainer
+        session_result = await db.execute(
+            select(TrainingSessionModel)
+            .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
+            .where(
+                TrainingSessionModel.id == session_id,
+                TrainingModel.trainer_id == trainer_id
+            )
+        )
+        session = session_result.scalar_one_or_none()
+        
+        if not session:
+            logger.warning(f"Session {session_id} not found or access denied for trainer {trainer_id}")
+            return []
+        
+        # Get chat messages for all learners in this session
+        chat_messages_result = await db.execute(
+            select(ChatMessageModel)
+            .join(LearnerSessionModel, ChatMessageModel.learner_session_id == LearnerSessionModel.id)
+            .where(LearnerSessionModel.training_session_id == session_id)
+            .order_by(ChatMessageModel.created_at.asc())
+        )
+        chat_messages = chat_messages_result.scalars().all()
+        
+        # Format messages for display
+        formatted_messages = []
+        for msg in chat_messages:
+            formatted_messages.append({
+                "id": str(msg.id),
+                "learner_message": msg.message,
+                "ai_response": msg.response,
+                "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S") if msg.created_at else None,
+                "learner_email": msg.learner_session.email if msg.learner_session else "Unknown"
+            })
+        
+        logger.info(f"Found {len(formatted_messages)} chat messages for session {session_id}")
+        return formatted_messages
+        
+    except Exception as e:
+        logger.error(f"Failed to get chat history for session {session_id}: {e}")
         return []

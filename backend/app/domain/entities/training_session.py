@@ -92,7 +92,20 @@ class TrainingSession:
     
     def is_accessible(self) -> bool:
         """Check if the session is accessible for learners"""
-        return self.is_active and bool(self.session_token)
+        return self.is_active and bool(self.session_token) and not self.is_expired()
+    
+    def is_expired(self) -> bool:
+        """Check if the session has expired"""
+        if not self.expires_at:
+            return False
+        return datetime.utcnow() > self.expires_at
+    
+    def check_and_deactivate_if_expired(self) -> bool:
+        """Check if expired and deactivate if needed. Returns True if was deactivated."""
+        if self.is_expired() and self.is_active:
+            self.deactivate()
+            return True
+        return False
     
     def get_display_name(self) -> str:
         """Get a display-friendly name for the session"""

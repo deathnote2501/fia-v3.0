@@ -9,6 +9,7 @@ from uuid import UUID
 from typing import List
 import secrets
 import logging
+from datetime import datetime, timedelta
 
 from app.infrastructure.database import get_database_session
 from app.infrastructure.auth import get_current_trainer
@@ -74,12 +75,16 @@ async def create_training_session(
         # Generate unique session token
         session_token = secrets.token_urlsafe(32)
         
+        # Calculate expiration date (30 days from now)
+        expires_at = datetime.utcnow() + timedelta(days=30)
+        
         # Create training session
         training_session = TrainingSession(
             training_id=session_data.training_id,
             name=session_data.name.strip(),
             description=session_data.description.strip() if session_data.description else None,
-            session_token=session_token
+            session_token=session_token,
+            expires_at=expires_at
         )
         
         # Sauvegarder en base
