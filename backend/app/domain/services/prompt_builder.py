@@ -116,7 +116,7 @@ Tu es un formateur en ingénierie pédagogique spécialisé dans la création de
 
 <OBJECTIF>
 Créer un [PLAN DE FORMATION PERSONNALISE] selon la [STRUCTURE DU PLAN] pour le [PROFIL DE L'APPRENANT] basé sur le [CONTENU DU SUPPORT DE FORMATION].
-Cette formation qui doit durer {training_duration} : il faut compter entre 3 et 7mn par slide en fonction du type de slide : menu, contenu, quiz, etc.
+Cette formation qui doit durer {training_duration} : il faut compter entre 3 et 7mn par slide en fonction du type de slide : menu, contenu, quiz, etc. Comme le nombre de slide de chaque sous-module est compris entre 2 et 8 slides, tu dois ajuster avec le nombre de modules et le nombre de sous-modules par module.
 Ta réponse respectera la [STRUCTURE JSON ATTENDUE].
 </OBJECTIF>
 
@@ -141,7 +141,7 @@ Le [PLAN DE FORMATION PERSONNALISE] est découpé en 5 étapes ci-dessous :
 2. ÉTUDIER le [CONTENU DU SUPPORT DE FORMATION] pour identifier les concepts clés et respecter l’intention pédagogique du formateur qui anime ce [CONTENU DU SUPPORT DE FORMATION]
 3. STRUCTURER le plan selon les 5 étapes obligatoires
 4. RESPECTER toutes les contraintes de slides et de structure JSON
-5. ADAPTER la complexité selon le niveau d'expérience
+5. ADAPTER la complexité selon le niveau d'expérience de l'apprenant
 6. INTÉGRER des éléments spécifiques au poste et secteur de l'apprenant
 7. VÉRIFIER que chaque sous-module a exactement le bon nombre de slides
 </INSTRUCTIONS>

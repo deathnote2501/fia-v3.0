@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "FIA v3.0 - AI-powered e-learning platform backend"
 authors = ["FIA Team <team@fia.com>"]
 readme = "README.md"
-packages = [{include = "app", from = "backend"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"

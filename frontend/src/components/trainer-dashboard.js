@@ -716,28 +716,14 @@ class TrainerDashboard {
         if (!tableBody) return;
 
         try {
-            // Show loading state
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="13" class="text-center text-muted py-4">
-                        <i class="bi bi-hourglass-split display-6"></i>
-                        <p class="mt-2">Loading trainers overview...</p>
-                    </td>
-                </tr>
-            `;
+            // Show loading state - consistent with existing patterns
+            this.showTrainersLoadingState(tableBody);
 
             // Fetch trainers overview data
             const trainersData = await apiClient.get('/api/admin/trainers-overview');
 
             if (trainersData.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="13" class="text-center text-muted py-4">
-                            <i class="bi bi-people display-6"></i>
-                            <p class="mt-2">No trainers found</p>
-                        </td>
-                    </tr>
-                `;
+                this.showTrainersEmptyState(tableBody);
                 return;
             }
 
@@ -771,23 +757,16 @@ class TrainerDashboard {
         } catch (error) {
             console.error('Failed to load trainers overview:', error);
             
-            let errorMessage = 'Failed to load trainers overview';
+            let errorMessage = 'Failed to load trainers overview. Please try again.';
             if (error.message.includes('403')) {
-                errorMessage = 'Access denied: Admin privileges required';
+                errorMessage = 'Access denied: Admin privileges required to view this data.';
+            } else if (error.message.includes('500')) {
+                errorMessage = 'Server error occurred while loading trainer data.';
+            } else if (error.message.includes('Network')) {
+                errorMessage = 'Network error: Please check your connection.';
             }
             
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="13" class="text-center text-danger py-4">
-                        <i class="bi bi-exclamation-triangle display-6"></i>
-                        <p class="mt-2">${errorMessage}</p>
-                        <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainersOverview()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>
-                            Try Again
-                        </button>
-                    </td>
-                </tr>
-            `;
+            this.showTrainersErrorState(tableBody, errorMessage);
         }
     }
 
@@ -866,6 +845,64 @@ class TrainerDashboard {
             month: 'short',
             day: 'numeric'
         });
+    }
+
+    // ============================================================================
+    // TABLE STATE MANAGEMENT - Consistent with existing patterns
+    // ============================================================================
+
+    showTrainersLoadingState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="13" class="text-center text-muted py-5 admin-table-loading">
+                    <div>
+                        <i class="bi bi-hourglass-split display-6 mb-3"></i>
+                        <p class="mb-1 fw-medium">Loading trainers overview...</p>
+                        <small class="text-muted">Fetching trainer statistics and data</small>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTrainersEmptyState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="13" class="text-center text-muted py-5 admin-table-empty">
+                    <div>
+                        <i class="bi bi-people display-4 mb-3 text-secondary"></i>
+                        <h6 class="text-muted mb-2">No Trainers Found</h6>
+                        <p class="small mb-3">There are currently no trainers registered in the system.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainersOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTrainersErrorState(tableBody, errorMessage = 'Failed to load trainers overview') {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="13" class="text-center py-5">
+                    <div>
+                        <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
+                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <p class="text-muted small mb-3">${errorMessage}</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainersOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 }
 
