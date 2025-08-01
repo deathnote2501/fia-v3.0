@@ -24,7 +24,7 @@ export class VoiceChatHandler {
     }
     
     /**
-     * Check if Web Speech API is supported in current browser
+     * Check if Web Speech API is supported in current browser 
      */
     checkSupport() {
         const hasWebkitSpeech = 'webkitSpeechRecognition' in window;
