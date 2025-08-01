@@ -32,15 +32,19 @@
     height: 1rem;
 }
 
-/* KISS: Simple markdown styling */
+/* KISS: Responsive markdown styling with clamp() */
 .slide-content h1, .slide-content h2, .slide-content h3 {
     color: #0d6efd;
     margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
-.slide-content h1 { font-size: 1.75rem; }
-.slide-content h2 { font-size: 1.5rem; }
-.slide-content h3 { font-size: 1.25rem; }
+.slide-content h1 { font-size: clamp(0.6rem, 3vw, 3rem); }
+.slide-content h2 { font-size: clamp(0.4rem, 2.5vw, 2.4rem); }
+.slide-content h3 { font-size: clamp(0.2rem, 2vw, 2rem); }
+.slide-content {
+    font-size: clamp(1rem, 1.3vw, 1.6rem);
+    line-height: 1.6;
+}
 .slide-content ul, .slide-content ol {
     margin-bottom: 1rem;
 }
@@ -57,7 +61,7 @@
     background: #f8f9fa;
     padding: 0.2rem 0.4rem;
     border-radius: 0.25rem;
-    font-size: 0.9em;
+    font-size: clamp(0.8rem, 1.3vw, 1.1rem);
 }
 .slide-content pre {
     background: #f8f9fa;
@@ -135,7 +139,7 @@
 }
 
 .progress-breadcrumb {
-    font-size: 0.9rem;
+    font-size: clamp(0.75rem, 1.1vw, 0.95rem);
     color: #6c757d;
 }
 
@@ -178,6 +182,8 @@
     border-radius: 0.375rem;
     max-width: 85%;
     word-wrap: break-word;
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    line-height: 1.5;
 }
 
 /* AI messages - gris clair standard Bootstrap */
@@ -281,7 +287,7 @@
 }
 
 .chat-status {
-    font-size: 0.75rem;
+    font-size: clamp(0.7rem, 1vw, 0.85rem);
     min-height: 1rem;
     color: #6c757d;
 }
@@ -386,7 +392,7 @@ input:checked + .tts-slider:before {
 }
 
 .tts-label {
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.1vw, 0.95rem);
     color: #495057;
     user-select: none;
     cursor: pointer;
