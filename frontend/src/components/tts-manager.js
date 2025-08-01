@@ -254,6 +254,13 @@ export class TTSManager {
             // Set up audio event listeners
             this.currentAudio.onended = () => {
                 this.hidePlayingState(messageElement);
+                
+                // Reset button to play state
+                const messageId = messageElement.getAttribute('data-message-id');
+                if (messageId && window.chatInterface) {
+                    window.chatInterface.updateAudioControlButtons(messageId, 'stopped');
+                }
+                
                 this.currentAudio = null;
                 this.currentPlayingMessageId = null;
             };

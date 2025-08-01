@@ -32,17 +32,22 @@
     height: 1rem;
 }
 
+/* Badge customizations */
+.badge.text-primary {
+    font-weight: normal !important;
+}
+
 /* KISS: Responsive markdown styling with clamp() */
 .slide-content h1, .slide-content h2, .slide-content h3 {
     color: #0d6efd;
     margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
-.slide-content h1 { font-size: clamp(0.6rem, 3vw, 3rem); }
-.slide-content h2 { font-size: clamp(0.4rem, 2.5vw, 2.4rem); }
-.slide-content h3 { font-size: clamp(0.2rem, 2vw, 2rem); }
+.slide-content h1 { font-size: clamp(2rem, 2.5vw, 3.5rem); }
+.slide-content h2 { font-size: clamp(1.5rem, 2vw, 2.5rem); }
+.slide-content h3 { font-size: clamp(1rem, 1.5vw, 2rem); }
 .slide-content {
-    font-size: clamp(1rem, 1.3vw, 1.6rem);
+    font-size: clamp(0.5rem, 1vw, 1.5rem);
     line-height: 1.6;
 }
 .slide-content ul, .slide-content ol {
@@ -182,7 +187,7 @@
     border-radius: 0.375rem;
     max-width: 85%;
     word-wrap: break-word;
-    font-size: clamp(0.8rem, 1.2vw, 1rem);
+    font-size: clamp(1rem, 1.5vw, 2rem);
     line-height: 1.5;
 }
 
@@ -408,16 +413,27 @@ input:checked + .tts-slider:before {
     display: block;
 }
 
-.audio-play-btn, .audio-pause-btn, .audio-stop-btn {
+/* Audio button unique avec hover */
+.audio-toggle-btn {
     margin-right: 0.25rem;
     padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    font-size: 1.25rem;
+    border: none !important;
+    background: none !important;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.audio-play-btn {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: white;
+.audio-toggle-btn:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+.audio-toggle-btn.playing {
+    color: #dc3545 !important; /* Rouge pour pause */
+}
+
+.audio-toggle-btn.stopped {
+    color: #198754 !important; /* Vert pour play */
 }
 
 .audio-pause-btn {
@@ -604,7 +620,7 @@ input:checked + .tts-slider:before {
     left: -20px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 0.8rem;
+    font-size: 1rem;
 }
 
 .message[data-action-type="live-session"] .message-content {

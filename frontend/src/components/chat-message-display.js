@@ -46,16 +46,9 @@ export class ChatMessageDisplay {
         if (!isUser && !metadata.error) {
             audioControls = `
                 <div class="message-audio-controls" style="display: ${this.ttsManager.enabled ? 'block' : 'none'}">
-                    <button class="btn btn-sm audio-play-btn" onclick="app.playMessageAudio('${messageId}')">
+                    <button class="audio-toggle-btn stopped" onclick="app.toggleMessageAudio('${messageId}')" data-message-id="${messageId}">
                         <i class="bi bi-play-circle"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-primary audio-pause-btn" onclick="app.pauseMessageAudio('${messageId}')" style="display: none;">
-                        <i class="bi bi-pause-circle"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning audio-stop-btn" onclick="app.stopMessageAudio('${messageId}')" style="display: none;">
-                        <i class="bi bi-pause-circle"></i>
-                    </button>
-                    <!-- Audio loading indicator removed -->
                 </div>
             `;
         }

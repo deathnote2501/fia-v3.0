@@ -869,14 +869,8 @@ export class ChatInterface {
         if (!isUser && !metadata.error) {
             audioControls = `
                 <div class="message-audio-controls" style="display: ${this.ttsManager.enabled ? 'block' : 'none'}">
-                    <button class="btn btn-sm audio-play-btn" onclick="window.chatInterface.playMessageAudio('${messageId}')">
+                    <button class="audio-toggle-btn stopped" onclick="window.chatInterface.toggleMessageAudio('${messageId}')" data-message-id="${messageId}">
                         <i class="bi bi-play-circle"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary audio-pause-btn" onclick="window.chatInterface.pauseMessageAudio('${messageId}')" style="display: none;">
-                        <i class="bi bi-pause-circle"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-warning audio-stop-btn" onclick="window.chatInterface.stopMessageAudio('${messageId}')" style="display: none;">
-                        <i class="bi bi-pause-circle"></i>
                     </button>
                 </div>
             `;
@@ -967,34 +961,67 @@ export class ChatInterface {
     }
     
     /**
+     * Toggle audio play/pause for a specific message (simplified method)
+     * 
+     * @param {string} messageId - Message ID
+     */
+    async toggleMessageAudio(messageId) {
+        const button = document.querySelector(`button[data-message-id="${messageId}"]`);
+        if (!button) return;
+        
+        const isPlaying = button.classList.contains('playing');
+        
+        if (isPlaying) {
+            // Currently playing, so pause
+            this.ttsManager.pauseAudio();
+            this.updateAudioControlButtons(messageId, 'paused');
+        } else {
+            // Currently stopped/paused, so play
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                // If no audio data exists, generate it first
+                if (!messageElement.ttsAudio) {
+                    const content = messageElement.querySelector('.message-content p').textContent;
+                    await this.ttsManager.generateAndPlaySpeech(content, messageElement, false);
+                }
+                
+                // Play or resume the audio
+                await this.ttsManager.playAudio(messageElement);
+                this.updateAudioControlButtons(messageId, 'playing');
+            }
+        }
+    }
+    
+    /**
      * Update audio control button states
      * 
      * @param {string} messageId - Message ID
      * @param {string} state - Button state ('playing', 'paused', 'stopped')
      */
     updateAudioControlButtons(messageId, state) {
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (!messageElement) return;
+        const button = document.querySelector(`button[data-message-id="${messageId}"]`);
+        if (!button) return;
         
-        const playBtn = messageElement.querySelector('.audio-play-btn');
-        const pauseBtn = messageElement.querySelector('.audio-pause-btn');
-        const stopBtn = messageElement.querySelector('.audio-stop-btn');
+        const icon = button.querySelector('i');
+        if (!icon) return;
         
-        if (playBtn && pauseBtn && stopBtn) {
-            switch (state) {
-                case 'playing':
-                    playBtn.style.display = 'none';
-                    pauseBtn.style.display = 'inline-block';
-                    stopBtn.style.display = 'inline-block';
-                    break;
-                case 'paused':
-                case 'stopped':
-                default:
-                    playBtn.style.display = 'inline-block';
-                    pauseBtn.style.display = 'none';
-                    stopBtn.style.display = 'none';
-                    break;
-            }
+        // Remove all state classes
+        button.classList.remove('playing', 'stopped', 'paused');
+        
+        switch (state) {
+            case 'playing':
+                button.classList.add('playing');
+                icon.className = 'bi bi-pause-circle';
+                break;
+            case 'paused':
+                button.classList.add('stopped'); // Paused state shows play button (to resume)
+                icon.className = 'bi bi-play-circle';
+                break;
+            case 'stopped':
+            default:
+                button.classList.add('stopped');
+                icon.className = 'bi bi-play-circle';
+                break;
         }
     }
     

@@ -243,6 +243,14 @@ export class FIATrainingApp {
         }
     }
     
+    async toggleMessageAudio(messageId) {
+        if (this.chatInterface) {
+            return await this.chatInterface.toggleMessageAudio(messageId);
+        } else {
+            console.warn('❌ [FIA-APP] ChatInterface not available for audio toggle');
+        }
+    }
+    
     pauseMessageAudio(messageId) {
         if (this.chatInterface) {
             this.chatInterface.pauseMessageAudio(messageId);
@@ -331,6 +339,7 @@ export const initializeFIAApp = async function(learnerSession, sessionData) {
             playMessageAudio: (messageId) => window.fiaApp.playMessageAudio(messageId),
             pauseMessageAudio: (messageId) => window.fiaApp.pauseMessageAudio(messageId),
             stopMessageAudio: (messageId) => window.fiaApp.stopMessageAudio(messageId),
+            toggleMessageAudio: (messageId) => window.fiaApp.toggleMessageAudio(messageId),
             navigateToNextSlide: () => window.fiaApp.navigateToNextSlide(),
             navigateToPreviousSlide: () => window.fiaApp.navigateToPreviousSlide(),
             simplifySlideContent: () => window.fiaApp.simplifySlideContent(),
