@@ -13,6 +13,7 @@ class TrainerDashboard {
         if (!authManager.requireAuth()) return;
 
         this.loadUserData();
+        this.checkAndShowAdminMenus();
         this.setupLogout();
         this.setupTrainingForm();
         this.setupAIToggle();
@@ -672,6 +673,200 @@ class TrainerDashboard {
             `;
         }
     }
+
+    // ============================================================================
+    // ADMIN FUNCTIONALITY 
+    // ============================================================================
+
+    checkAndShowAdminMenus() {
+        if (authManager.isSuperUser()) {
+            this.showAdminMenus();
+            this.setupAdminFunctionality();
+        }
+    }
+
+    showAdminMenus() {
+        // Add admin class to body to show admin-only elements
+        document.body.classList.add('is-admin');
+        
+        console.log('Admin menus enabled for superuser');
+        
+        // Log for debugging
+        const adminElements = document.querySelectorAll('.admin-only');
+        console.log(`Found ${adminElements.length} admin-only elements`);
+    }
+
+    setupAdminFunctionality() {
+        // Setup admin-specific event handlers and functionality
+        this.setupTrainersOverviewTab();
+    }
+
+    setupTrainersOverviewTab() {
+        // Setup click handler for admin trainers tab
+        const trainersTab = document.querySelector('a[href="#admin-trainers"]');
+        if (trainersTab) {
+            trainersTab.addEventListener('shown.bs.tab', () => {
+                this.loadTrainersOverview();
+            });
+        }
+    }
+
+    async loadTrainersOverview() {
+        const tableBody = document.getElementById('trainers-overview-body');
+        if (!tableBody) return;
+
+        try {
+            // Show loading state
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="13" class="text-center text-muted py-4">
+                        <i class="bi bi-hourglass-split display-6"></i>
+                        <p class="mt-2">Loading trainers overview...</p>
+                    </td>
+                </tr>
+            `;
+
+            // Fetch trainers overview data
+            const trainersData = await apiClient.get('/api/admin/trainers-overview');
+
+            if (trainersData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="13" class="text-center text-muted py-4">
+                            <i class="bi bi-people display-6"></i>
+                            <p class="mt-2">No trainers found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Render trainers data
+            const trainersHtml = trainersData.map(trainer => `
+                <tr data-trainer-id="${trainer.id}">
+                    <td><strong>${trainer.first_name}</strong></td>
+                    <td><strong>${trainer.last_name}</strong></td>
+                    <td>
+                        <span class="text-muted">${trainer.email}</span>
+                        ${trainer.is_superuser ? '<i class="bi bi-shield-check text-warning ms-1" title="Admin"></i>' : ''}
+                    </td>
+                    <td><small>${this.formatDate(trainer.created_at)}</small></td>
+                    <td><span class="badge bg-primary">${trainer.trainings_with_support}</span></td>
+                    <td><span class="badge bg-success">${trainer.trainings_ai_generated}</span></td>
+                    <td><span class="badge bg-info">${trainer.active_sessions}</span></td>
+                    <td><span class="badge bg-secondary">${trainer.total_sessions}</span></td>
+                    <td><span class="badge bg-warning">${trainer.unique_learners}</span></td>
+                    <td><span class="text-muted">${trainer.total_time_all_learners}</span></td>
+                    <td><span class="text-muted">${trainer.average_time_per_slide}</span></td>
+                    <td><span class="badge bg-dark">${trainer.total_slides_generated}</span></td>
+                    <td><span class="text-muted">${trainer.average_slides_per_training}</span></td>
+                </tr>
+            `).join('');
+
+            tableBody.innerHTML = trainersHtml;
+
+            // Setup table sorting if not already done
+            this.setupTableSorting();
+
+        } catch (error) {
+            console.error('Failed to load trainers overview:', error);
+            
+            let errorMessage = 'Failed to load trainers overview';
+            if (error.message.includes('403')) {
+                errorMessage = 'Access denied: Admin privileges required';
+            }
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="13" class="text-center text-danger py-4">
+                        <i class="bi bi-exclamation-triangle display-6"></i>
+                        <p class="mt-2">${errorMessage}</p>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainersOverview()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Try Again
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    setupTableSorting() {
+        const table = document.getElementById('trainers-overview-table');
+        if (!table || table.hasAttribute('data-sorting-enabled')) return;
+
+        table.setAttribute('data-sorting-enabled', 'true');
+        
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                this.sortTable(header);
+            });
+        });
+    }
+
+    sortTable(header) {
+        const table = header.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const column = header.getAttribute('data-column');
+        const currentSort = header.classList.contains('sort-asc') ? 'asc' : 
+                           header.classList.contains('sort-desc') ? 'desc' : null;
+        
+        // Reset all headers
+        table.querySelectorAll('th.sortable').forEach(h => {
+            h.classList.remove('sort-asc', 'sort-desc');
+        });
+
+        // Determine new sort direction
+        let newSort = 'asc';
+        if (currentSort === 'asc') newSort = 'desc';
+        
+        header.classList.add(`sort-${newSort}`);
+
+        // Sort rows
+        rows.sort((a, b) => {
+            const aValue = this.getCellValue(a, column);
+            const bValue = this.getCellValue(b, column);
+            
+            let comparison = 0;
+            if (this.isNumeric(aValue) && this.isNumeric(bValue)) {
+                comparison = parseFloat(aValue) - parseFloat(bValue);
+            } else {
+                comparison = aValue.localeCompare(bValue);
+            }
+            
+            return newSort === 'desc' ? -comparison : comparison;
+        });
+
+        // Reorder DOM
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    getCellValue(row, column) {
+        const cellIndex = Array.from(row.parentNode.parentNode.querySelectorAll('th')).findIndex(th => 
+            th.getAttribute('data-column') === column
+        );
+        
+        if (cellIndex === -1) return '';
+        
+        const cell = row.cells[cellIndex];
+        return cell ? cell.textContent.trim() : '';
+    }
+
+    isNumeric(str) {
+        return !isNaN(str) && !isNaN(parseFloat(str));
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
 }
 
 // Global functions for training management
@@ -780,6 +975,13 @@ async function deleteTraining(trainingId, trainingName) {
 function loadTrainings() {
     if (window.trainerDashboard) {
         window.trainerDashboard.loadTrainings();
+    }
+}
+
+// Global function to refresh trainers overview (admin)
+function refreshTrainersOverview() {
+    if (window.trainerDashboard && window.trainerDashboard.loadTrainersOverview) {
+        window.trainerDashboard.loadTrainersOverview();
     }
 }
 

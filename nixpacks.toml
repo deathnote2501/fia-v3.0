@@ -1,14 +1,8 @@
 [phases.setup]
-nixPkgs = ["python311", "nodejs_18"]
+nixPkgs = ["python311", "poetry"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[phases.build]
-cmds = ["echo 'Build completed'"]
+cmds = ["poetry config virtualenvs.create false", "poetry install --no-dev"]
 
 [start]
-cmd = "python main.py"
-
-[env]
-NIXPACKS_PYTHON_VERSION = "3.11"
+cmd = "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT"
