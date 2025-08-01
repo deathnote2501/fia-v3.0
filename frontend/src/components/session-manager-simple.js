@@ -226,7 +226,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
  */
 async function copySessionLink(token) {
     try {
-        const link = `${window.location.origin}/frontend/public/session.html?token=${token}`;
+        const link = `${window.location.origin}/frontend/public/training.html?token=${token}`;
         await navigator.clipboard.writeText(link);
         showAlert('Session link copied to clipboard!', 'success', 3000);
     } catch (error) {

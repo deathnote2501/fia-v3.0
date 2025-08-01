@@ -25,6 +25,7 @@ class UnifiedTrainingApp {
         this.token = null;
         this.sessionData = null;
         this.learnerSession = null;
+        this.progressAnimationInterval = null;
         
         console.log('🚀 [UNIFIED-APP] UnifiedTrainingApp initialized');
     }
@@ -134,6 +135,52 @@ class UnifiedTrainingApp {
     }
     
     // ========================================
+    // PROGRESS BAR ANIMATION METHODS
+    // ========================================
+    
+    /**
+     * Start progress bar animation (0% to 100% in 60 seconds)
+     */
+    startProgressAnimation() {
+        const progressBar = document.getElementById('loading-progress-bar');
+        if (!progressBar) return;
+        
+        const duration = 60000; // 60 seconds
+        const intervalTime = 100; // Update every 100ms
+        const totalSteps = duration / intervalTime;
+        let currentStep = 0;
+        
+        // Clear any existing animation
+        this.stopProgressAnimation();
+        
+        console.log('🎬 [UNIFIED-APP] Starting progress animation (60s)');
+        
+        this.progressAnimationInterval = setInterval(() => {
+            currentStep++;
+            const progress = Math.min((currentStep / totalSteps) * 100, 100);
+            
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress.toString());
+            
+            // Stop when reaching 100%
+            if (progress >= 100) {
+                this.stopProgressAnimation();
+            }
+        }, intervalTime);
+    }
+    
+    /**
+     * Stop progress bar animation
+     */
+    stopProgressAnimation() {
+        if (this.progressAnimationInterval) {
+            clearInterval(this.progressAnimationInterval);
+            this.progressAnimationInterval = null;
+            console.log('⏹️ [UNIFIED-APP] Progress animation stopped');
+        }
+    }
+    
+    // ========================================
     // STATE DISPLAY METHODS
     // ========================================
     
@@ -161,7 +208,7 @@ class UnifiedTrainingApp {
         document.getElementById('main-content').innerHTML = `
             <div class="container-fluid h-100 py-4">
                 <div class="row justify-content-center h-100">
-                    <div class="col-lg-8">
+                    <div class="col-12">
                         <!-- Session Info -->
                         ${this.sessionData.session_description ? 
                             `<div class="alert alert-info mb-4">
@@ -479,15 +526,14 @@ class UnifiedTrainingApp {
             </div>
         `;
         
+        // Start progress bar animation (0% to 100% in 60 seconds)
+        this.startProgressAnimation();
+        
         try {
             if (!this.sessionData?.training_session?.training_id) {
                 throw new Error('No training ID available in session data');
             }
             
-            // Start progress animation (if available)
-            if (window.fiaApp && window.fiaApp.progressManager) {
-                window.fiaApp.progressManager.startProgressAnimation();
-            }
             
             // Generate the training plan using submitted profile data or existing session data
             const profileData = this.submittedProfileData || this.learnerSession || {};
@@ -549,9 +595,7 @@ class UnifiedTrainingApp {
             this.showErrorState('Plan Generation Failed', `Unable to generate your training plan: ${error.message}`);
         } finally {
             // Stop progress animation
-            if (window.fiaApp && window.fiaApp.progressManager) {
-                window.fiaApp.progressManager.stopProgressAnimation();
-            }
+            this.stopProgressAnimation();
         }
     }
     
