@@ -28,6 +28,10 @@ class GeminiCallLogger:
     def __init__(self):
         """Initialize Gemini call logger"""
         self.call_counter = 0
+        # 🔍 Simple déduplication pour éviter les logs identiques en succession rapide
+        self.last_prompt_hash = None
+        self.last_prompt_time = 0
+        self.dedup_window_seconds = 2  # Éviter les doublons dans une fenêtre de 2 secondes
         logger.info("🔍 GEMINI_CALL_LOGGER [INIT] Service initialized")
     
     def log_input(
@@ -52,6 +56,19 @@ class GeminiCallLogger:
             call_id: Identifiant unique pour tracer l'appel
         """
         try:
+            # 🔍 Simple déduplication - éviter les prompts identiques en succession rapide  
+            import hashlib
+            prompt_hash = hashlib.md5(prompt.encode()).hexdigest()
+            current_time = time.time()
+            
+            if (prompt_hash == self.last_prompt_hash and 
+                current_time - self.last_prompt_time < self.dedup_window_seconds):
+                logger.info(f"🔍 GEMINI_CALL_LOGGER [DEDUP] Skipping duplicate prompt (within {self.dedup_window_seconds}s)")
+                return f"dedup_skip_{int(current_time)}"
+            
+            self.last_prompt_hash = prompt_hash
+            self.last_prompt_time = current_time
+            
             self.call_counter += 1
             call_id = f"call_{self.call_counter}_{int(time.time())}"
             
@@ -103,6 +120,10 @@ class GeminiCallLogger:
             additional_metadata: Métadonnées additionnelles
         """
         try:
+            # Skip si c'était un appel dédupliqué
+            if call_id.startswith("dedup_skip_"):
+                return
+                
             # Préparer le contexte de session
             session_info = self._format_session_info(session_id, learner_session_id)
             

@@ -174,6 +174,7 @@ class ConversationAdapter(ConversationServicePort):
                 "confidence_score": response_data.get("confidence_score", 0.8),
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
+                "learner_profile": response_data.get("learner_profile", {}),  # 🔍 AJOUTÉ pour éviter le double appel
                 "metadata": self._build_response_metadata(action_type, response_data)
             }
             
@@ -219,19 +220,9 @@ class ConversationAdapter(ConversationServicePort):
                 learner_session_id=learner_session_id
             )
             
-            # Extract response data and handle profile enrichment
+            # Extract response data and handle profile enrichment  
             response_data = response_result.copy()
-            if "metadata" in response_data and "error" not in response_data["metadata"]:
-                # Re-parse for learner_profile if no error
-                try:
-                    full_response = json.loads(await self.vertex_adapter.generate_content(
-                        prompt=prompt,
-                        generation_config=self._get_generation_config("chat"),
-                        learner_session_id=str(learner_session_id) if learner_session_id else None
-                    ))
-                    response_data["learner_profile"] = full_response.get("learner_profile", {})
-                except:
-                    response_data["learner_profile"] = {}
+            # Le learner_profile est maintenant inclus dans response_result, plus besoin de double appel !
             
             # Extract and save enriched profile data
             enriched_profile_data = response_data.get("learner_profile", {})

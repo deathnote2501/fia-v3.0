@@ -14,13 +14,14 @@ class APIClient {
     }
 
     /**
-     * Make HTTP request
+     * Make HTTP request with logging
      * @param {string} endpoint 
      * @param {object} options 
      * @returns {Promise}
      */
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
+        const startTime = performance.now();
         
         const defaultOptions = {
             headers: {
@@ -30,8 +31,24 @@ class APIClient {
 
         const config = { ...defaultOptions, ...options };
 
+        // 📤 Log API Request
+        console.log(`📤 [API_CALL] [REQUEST] ${config.method || 'GET'} ${endpoint}`);
+        if (config.body) {
+            try {
+                const payload = JSON.parse(config.body);
+                console.log(`📋 [API_CALL] [PAYLOAD]`, payload);
+            } catch (e) {
+                console.log(`📋 [API_CALL] [RAW_BODY]`, config.body);
+            }
+        }
+
         try {
             const response = await fetch(url, config);
+            const duration = performance.now() - startTime;
+            
+            // 📥 Log API Response
+            console.log(`📥 [API_CALL] [RESPONSE] ${response.status} ${response.statusText} (${duration.toFixed(0)}ms)`);
+            console.log(`🔗 [API_CALL] [URL] ${url}`);
             
             if (!response.ok) {
                 let errorMessage = `HTTP error! status: ${response.status}`;
@@ -39,7 +56,7 @@ class APIClient {
                 // Try to get detailed error message from response
                 try {
                     const errorData = await response.json();
-                    console.error('API Error Details:', errorData);
+                    console.log(`❌ [API_CALL] [ERROR]`, errorData);
                     
                     if (errorData.detail) {
                         // Handle Pydantic validation errors (detail is an array)
@@ -63,9 +80,16 @@ class APIClient {
                 throw new Error(errorMessage);
             }
             
-            return await response.json();
+            // Log successful response data (preview)
+            const responseData = await response.json();
+            const preview = JSON.stringify(responseData).substring(0, 200);
+            console.log(`✅ [API_CALL] [DATA] ${preview}${preview.length >= 200 ? '...' : ''}`);
+            
+            return responseData;
         } catch (error) {
-            console.error('API request failed:', error);
+            const duration = performance.now() - startTime;
+            console.log(`❌ [API_CALL] [FAILED] ${config.method || 'GET'} ${endpoint} (${duration.toFixed(0)}ms)`);
+            console.error(`💥 [API_CALL] [EXCEPTION]`, error);
             throw error;
         }
     }

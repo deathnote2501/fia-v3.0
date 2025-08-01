@@ -161,7 +161,11 @@ export class GeminiLiveAPI {
     // LOG - Copié exactement du fichier HTML
     // =============================================================================
     log(category, message, data = null) {
-        // Logs supprimés pour interface propre
+        // 🎙️ Live API Logging pour debug facile
+        console.log(`🎙️ [LIVE_API] [${category}] ${message}`);
+        if (data) {
+            console.log(`📋 [LIVE_API] [${category}_DATA]`, data);
+        }
     }
     
     // =============================================================================
@@ -292,10 +296,16 @@ export class GeminiLiveAPI {
                 httpOptions: { apiVersion: "v1alpha" }
             });
             
+            const systemInstruction = this.getSystemInstruction();
+            
+            // 🎙️ Log system instruction pour debug
+            console.log('🎙️ [LIVE_API] [SYSTEM_PROMPT] System instruction envoyé à Gemini Live API:');
+            console.log('📝 [LIVE_API] [SYSTEM_PROMPT_CONTENT]', systemInstruction);
+            
             const config = {
                 responseModalities: [Modality.AUDIO],
                 enableAffectiveDialog: true, // 👉 active l'adaptation tonale
-                systemInstruction: this.getSystemInstruction(),
+                systemInstruction: systemInstruction,
                 inputAudioTranscription: {},   // pour afficher la transcription d'entrée si disponible
                 outputAudioTranscription: {}   // idem pour la sortie
             };
@@ -347,6 +357,7 @@ export class GeminiLiveAPI {
             
             if (sc.inputTranscription?.text) {
                 const userText = sc.inputTranscription.text;
+                console.log('🎙️ [LIVE_API] [AUDIO_IN] Transcription utilisateur:', userText);
                 this.log('GEMINI_RESPONSE', `🎤 Vous: "${userText}"`);
                 if (this.onTranscriptUpdate) this.onTranscriptUpdate(`Vous: ${userText}`);
                 if (this.onMessageReceived) this.onMessageReceived(userText, true);
@@ -354,6 +365,7 @@ export class GeminiLiveAPI {
             
             if (sc.outputTranscription?.text) {
                 const assistantText = sc.outputTranscription.text;
+                console.log('🎙️ [LIVE_API] [AUDIO_OUT] Réponse assistant:', assistantText);
                 this.log('GEMINI_RESPONSE', `🤖 Assistant: "${assistantText}"`);
                 if (this.onMessageReceived) this.onMessageReceived(assistantText, false);
             }
@@ -432,11 +444,13 @@ export class GeminiLiveAPI {
         
         if (this.onStatusChange) this.onStatusChange('🎙️ Enregistrement PCM - Parlez !', 'recording');
         
+        console.log('🎙️ [LIVE_API] [MIC_START] Enregistrement audio démarré - Je vous écoute !');
         if (this.onMessageReceived) this.onMessageReceived("Conversation (Affective Dialog) démarrée. Je vous écoute !", false);
         this.log('APP_FLOW', '🎉 PCM actif');
     }
     
     stopConversation() {
+        console.log('🎙️ [LIVE_API] [MIC_STOP] Arrêt de l\'enregistrement audio');
         this.log('APP_FLOW', '🛑 Arrêt conversation');
         if (!this.isRecording) return;
         this.isRecording = false;

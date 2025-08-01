@@ -10,6 +10,11 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s %(name)s: %(message)s',
     force=True  # Force override de la config existante
 )
+
+# 🔍 RÉDUIRE LES LOGS SQL REDONDANTS
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)  # Réduire les logs SQL
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -34,10 +39,10 @@ from app.adapters.inbound.config_controller import router as config_router
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
 
-# 🔍 FORCER L'INITIALISATION DU GEMINI CALL LOGGER
+# Initialize GeminiCallLogger at startup
 try:
     from app.infrastructure.gemini_call_logger import gemini_call_logger
-    logger.info("🔍 MAIN [INIT] GeminiCallLogger initialized at startup")
+    logger.info("✅ MAIN [INIT] GeminiCallLogger initialized")
 except ImportError as e:
     logger.error(f"❌ MAIN [INIT] Failed to import GeminiCallLogger: {e}")
 
