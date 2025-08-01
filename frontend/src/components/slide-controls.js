@@ -698,7 +698,6 @@ export class SlideControls {
         let chartsHtml = `
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-title">📊 Generated Charts</h6>
         `;
         
         // Display each chart at full width, one below the other
@@ -721,7 +720,6 @@ export class SlideControls {
         
         chartsHtml += `
                     <p class="card-text mt-2 text-muted small">
-                        <i class="bi bi-info-circle"></i> ${charts.length} chart(s) generated from slide content
                     </p>
                 </div>
             </div>
