@@ -1,5 +1,5 @@
 /* FIA v3.0 - Main Styles */
-/* Bootstrap-based styling with 16:9 slide format */
+/* Bootstrap-based styling with minimal custom additions */
 
 :root {
     --fia-primary: #0d6efd;
@@ -66,9 +66,53 @@
     overflow-x: auto;
 }
 
-/* ==============================================
-   16:9 SLIDE LAYOUT SYSTEM 
-   ============================================== */
+/* Live Voice Button Styles - HIDDEN UNTIL VERTEX AI INTEGRATION */
+#live-voice-btn {
+    display: none !important; /* Hide Live Voice button */
+    transition: all 0.3s ease;
+}
+
+#live-voice-btn.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+#live-voice-btn.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
+
+#live-status {
+    display: none !important; /* Hide Live Voice status text */
+    font-size: 0.75rem;
+    min-height: 1rem;
+}
+
+/* Live session chat message styling */
+.message[data-action-type="live-voice"] .message-content {
+    position: relative;
+}
+
+.message[data-action-type="live-voice"] .message-content::before {
+    content: "🎙️";
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+}
+
+.message[data-action-type="live-session"] .message-content {
+    border-left: 3px solid #198754;
+    padding-left: 8px;
+}
 
 /* Viewport: fond blanc pour espaces vides */
 .slide-viewport {
@@ -76,14 +120,13 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
-    width: 100vw;
-    height: 100vh;
 }
 
-/* Container 16:9 centré avec cadre gris */
-.slide-container-16-9 {
+/* Container 16:9 centré avec cadre */
+.slide-container {
     width: min(100vw, 177.78vh);  /* 16:9 ratio inverse */
     height: min(56.25vw, 100vh);  /* 16:9 ratio */
+    margin: auto;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -92,124 +135,32 @@
     background: white;
     display: flex;
     flex-direction: column;
+    overflow: hidden;  /* Empêche expansion du container */
 }
 
-/* Header: Progress Bar (hauteur fixe) */
-.slide-header {
-    background: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-}
-
-/* Body: Layout principal (flexible) */
-.slide-body {
+/* PowerPoint-style Layout - Flat design, no shadows */
+.powerpoint-container {
     display: flex;
     flex: 1;
-    min-height: 0; /* Important pour flexbox */
+    background: white;
 }
 
-/* Left Panel: Chat IA (25%) */
-.slide-chat {
+/* Chat Panel - 25% left */
+.chat-panel {
     width: 25%;
     background: #f8f9fa;
     border-right: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Important pour flexbox */
 }
 
-/* Right Panel: Content Area (75%) */
-.slide-content {
-    width: 75%;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Important pour flexbox */
-}
-
-/* Content Area (scrollable) */
-.content-area {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0; /* Important pour flexbox */
-}
-
-/* Navigation Bar (fixe en bas) */
-.content-nav {
-    background: #f8f9fa;
-    border-top: 1px solid #dee2e6;
-    padding: 1rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-/* ==============================================
-   PROGRESS BAR STYLES 
-   ============================================== */
-
-.progress-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-width: 300px;
-}
-.progress-section .progress {
-    flex: 1;
-    height: 25px;
-    position: relative;
-}
-/* Ensure percentage text is always visible */
-.progress-section .progress-bar {
-    background-color: #0d6efd;
-    color: white;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 50px;
-}
-
-/* Fallback for very low percentages - show text outside */
-.progress-section .progress[data-percentage="1"] .progress-bar::after,
-.progress-section .progress[data-percentage="2"] .progress-bar::after {
-    content: attr(aria-valuenow) '%';
-    position: absolute;
-    left: 8px;
-    color: #6c757d;
-    font-weight: 500;
-}
-
-.progress-breadcrumb {
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.progress-text {
-    font-weight: 500;
-}
-
-.progress-text .current-module {
-    color: #0d6efd;
-    font-weight: 600;
-}
-
-/* ==============================================
-   CHAT PANEL STYLES 
-   ============================================== */
-
-/* Chat Messages Area (scrollable) */
+/* Chat Messages Area */
 .chat-messages {
+    height: 0;  /* Force la limitation de hauteur */
     flex: 1;
     padding: 1rem;
     overflow-y: auto;
     background: white;
-    min-height: 0; /* Important pour flexbox */
 }
 
 .message {
@@ -250,7 +201,6 @@
     background: white;
     border-top: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
-    flex-shrink: 0;
 }
 
 /* Chat Input */
@@ -260,7 +210,6 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    flex-shrink: 0;
 }
 
 .chat-input .input-group {
@@ -282,26 +231,6 @@
     min-height: 1rem;
 }
 
-/* ==============================================
-   CONTENT AREA STYLES 
-   ============================================== */
-
-/* Slide Content Area (inside scrollable content-area) */
-.slide-content-area {
-    padding: 2rem;
-    background: white;
-}
-
-/* Navigation interaction buttons */
-.interaction-buttons {
-    display: flex;
-    align-items: center;
-}
-
-/* ==============================================
-   TTS AND VOICE CONTROLS 
-   ============================================== */
-
 /* TTS Controls */
 .tts-controls {
     padding: 0.75rem 1rem;
@@ -309,7 +238,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    flex-shrink: 0;
 }
 
 /* iPhone-style Toggle Switch */
@@ -401,12 +329,20 @@ input:checked + .tts-slider:before {
     color: white;
 }
 
+.audio-stop-btn {
+    /* Using Bootstrap outline classes */
+}
+
+/* Audio Loading States - Removed */
+
 .audio-loading-indicator {
     display: none;
     font-size: 0.75rem;
     color: #6c757d;
     margin-top: 0.25rem;
 }
+
+/* Audio loading indicator removed */
 
 /* Voice Chat Button States */
 .voice-chat-btn {
@@ -534,61 +470,95 @@ input:checked + .tts-slider:before {
     }
 }
 
-/* ==============================================
-   LIVE VOICE FEATURES (HIDDEN) 
-   ============================================== */
-
-/* Live Voice Button Styles - HIDDEN UNTIL VERTEX AI INTEGRATION */
-#live-voice-btn {
-    display: none !important; /* Hide Live Voice button */
-    transition: all 0.3s ease;
+/* Content Panel - 75% right */
+.content-panel {
+    width: 75%;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    height: 0;  /* Force la limitation de hauteur */
+    flex: 1;    /* Prend l'espace disponible dans powerpoint-container */
+    overflow-y: auto;  /* Scroll pour contenu long */
 }
 
-#live-voice-btn.btn-danger {
-    background-color: #dc3545;
-    border-color: #dc3545;
+/* Progress Bar - Inside 16:9 container */
+.progress-bar-container {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
 }
-
-#live-voice-btn.btn-success {
-    background-color: #198754;
-    border-color: #198754;
-    animation: pulse 2s infinite;
+.progress-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 300px;
 }
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-    50% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
-}
-
-#live-status {
-    display: none !important; /* Hide Live Voice status text */
-    font-size: 0.75rem;
-    min-height: 1rem;
-}
-
-/* Live session chat message styling */
-.message[data-action-type="live-voice"] .message-content {
+.progress-section .progress {
+    flex: 1;
+    height: 25px;
     position: relative;
 }
+/* Ensure percentage text is always visible */
+.progress-section .progress-bar {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+}
 
-.message[data-action-type="live-voice"] .message-content::before {
-    content: "🎙️";
+/* Fallback for very low percentages - show text outside */
+.progress-section .progress[data-percentage="1"] .progress-bar::after,
+.progress-section .progress[data-percentage="2"] .progress-bar::after {
+    content: attr(aria-valuenow) '%';
     position: absolute;
-    left: -20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.8rem;
+    left: 8px;
+    color: #6c757d;
+    font-weight: 500;
 }
 
-.message[data-action-type="live-session"] .message-content {
-    border-left: 3px solid #198754;
-    padding-left: 8px;
+.progress-breadcrumb {
+    font-size: 0.9rem;
+    color: #6c757d;
 }
 
-/* ==============================================
-   BOOTSTRAP OVERRIDES 
-   ============================================== */
+.progress-text {
+    font-weight: 500;
+}
+
+.progress-text .current-module {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* Slide Content Area (pas de scroll ici maintenant) */
+.slide-content-area {
+    flex: 1;
+    padding: 2rem;
+    background: white;
+}
+
+/* Navigation Bar (fixed at bottom) */
+.navigation-bar {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;  /* Ne se compresse pas */
+}
+
+.interaction-buttons {
+    display: flex;
+    align-items: center;
+}
 
 /* Remove Bootstrap shadows for flat design, keep standard rounded corners */
 .btn {

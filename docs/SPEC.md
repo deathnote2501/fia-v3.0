@@ -32,7 +32,7 @@ Etape
 - L'apprenant peut poser des quesions au formateur ia via le chat ou utiliser des actions pré-définie via des boutons (message ou via son micro) qui repond à la question en se basant sur le contenu du slide (training_slides) et le profil de l'apprenant (learner_sessions)
 - IA analyse chaque conversation pour enrichir automatiquement le profil de l'apprenant et personnaliser les slides futures
 - L'apprenant a les options suivantes sur les slides :
-  - implifier,  approfondir, générer une image et générer des graphiques
+  - simplifier,  approfondir, générer une image et générer des graphiques
 
 ## La vue côté administrateur
 - Les logs affichent tous les appels et les réponses à l'api gemini via Vertex AI (important!) de tel manière à ce qu'ils soient facile à lire dans le reste des logs 
