@@ -13,6 +13,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 from app.infrastructure.settings import settings
+from app.infrastructure.gemini_call_logger import gemini_call_logger
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -193,12 +194,13 @@ class VertexAIAdapter:
             logger.error(f"❌ VERTEX AI [FILE] Failed to read {Path(file_path).name}: {str(e)}")
             raise VertexAIError(f"File reading failed: {str(e)}", original_error=e)
     
-    async def generate_content_with_grounding(self, prompt, generation_config: Optional[Dict[str, Any]] = None, use_google_search: bool = False) -> tuple[str, Optional[Dict[str, Any]]]:
+    async def generate_content_with_grounding(self, prompt, generation_config: Optional[Dict[str, Any]] = None, use_google_search: bool = False, session_id: Optional[str] = None, learner_session_id: Optional[str] = None) -> tuple[str, Optional[Dict[str, Any]]]:
         """Generate content with optional Google Search grounding using genai.Client"""
         if not VERTEX_AI_AVAILABLE or not genai:
             raise VertexAIError("Vertex AI with grounding not available - missing dependencies")
         
         start_time = time.time()
+        call_id = None
         
         try:
             # Get project and location from settings
@@ -236,10 +238,24 @@ class VertexAIAdapter:
             else:
                 config = types.GenerateContentConfig(**config_dict)
             
-            logger.info(f"🚀 VERTEX AI [GROUNDING] Starting content generation with grounding...")
+            # 🔍 NOUVEAU: Logger centralisé - INPUT (grounding)
+            call_id = gemini_call_logger.log_input(
+                service_name="vertex_ai_adapter_grounding",
+                prompt=str(prompt),
+                session_id=session_id,
+                learner_session_id=learner_session_id,
+                additional_context={
+                    "generation_config": config_dict,
+                    "use_google_search": use_google_search,
+                    "method": "generate_content_with_grounding",
+                    "project_id": project_id,
+                    "location": location
+                }
+            )
+            
+            logger.info(f"🚀 VERTEX AI [GROUNDING] Starting content generation - Call ID: {call_id}")
             logger.info(f"🔍 VERTEX AI [GROUNDING] Use search: {use_google_search}")
             logger.info(f"🔍 VERTEX AI [GROUNDING] Project: {project_id}, Location: {location}")
-            logger.info(f"🔍 VERTEX AI [GROUNDING] Prompt length: {len(str(prompt))} characters")
             
             # Generate content with grounding
             response = await asyncio.to_thread(
@@ -270,6 +286,21 @@ class VertexAIAdapter:
                     result_cleaned = result_cleaned[:-3]
                 result = result_cleaned.strip()
             
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT (grounding)
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="vertex_ai_adapter_grounding",
+                response=result,
+                session_id=session_id,
+                learner_session_id=learner_session_id,
+                processing_time=duration,
+                additional_metadata={
+                    "has_grounding": grounding_metadata is not None,
+                    "grounding_sources": len(grounding_metadata.grounding_chunks) if grounding_metadata and hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks else 0,
+                    "method": "generate_content_with_grounding"
+                }
+            )
+            
             self._log_api_call(
                 "content_generation_with_grounding",
                 {"prompt": str(prompt)[:100] + "...", "generation_config": config_dict, "use_google_search": use_google_search},
@@ -282,6 +313,18 @@ class VertexAIAdapter:
             
         except Exception as e:
             duration = time.time() - start_time
+            
+            # 🔍 NOUVEAU: Logger centralisé - ERROR (grounding)
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="vertex_ai_adapter_grounding",
+                    error=e,
+                    session_id=session_id,
+                    learner_session_id=learner_session_id,
+                    processing_time=duration
+                )
+            
             logger.error(f"❌ VERTEX AI [GROUNDING] Exception: {str(e)}")
             
             self._log_api_call(
@@ -295,12 +338,13 @@ class VertexAIAdapter:
             
             raise VertexAIError(f"Content generation with grounding failed: {str(e)}", original_error=e)
 
-    async def generate_content(self, prompt, generation_config: Optional[Dict[str, Any]] = None) -> str:
+    async def generate_content(self, prompt, generation_config: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None, learner_session_id: Optional[str] = None) -> str:
         """Generate content using Vertex AI with Structured Output"""
         if not self.client:
             raise VertexAIError("Vertex AI client not configured")
         
         start_time = time.time()
+        call_id = None
         
         try:
             # Prepare generation config - SIMPLE comme l'ancien service
@@ -312,14 +356,21 @@ class VertexAIAdapter:
                 "response_mime_type": "application/json"  # Pas de response_schema complexe
             }
             
-            # LOG DÉTAILLÉ INPUT
-            logger.info(f"🚀 VERTEX AI [GENERATE] Starting content generation with Structured Output...")
-            logger.info(f"🔍 VERTEX AI [INPUT] Generation config: {json.dumps(config, indent=2)}")
-            logger.info(f"🔍 VERTEX AI [INPUT] Prompt type: {type(prompt)}")
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name="vertex_ai_adapter",
+                prompt=str(prompt),
+                session_id=session_id,
+                learner_session_id=learner_session_id,
+                additional_context={
+                    "generation_config": config,
+                    "method": "generate_content"
+                }
+            )
+            
+            # LOG DÉTAILLÉ INPUT (existant - réduit)
+            logger.info(f"🚀 VERTEX AI [GENERATE] Starting content generation - Call ID: {call_id}")
             logger.info(f"🔍 VERTEX AI [INPUT] Prompt length: {len(str(prompt))} characters")
-            logger.info(f"🔍 VERTEX AI [INPUT] === DÉBUT PROMPT COMPLET ===")
-            logger.info(f"🔍 VERTEX AI [INPUT] {str(prompt)}")
-            logger.info(f"🔍 VERTEX AI [INPUT] === FIN PROMPT COMPLET ===")
             
             # Generate content (synchronous call wrapped in asyncio.to_thread)
             response = await asyncio.to_thread(
@@ -331,14 +382,23 @@ class VertexAIAdapter:
             duration = time.time() - start_time
             result = response.text
             
-            # LOG DÉTAILLÉ OUTPUT
-            logger.info(f"🔍 VERTEX AI [OUTPUT] Response object type: {type(response)}")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] Response object attributes: {dir(response)}")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] Response text type: {type(result)}")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] Response text length: {len(result) if result else 0} characters")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] === DÉBUT RÉPONSE VERTEX AI COMPLÈTE ===")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] {result}")
-            logger.info(f"🔍 VERTEX AI [OUTPUT] === FIN RÉPONSE VERTEX AI COMPLÈTE ===")
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="vertex_ai_adapter", 
+                response=result,
+                session_id=session_id,
+                learner_session_id=learner_session_id,
+                processing_time=duration,
+                additional_metadata={
+                    "response_type": type(result).__name__,
+                    "usage_metadata": str(response.usage_metadata) if hasattr(response, 'usage_metadata') else None,
+                    "method": "generate_content"
+                }
+            )
+            
+            # LOG DÉTAILLÉ OUTPUT (existant - réduit)
+            logger.info(f"🔍 VERTEX AI [OUTPUT] Response length: {len(result) if result else 0} characters")
             
             # Vérifier si on a des métadonnées d'usage
             if hasattr(response, 'usage_metadata'):
@@ -390,10 +450,19 @@ class VertexAIAdapter:
         except Exception as e:
             duration = time.time() - start_time
             
-            # DETAILED ERROR LOGGING
-            logger.error(f"❌ VERTEX AI [EXCEPTION] Exception type: {type(e).__name__}")
-            logger.error(f"❌ VERTEX AI [EXCEPTION] Exception message: {str(e)}")
-            logger.error(f"❌ VERTEX AI [EXCEPTION] Exception args: {e.args}")
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="vertex_ai_adapter",
+                    error=e,
+                    session_id=session_id,
+                    learner_session_id=learner_session_id,
+                    processing_time=duration
+                )
+            
+            # DETAILED ERROR LOGGING (existant - réduit)
+            logger.error(f"❌ VERTEX AI [EXCEPTION] {type(e).__name__}: {str(e)}")
             
             self._log_api_call(
                 "content_generation",

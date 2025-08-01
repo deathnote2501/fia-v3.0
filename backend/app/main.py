@@ -4,6 +4,12 @@ Main FastAPI application entry point
 """
 
 import logging
+# 🔍 FORCER LA CONFIGURATION DE LOGGING POUR VOIR NOS LOGS
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    force=True  # Force override de la config existante
+)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -27,6 +33,13 @@ from app.adapters.inbound.config_controller import router as config_router
 
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
+
+# 🔍 FORCER L'INITIALISATION DU GEMINI CALL LOGGER
+try:
+    from app.infrastructure.gemini_call_logger import gemini_call_logger
+    logger.info("🔍 MAIN [INIT] GeminiCallLogger initialized at startup")
+except ImportError as e:
+    logger.error(f"❌ MAIN [INIT] Failed to import GeminiCallLogger: {e}")
 
 # Import unified plan generation controller
 try:

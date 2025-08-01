@@ -27,6 +27,13 @@ from app.adapters.repositories.training_slide_repository import TrainingSlideRep
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# 🔍 VÉRIFIER QUE LE GEMINI CALL LOGGER EST ACCESSIBLE
+try:
+    from app.infrastructure.gemini_call_logger import gemini_call_logger
+    logger.info("🔍 CONVERSATION_CONTROLLER [INIT] GeminiCallLogger imported successfully")
+except ImportError as e:
+    logger.error(f"❌ CONVERSATION_CONTROLLER [INIT] GeminiCallLogger import failed: {e}")
+
 router = APIRouter(tags=["conversation"])
 
 
@@ -58,6 +65,7 @@ async def chat_with_ai_trainer(
     """
     try:
         logger.info(f"🤖 CONVERSATION [CHAT] Processing chat for learner session {chat_request.context.learner_session_id}")
+        logger.info(f"🔍 DEBUG VISIBLE: Chat message='{chat_request.message}' - Cette ligne DOIT apparaître dans les logs !")
         
         # Validate learner session exists
         learner_repo = LearnerSessionRepository(db)

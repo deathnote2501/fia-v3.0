@@ -17,6 +17,7 @@ from openai import OpenAI
 from app.domain.ports.outbound_ports import ImageGenerationServicePort
 from app.infrastructure.settings import settings
 from app.infrastructure.rate_limiter import openai_rate_limiter, RateLimitExceeded
+from app.infrastructure.gemini_call_logger import gemini_call_logger
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,9 @@ class OpenAIAdapter(ImageGenerationServicePort):
         slide_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """Generate educational infographic using OpenAI DALL-E"""
+        call_id = None
+        start_time = time.time()
+        
         try:
             # Apply rate limiting before API call
             await openai_rate_limiter.acquire()
@@ -52,7 +56,22 @@ class OpenAIAdapter(ImageGenerationServicePort):
             # Build prompt for infographic generation
             prompt = self._build_infographic_prompt(slide_content, slide_title, learner_profile, language)
             
-            logger.debug(f"Generating infographic with prompt: {prompt[:200]}...")
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name="openai_dalle",
+                prompt=prompt,
+                learner_session_id=str(learner_session_id) if learner_session_id else None,
+                additional_context={
+                    "slide_title": slide_title,
+                    "slide_id": str(slide_id) if slide_id else None,
+                    "language": language,
+                    "model": "dall-e-3",
+                    "size": "1024x1024",
+                    "quality": "hd"
+                }
+            )
+            
+            logger.debug(f"Generating infographic with prompt - Call ID: {call_id}")
             
             # Generate image using OpenAI DALL-E 3 (fallback until organization is verified)
             response = self.client.images.generate(
@@ -94,14 +113,57 @@ class OpenAIAdapter(ImageGenerationServicePort):
                 }
             }
             
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            processing_time = time.time() - start_time
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="openai_dalle",
+                response={
+                    "image_generated": True,
+                    "image_size_bytes": len(image_base64) if image_base64 else 0,
+                    "revised_prompt": image_data.revised_prompt or prompt,
+                    "image_path": image_path,
+                    "metadata": result["metadata"]
+                },
+                learner_session_id=str(learner_session_id) if learner_session_id else None,
+                processing_time=processing_time,
+                additional_metadata={
+                    "slide_title": slide_title,
+                    "slide_id": str(slide_id) if slide_id else None,
+                    "image_saved": image_path is not None
+                }
+            )
+            
             logger.info(f"Successfully generated infographic (revised prompt: {image_data.revised_prompt[:100] if image_data.revised_prompt else 'None'}...)")
             
             return result
             
         except RateLimitExceeded as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR (rate limit)
+            if call_id:
+                processing_time = time.time() - start_time
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="openai_dalle",
+                    error=e,
+                    learner_session_id=str(learner_session_id) if learner_session_id else None,
+                    processing_time=processing_time
+                )
+            
             logger.warning(f"OpenAI rate limit exceeded: {str(e)}")
             raise
         except Exception as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                processing_time = time.time() - start_time
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="openai_dalle",
+                    error=e,
+                    learner_session_id=str(learner_session_id) if learner_session_id else None,
+                    processing_time=processing_time
+                )
+            
             logger.error(f"Error generating infographic: {str(e)}")
             raise Exception(f"Failed to generate infographic: {str(e)}")
     

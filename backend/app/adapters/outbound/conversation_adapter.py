@@ -11,6 +11,7 @@ from uuid import UUID
 from app.domain.ports.outbound_ports import ConversationServicePort
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 from app.infrastructure.rate_limiter import gemini_rate_limiter
+from app.infrastructure.gemini_call_logger import gemini_call_logger
 from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.services.conversation_prompt_builder import ConversationPromptBuilder
@@ -126,18 +127,45 @@ class ConversationAdapter(ConversationServicePort):
         self, 
         prompt: str, 
         prompt_type: str, 
-        action_type: str
+        action_type: str,
+        learner_session_id: UUID = None
     ) -> Dict[str, Any]:
         """Unified AI response generation with error handling"""
+        call_id = None
         try:
             await gemini_rate_limiter.acquire()
             
-            response_text = await self.vertex_adapter.generate_content(
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name=f"conversation_{action_type}",
                 prompt=prompt,
-                generation_config=self._get_generation_config(prompt_type)
+                learner_session_id=str(learner_session_id) if learner_session_id else None,
+                additional_context={
+                    "prompt_type": prompt_type,
+                    "action_type": action_type,
+                    "generation_config": self._get_generation_config(prompt_type)
+                }
             )
             
-            logger.info(f"🤖 CONVERSATION [{action_type.upper()}] Generated response")
+            response_text = await self.vertex_adapter.generate_content(
+                prompt=prompt,
+                generation_config=self._get_generation_config(prompt_type),
+                learner_session_id=str(learner_session_id) if learner_session_id else None
+            )
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name=f"conversation_{action_type}",
+                response=response_text,
+                learner_session_id=str(learner_session_id) if learner_session_id else None,
+                additional_metadata={
+                    "parsed_successfully": True,
+                    "action_type": action_type
+                }
+            )
+            
+            logger.info(f"🤖 CONVERSATION [{action_type.upper()}] Generated response - Call ID: {call_id}")
             
             response_data = self._parse_json_response(response_text, action_type)
             
@@ -150,6 +178,15 @@ class ConversationAdapter(ConversationServicePort):
             }
             
         except Exception as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name=f"conversation_{action_type}",
+                    error=e,
+                    learner_session_id=str(learner_session_id) if learner_session_id else None
+                )
+            
             logger.error(f"❌ CONVERSATION [{action_type.upper()}] Failed to generate response: {str(e)}")
             fallback = self._get_fallback_response(action_type)
             fallback["metadata"] = {"error": str(e), "fallback": True}
@@ -178,7 +215,8 @@ class ConversationAdapter(ConversationServicePort):
             response_result = await self._generate_ai_response(
                 prompt=prompt,
                 prompt_type="chat",
-                action_type="chat"
+                action_type="chat",
+                learner_session_id=learner_session_id
             )
             
             # Extract response data and handle profile enrichment
@@ -188,7 +226,8 @@ class ConversationAdapter(ConversationServicePort):
                 try:
                     full_response = json.loads(await self.vertex_adapter.generate_content(
                         prompt=prompt,
-                        generation_config=self._get_generation_config("chat")
+                        generation_config=self._get_generation_config("chat"),
+                        learner_session_id=str(learner_session_id) if learner_session_id else None
                     ))
                     response_data["learner_profile"] = full_response.get("learner_profile", {})
                 except:
@@ -284,7 +323,8 @@ class ConversationAdapter(ConversationServicePort):
         return await self._generate_ai_response(
             prompt=prompt,
             prompt_type="commentary",
-            action_type="comment"
+            action_type="comment",
+            learner_session_id=None  # No learner session for slide comments
         )
     
     async def generate_quiz(
@@ -294,6 +334,7 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Generate a quiz based on the current slide to evaluate comprehension"""
+        call_id = None
         try:
             await gemini_rate_limiter.acquire()
             
@@ -311,9 +352,31 @@ class ConversationAdapter(ConversationServicePort):
                 "response_mime_type": "application/json"
             }
             
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name="conversation_quiz",
+                prompt=prompt,
+                additional_context={
+                    "slide_title": slide_title,
+                    "generation_config": generation_config,
+                    "action_type": "quiz_generation"
+                }
+            )
+            
             response_text = await self.vertex_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
+            )
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="conversation_quiz",
+                response=response_text,
+                additional_metadata={
+                    "action_type": "quiz_generation",
+                    "slide_title": slide_title
+                }
             )
             
             logger.info(f"🤖 CONVERSATION [QUIZ] Generated quiz for slide comprehension")
@@ -342,6 +405,14 @@ class ConversationAdapter(ConversationServicePort):
             }
             
         except Exception as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="conversation_quiz",
+                    error=e
+                )
+            
             logger.error(f"❌ CONVERSATION [QUIZ] Failed to generate quiz: {str(e)}")
             return {
                 "response": "Let me test your understanding: What are the most important points from this slide? Try explaining them in your own words.",
@@ -358,6 +429,7 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Provide practical examples to illustrate the slide content"""
+        call_id = None
         try:
             await gemini_rate_limiter.acquire()
             
@@ -375,9 +447,31 @@ class ConversationAdapter(ConversationServicePort):
                 "response_mime_type": "application/json"
             }
             
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name="conversation_examples",
+                prompt=prompt,
+                additional_context={
+                    "slide_title": slide_title,
+                    "generation_config": generation_config,
+                    "action_type": "examples_generation"
+                }
+            )
+            
             response_text = await self.vertex_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
+            )
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="conversation_examples",
+                response=response_text,
+                additional_metadata={
+                    "action_type": "examples_generation",
+                    "slide_title": slide_title
+                }
             )
             
             logger.info(f"🤖 CONVERSATION [EXAMPLES] Generated practical examples")
@@ -406,6 +500,14 @@ class ConversationAdapter(ConversationServicePort):
             }
             
         except Exception as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="conversation_examples",
+                    error=e
+                )
+            
             logger.error(f"❌ CONVERSATION [EXAMPLES] Failed to provide examples: {str(e)}")
             return {
                 "response": "Let me give you some examples: Think about how these concepts apply in your daily work or professional context.",
@@ -422,6 +524,7 @@ class ConversationAdapter(ConversationServicePort):
         learner_profile: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Extract the 1-3 most important points to remember from the slide"""
+        call_id = None
         try:
             await gemini_rate_limiter.acquire()
             
@@ -439,9 +542,31 @@ class ConversationAdapter(ConversationServicePort):
                 "response_mime_type": "application/json"
             }
             
+            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            call_id = gemini_call_logger.log_input(
+                service_name="conversation_key_points",
+                prompt=prompt,
+                additional_context={
+                    "slide_title": slide_title,
+                    "generation_config": generation_config,
+                    "action_type": "key_points_extraction"
+                }
+            )
+            
             response_text = await self.vertex_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
+            )
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="conversation_key_points",
+                response=response_text,
+                additional_metadata={
+                    "action_type": "key_points_extraction",
+                    "slide_title": slide_title
+                }
             )
             
             logger.info(f"🤖 CONVERSATION [KEY_POINTS] Generated key points to remember")
@@ -470,6 +595,14 @@ class ConversationAdapter(ConversationServicePort):
             }
             
         except Exception as e:
+            # 🔍 NOUVEAU: Logger centralisé - ERROR
+            if call_id:
+                gemini_call_logger.log_error(
+                    call_id=call_id,
+                    service_name="conversation_key_points",
+                    error=e
+                )
+            
             logger.error(f"❌ CONVERSATION [KEY_POINTS] Failed to extract key points: {str(e)}")
             return {
                 "response": "The most important takeaway from this slide is understanding the core concept and how it applies to your learning goals.",
