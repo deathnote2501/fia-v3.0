@@ -1211,7 +1211,7 @@ export class ChatInterface {
             onStatusChange: (message, type) => {
                 // Update button appearance based on status
                 if (liveApiBtn && liveApiIcon && liveApiText) {
-                    liveApiBtn.className = 'btn btn-success btn-sm';
+                    liveApiBtn.className = 'btn btn-success';
                     
                     switch (type) {
                         case 'connecting':
@@ -1227,11 +1227,11 @@ export class ChatInterface {
                         case 'recording':
                             liveApiBtn.classList.add('recording');
                             liveApiIcon.className = 'bi bi-mic-fill me-1';
-                            liveApiText.textContent = 'Recording';
+                            liveApiText.textContent = 'Stop';
                             break;
                         case 'error':
                             liveApiBtn.classList.remove('connecting', 'connected', 'recording');
-                            liveApiBtn.className = 'btn btn-danger btn-sm';
+                            liveApiBtn.className = 'btn btn-danger';
                             liveApiIcon.className = 'bi bi-exclamation-triangle me-1';
                             liveApiText.textContent = 'Error';
                             break;
@@ -1239,7 +1239,7 @@ export class ChatInterface {
                         default:
                             liveApiBtn.classList.remove('connecting', 'connected', 'recording');
                             liveApiIcon.className = 'bi bi-soundwave me-1';
-                            liveApiText.textContent = 'Live API';
+                            liveApiText.textContent = 'Vocal';
                             break;
                     }
                 }
