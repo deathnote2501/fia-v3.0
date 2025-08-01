@@ -14,16 +14,20 @@
  * - Typing animations and visual feedback
  * - Voice fallback for unsupported browsers
  * - Smart button state management (mic/recording/send modes)
+ * - Gemini Live API integration for real-time voice conversations
  * 
  * Dependencies:
  * - TTSManager: Text-to-speech functionality
  * - VoiceChatHandler: Voice recognition and speech processing
+ * - GeminiLiveAPI: Real-time voice conversation with Gemini
  * - LearnerSession: User session data for context
  * - SessionData: Training session information
  * 
  * @author FIA v3.0 Platform
  * @version 1.0.0
  */
+
+import { GeminiLiveAPI } from './gemini-live-api.js';
 
 export class ChatInterface {
     /**
@@ -49,7 +53,11 @@ export class ChatInterface {
         this.resetSilenceTimeout = null;
         this.clearSilenceTimeout = null;
         
-        console.log('💬 [CHAT_INTERFACE] Initialized with dependencies');
+        // Gemini Live API
+        this.geminiLiveAPI = new GeminiLiveAPI();
+        this.isLiveAPIActive = false;
+        
+        console.log('💬 [CHAT_INTERFACE] Initialized with dependencies and Live API');
     }
     
     /**
@@ -83,6 +91,9 @@ export class ChatInterface {
         
         // Setup TTS functionality
         this.setupTTSFunctionality();
+        
+        // Setup Gemini Live API functionality
+        this.setupLiveAPIFunctionality();
         
         // Setup fallback for unsupported browsers
         this.setupVoiceFallback(sendBtnFallback, chatInput);
@@ -1177,6 +1188,99 @@ export class ChatInterface {
                 }
             }
         });
+    }
+    
+    /**
+     * Setup Gemini Live API functionality
+     */
+    setupLiveAPIFunctionality() {
+        const liveApiBtn = document.getElementById('live-api-btn');
+        const liveApiIcon = document.getElementById('live-api-icon');
+        const liveApiText = document.getElementById('live-api-text');
+        
+        if (!liveApiBtn || !this.geminiLiveAPI.isSupported()) {
+            if (liveApiBtn) {
+                liveApiBtn.style.display = 'none';
+            }
+            console.log('🎙️ [LIVE-API] Live API not supported or button not found');
+            return;
+        }
+        
+        // Configure callbacks pour intégration FIA
+        this.geminiLiveAPI.setCallbacks({
+            onStatusChange: (message, type) => {
+                // Update button appearance based on status
+                if (liveApiBtn && liveApiIcon && liveApiText) {
+                    liveApiBtn.className = 'btn btn-success btn-sm';
+                    
+                    switch (type) {
+                        case 'connecting':
+                            liveApiBtn.classList.add('connecting');
+                            liveApiIcon.className = 'bi bi-hourglass-split me-1';
+                            liveApiText.textContent = 'Connecting...';
+                            break;
+                        case 'connected':
+                            liveApiBtn.classList.add('connected');
+                            liveApiIcon.className = 'bi bi-soundwave me-1';
+                            liveApiText.textContent = 'Connected';
+                            break;
+                        case 'recording':
+                            liveApiBtn.classList.add('recording');
+                            liveApiIcon.className = 'bi bi-mic-fill me-1';
+                            liveApiText.textContent = 'Recording';
+                            break;
+                        case 'error':
+                            liveApiBtn.classList.remove('connecting', 'connected', 'recording');
+                            liveApiBtn.className = 'btn btn-danger btn-sm';
+                            liveApiIcon.className = 'bi bi-exclamation-triangle me-1';
+                            liveApiText.textContent = 'Error';
+                            break;
+                        case 'disconnected':
+                        default:
+                            liveApiBtn.classList.remove('connecting', 'connected', 'recording');
+                            liveApiIcon.className = 'bi bi-soundwave me-1';
+                            liveApiText.textContent = 'Live API';
+                            break;
+                    }
+                }
+                
+                console.log(`🎙️ [LIVE-API] Status: ${message} (${type})`);
+            },
+            
+            onTranscriptUpdate: (transcript) => {
+                console.log(`🎙️ [LIVE-API] Transcript: ${transcript}`);
+                // Ne pas afficher dans le chat, juste logger
+            },
+            
+            onMessageReceived: (message, isUser) => {
+                console.log(`🎙️ [LIVE-API] Message from ${isUser ? 'User' : 'Assistant'}: ${message}`);
+                // Ne pas afficher dans le chat, juste logger
+            }
+        });
+        
+        // Setup button click handler
+        liveApiBtn.addEventListener('click', async () => {
+            if (this.isLiveAPIActive) {
+                // Stop Live API conversation
+                this.geminiLiveAPI.stop();
+                this.isLiveAPIActive = false;
+                liveApiBtn.disabled = false;
+            } else {
+                // Start Live API conversation
+                try {
+                    liveApiBtn.disabled = true;
+                    await this.geminiLiveAPI.start();
+                    this.isLiveAPIActive = true;
+                    liveApiBtn.disabled = false;
+                } catch (error) {
+                    console.error('❌ [LIVE-API] Failed to start Live API:', error);
+                    liveApiBtn.disabled = false;
+                    this.isLiveAPIActive = false;
+                }
+            }
+        });
+        
+        console.log('✅ [LIVE-API] Live API functionality initialized');
     }
     
     /**

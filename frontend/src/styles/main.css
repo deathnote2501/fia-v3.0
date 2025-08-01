@@ -205,8 +205,6 @@
 .chat-actions {
     padding: 0.75rem 1rem;
     background: white;
-    border-top: 1px solid #dee2e6;
-    border-bottom: 1px solid #dee2e6;
 }
 
 /* TTS Controls (dans le chat panel) */
@@ -270,7 +268,6 @@
     align-items: center;
     background: transparent;
     border-radius: 0.375rem;
-    border: 1px solid #dee2e6;
     padding: 3px;  /* Padding minimal autour du champ */
     margin: 0.25rem 0;  /* 5px entre toggle et champ, 5px entre champ et bas */
 }
@@ -312,6 +309,47 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Live API Controls */
+.live-api-toggle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#live-api-btn {
+    border-radius: 20px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+#live-api-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+#live-api-btn.recording {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+    animation: pulse-recording 1.5s infinite;
+}
+
+#live-api-btn.connecting {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+@keyframes pulse-recording {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
 }
 
 .tts-switch {
@@ -416,6 +454,7 @@ input:checked + .tts-slider:before {
 .voice-chat-btn.state-mic {
     background-color: #0d6efd;
     color: white;
+    margin-left: 0.5rem;
 }
 
 .voice-chat-btn.state-mic:hover {
