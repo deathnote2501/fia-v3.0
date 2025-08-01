@@ -16,24 +16,22 @@ export class GeminiLiveAPI {
         this.API_KEY = null; // Will be loaded from environment
         this.MODEL = "gemini-2.5-flash-preview-native-audio-dialog"; // modèle audio natif requis
         
-        // Lecture (priorité stabilité/fluide)
         this.AUDIO_CONFIG = {
-            bufferSize: 4096,            // ~0.17s @24kHz → lecture régulière
-            initialBufferTime: 0.25,     // 250ms avant 1re lecture
-            scheduleAheadTime: 0.45,     // planif ~450ms à l'avance
-            scheduleMargin: 80,          // marge de scheduling (ms)
-            sentenceTimeout: 1100,       // 1.1s de silence → fin de phrase
-            fadeTime: 0.006,             // 6ms, borné à 25% du buffer
-            minCoalesceSec: 0.12,        // coalescer ~120ms min
-            inputSampleRate: 16000,      // input → Gemini
-            outputSampleRate: 24000      // output audio Gemini
+            bufferSize: 4096,
+            initialBufferTime: 0.4,      // ✓ Plus de buffer initial
+            scheduleAheadTime: 0.6,      // ✓ Plus de planification
+            scheduleMargin: 120,         // ✓ Plus de marge
+            sentenceTimeout: 800,        // ✓ Réduction timeout
+            fadeTime: 0.015,             // ✓ Transitions plus douces
+            minCoalesceSec: 0.2,         // ✓ Moins de fragmentation
+            inputSampleRate: 16000,
+            outputSampleRate: 24000
         };
-        
-        // Capture PCM (micro)
+
         this.PCM_CONFIG = {
-            captureRate: 48000,          // selon device
-            sendInterval: 500,           // envoi toutes les 500ms
-            bufferSize: 4096             // ScriptProcessor buffer
+            captureRate: 48000,
+            sendInterval: 300,           // ✓ Envoi plus fréquent
+            bufferSize: 4096
         };
         
         // =============================================================================

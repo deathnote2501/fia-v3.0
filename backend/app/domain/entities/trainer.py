@@ -19,6 +19,7 @@ class Trainer:
         trainer_id: Optional[UUID] = None,
         is_active: bool = True,
         is_verified: bool = False,
+        is_superuser: bool = False,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None
     ):
@@ -28,6 +29,7 @@ class Trainer:
         self.last_name = last_name
         self.is_active = is_active
         self.is_verified = is_verified
+        self.is_superuser = is_superuser
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at or datetime.utcnow()
         
@@ -72,6 +74,20 @@ class Trainer:
         """Business logic: Verify trainer account"""
         self.is_verified = True
         self.updated_at = datetime.utcnow()
+    
+    def grant_admin_privileges(self) -> None:
+        """Business logic: Grant administrator privileges"""
+        self.is_superuser = True
+        self.updated_at = datetime.utcnow()
+    
+    def revoke_admin_privileges(self) -> None:
+        """Business logic: Revoke administrator privileges"""
+        self.is_superuser = False
+        self.updated_at = datetime.utcnow()
+    
+    def has_admin_privileges(self) -> bool:
+        """Business logic: Check if trainer has admin privileges"""
+        return self.is_superuser and self.is_active
     
     def __str__(self) -> str:
         return f"Trainer({self.email}, {self.get_full_name()})"

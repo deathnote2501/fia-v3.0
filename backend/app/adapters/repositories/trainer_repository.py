@@ -54,6 +54,7 @@ class TrainerRepository(TrainerRepositoryPort):
         trainer_model.last_name = trainer.last_name
         trainer_model.is_active = trainer.is_active
         trainer_model.is_verified = trainer.is_verified
+        trainer_model.is_superuser = trainer.is_superuser
         trainer_model.updated_at = trainer.updated_at
         
         await self.session.commit()
@@ -83,6 +84,25 @@ class TrainerRepository(TrainerRepositoryPort):
         trainer_models = result.scalars().all()
         return [self._to_entity(model) for model in trainer_models]
     
+    async def get_all_for_admin_overview(self) -> List[Trainer]:
+        """Get all trainers for admin overview (no pagination)"""
+        result = await self.session.execute(
+            select(TrainerModel)
+            .order_by(TrainerModel.created_at.desc())
+        )
+        trainer_models = result.scalars().all()
+        return [self._to_entity(model) for model in trainer_models]
+    
+    async def get_superusers(self) -> List[Trainer]:
+        """Get all superuser trainers"""
+        result = await self.session.execute(
+            select(TrainerModel)
+            .where(TrainerModel.is_superuser == True)
+            .order_by(TrainerModel.created_at.desc())
+        )
+        trainer_models = result.scalars().all()
+        return [self._to_entity(model) for model in trainer_models]
+    
     def _to_entity(self, model: TrainerModel) -> Trainer:
         """Convert SQLAlchemy model to domain entity"""
         return Trainer(
@@ -92,6 +112,7 @@ class TrainerRepository(TrainerRepositoryPort):
             trainer_id=model.id,
             is_active=model.is_active,
             is_verified=model.is_verified,
+            is_superuser=model.is_superuser or False,
             created_at=model.created_at,
             updated_at=model.updated_at
         )
@@ -105,6 +126,7 @@ class TrainerRepository(TrainerRepositoryPort):
             last_name=entity.last_name,
             is_active=entity.is_active,
             is_verified=entity.is_verified,
+            is_superuser=entity.is_superuser,
             created_at=entity.created_at,
             updated_at=entity.updated_at
         )

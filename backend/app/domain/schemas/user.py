@@ -14,6 +14,7 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
     """Schema for reading user data"""
     first_name: str
     last_name: str
+    is_superuser: bool
     created_at: datetime
     updated_at: datetime
 

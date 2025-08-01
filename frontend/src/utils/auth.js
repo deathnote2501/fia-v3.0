@@ -246,6 +246,37 @@ class AuthManager {
             };
         }
     }
+
+    /**
+     * Check if current user has admin privileges
+     * @returns {boolean}
+     */
+    isSuperUser() {
+        const user = this.getUser();
+        return user && user.is_superuser === true;
+    }
+
+    /**
+     * Check if current user has admin privileges and is authenticated
+     * @returns {boolean}
+     */
+    hasAdminAccess() {
+        return this.isAuthenticated() && this.isSuperUser();
+    }
+
+    /**
+     * Redirect if user doesn't have admin access
+     * @param {string} redirectUrl 
+     * @returns {boolean}
+     */
+    requireAdminAccess(redirectUrl = '/frontend/public/trainer.html') {
+        if (!this.hasAdminAccess()) {
+            console.warn('Access denied: Admin privileges required');
+            window.location.href = redirectUrl;
+            return false;
+        }
+        return true;
+    }
 }
 
 // Create global auth manager instance
