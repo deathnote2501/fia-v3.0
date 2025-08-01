@@ -21,7 +21,7 @@
     <!-- Container 16:9 centré avec cadre gris -->
     <div class="slide-container-16-9">
         
-        <!-- Header: Progress Bar (hauteur fixe) -->
+        <!-- 1. HEADER: Progress Bar (toute la largeur) -->
         <div class="slide-header">
             <div id="progress-breadcrumb" class="progress-breadcrumb">
                 <span class="progress-text">Training Plan</span>
@@ -36,36 +36,46 @@
             </div>
         </div>
         
-        <!-- Body: Layout 25% Chat + 75% Content (flexible) -->
-        <div class="slide-body">
+        <!-- 2. CHAT: Panel gauche 25% (messages + actions + TTS) -->
+        <div class="slide-chat">
+            <!-- Chat Messages Area (scrollable) -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be added dynamically here -->
+            </div>
             
-            <!-- Left Panel: Chat IA (25%) -->
-            <div class="slide-chat">
-                <!-- Chat Messages Area (scrollable) -->
-                <div class="chat-messages" id="chat-messages">
-                    <!-- Messages will be added dynamically here -->
+            <!-- Action Buttons -->
+            <div class="chat-actions">
+                <div class="btn-group w-100" role="group" aria-label="Chat actions">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn">
+                        <i class="bi bi-chat-text me-1"></i>Comment
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn">
+                        <i class="bi bi-question-circle me-1"></i>Quiz
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn">
+                        <i class="bi bi-lightbulb me-1"></i>Examples
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn">
+                        <i class="bi bi-star me-1"></i>Key Points
+                    </button>
                 </div>
-                
-                <!-- Action Buttons -->
-                <div class="chat-actions">
-                    <div class="btn-group w-100" role="group" aria-label="Chat actions">
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn">
-                            <i class="bi bi-chat-text me-1"></i>Comment
-                        </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn">
-                            <i class="bi bi-question-circle me-1"></i>Quiz
-                        </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn">
-                            <i class="bi bi-lightbulb me-1"></i>Examples
-                        </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn">
-                            <i class="bi bi-star me-1"></i>Key Points
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- TTS Controls (above chat input) -->
-                <div class="tts-controls mb-2">
+            </div>
+            
+        </div>
+        
+        <!-- 3. CONTENT: Panel droit 75% (contenu slides) -->
+        <div class="slide-content">
+            <div id="main-content" class="slide-content-area">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+        
+        <!-- 4. FOOTER: Barre unifiée (chat input 25% + navigation 75%) -->
+        <div class="slide-footer">
+            <!-- Chat Input Section (25% gauche) -->
+            <div class="footer-chat-section">
+                <!-- TTS Controls (au-dessus du champ de saisie) -->
+                <div class="tts-controls">
                     <div class="tts-toggle-container">
                         <label class="tts-switch">
                             <input type="checkbox" id="tts-toggle">
@@ -75,70 +85,55 @@
                     </div>
                 </div>
                 
-                <!-- Chat Input (fixed at bottom) -->
-                <div class="chat-input">
-                    <div class="input-group">
-                        <textarea class="form-control" id="chat-input" 
-                                  placeholder="Ask your AI trainer..." maxlength="500"
-                                  rows="1" style="resize: none; overflow: hidden;"></textarea>
-                        
-                        <!-- Voice Chat Button (adaptive) -->
-                        <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
-                                title="Click to start voice recording">
-                            <i class="bi bi-mic" id="voice-btn-icon"></i>
-                        </button>
-                        
-                        <!-- Fallback text for unsupported browsers -->
-                        <span class="voice-not-supported">
-                            <button class="btn btn-primary" type="button" id="send-message-btn-fallback">
-                                <i class="bi bi-send"></i>
-                            </button>
-                        </span>
-                    </div>
+                <!-- Chat Input avec bouton voix -->
+                <div class="chat-input-wrapper">
+                    <textarea class="form-control" id="chat-input" 
+                              placeholder="Ask your AI trainer..." maxlength="500"
+                              rows="1" style="resize: none; overflow: hidden;"></textarea>
                     
-                    <!-- Voice status indicator -->
-                    <div class="chat-status" id="voice-status"></div>
-                </div>
-            </div>
-            
-            <!-- Right Panel: Content Area (75%) -->
-            <div class="slide-content">
-                
-                <!-- Content Area (scrollable) -->
-                <div class="content-area">
-                    <div id="main-content" class="slide-content-area">
-                        <!-- Content will be loaded dynamically -->
-                    </div>
-                </div>
-                
-                <!-- Navigation Bar (fixed at bottom) -->
-                <div class="content-nav">
-                    <button id="new-previous-btn" class="btn btn-primary" disabled>
-                        <i class="bi bi-chevron-left me-1"></i>Previous
+                    <!-- Voice Chat Button (adaptive) -->
+                    <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
+                            title="Click to start voice recording">
+                        <i class="bi bi-mic" id="voice-btn-icon"></i>
                     </button>
                     
-                    <div class="interaction-buttons">
-                        <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
-                            <i class="bi bi-arrows-collapse me-1"></i>Simplify
+                    <!-- Fallback text for unsupported browsers -->
+                    <span class="voice-not-supported">
+                        <button class="btn btn-primary" type="button" id="send-message-btn-fallback">
+                            <i class="bi bi-send"></i>
                         </button>
-                        <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
-                            <i class="bi bi-arrows-expand me-1"></i>Deepen
-                        </button>
-                        <button id="generate-image-btn" class="btn btn-outline-primary me-2" style="display: none;">
-                            <i class="bi bi-image me-1"></i>Image
-                        </button>
-                        <button id="generate-chart-btn" class="btn btn-outline-primary">
-                            <i class="bi bi-graph-up me-1"></i>Chart
-                        </button>
-                    </div>
-                    
-                    <button id="new-next-btn" class="btn btn-primary">
-                        Next<i class="bi bi-chevron-right ms-1"></i>
+                    </span>
+                </div>
+                
+                <!-- Voice status indicator -->
+                <div class="chat-status" id="voice-status"></div>
+            </div>
+            
+            <!-- Navigation Section (75% droite) -->
+            <div class="footer-nav-section">
+                <button id="new-previous-btn" class="btn btn-primary" disabled>
+                    <i class="bi bi-chevron-left me-1"></i>Previous
+                </button>
+                
+                <div class="interaction-buttons">
+                    <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-arrows-collapse me-1"></i>Simplify
+                    </button>
+                    <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-arrows-expand me-1"></i>Deepen
+                    </button>
+                    <button id="generate-image-btn" class="btn btn-outline-primary me-2" style="display: none;">
+                        <i class="bi bi-image me-1"></i>Image
+                    </button>
+                    <button id="generate-chart-btn" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up me-1"></i>Chart
                     </button>
                 </div>
                 
+                <button id="new-next-btn" class="btn btn-primary">
+                    Next<i class="bi bi-chevron-right ms-1"></i>
+                </button>
             </div>
-            
         </div>
         
     </div>
