@@ -37,6 +37,22 @@
     font-weight: normal !important;
 }
 
+/* Animation légère pour les slides */
+@keyframes slideInFade {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slide-animate {
+    animation: slideInFade 0.6s ease-out;
+}
+
 /* KISS: Responsive markdown styling with clamp() */
 .slide-content h1, .slide-content h2, .slide-content h3 {
     color: #0d6efd;
@@ -457,6 +473,7 @@ input:checked + .tts-slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-left: 0.5rem;
 }
 
 /* Microphone state (default - blue) */

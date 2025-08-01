@@ -159,6 +159,16 @@ export class SlideContentManager {
                     </div>
                 </div>
             `;
+            
+            // Ajouter l'animation slide-in légère
+            const slideContentDiv = this.container.querySelector('#slide-content');
+            if (slideContentDiv) {
+                slideContentDiv.classList.add('slide-animate');
+                // Nettoyer la classe après l'animation pour permettre la répétition
+                setTimeout(() => {
+                    slideContentDiv.classList.remove('slide-animate');
+                }, 600); // Durée de l'animation CSS
+            }
         }
         
         return { title, content, htmlTransformed };

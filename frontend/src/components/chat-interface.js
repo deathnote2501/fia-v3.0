@@ -245,11 +245,15 @@ export class ChatInterface {
         const updateButtonState = () => {
             const hasText = chatInput.value.trim().length > 0;
             
+            console.log('🔄 [DEBUG] updateButtonState called - hasText:', hasText, 'currentState:', this.currentButtonState);
+            
             if (hasText && this.currentButtonState !== 'send') {
                 // Switch to send mode
+                console.log('🔄 [DEBUG] Switching to SEND mode');
                 this.setButtonState('send', voiceChatBtn, voiceBtnIcon);
             } else if (!hasText && this.currentButtonState !== 'mic' && this.currentButtonState !== 'recording') {
                 // Switch back to mic mode
+                console.log('🔄 [DEBUG] Switching to MIC mode');
                 this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
             }
         };
@@ -265,11 +269,11 @@ export class ChatInterface {
             }
         });
         
+        // Initialize button state based on current input
+        updateButtonState();
+        
         // Setup voice recording press & hold
         this.setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
-        
-        // Initial state check
-        updateButtonState();
     }
     
     /**
@@ -319,7 +323,19 @@ export class ChatInterface {
      */
     setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
         if (!this.voiceHandler || !this.voiceHandler.isApiSupported()) {
-            console.log('🎤 [VOICE] Voice recording setup skipped - not supported');
+            console.log('🎤 [VOICE] Voice recording not supported, setting up send-only button');
+            
+            // Même sans support vocal, on doit configurer le bouton pour l'envoi de messages
+            voiceChatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔍 [DEBUG] Button clicked (no voice support)! Current state:', this.currentButtonState);
+                
+                if (this.currentButtonState === 'send') {
+                    console.log('✅ [DEBUG] Sending message via button click (no voice support)');
+                    this.sendChatMessage(chatInput.value.trim());
+                }
+            });
+            
             return;
         }
         
@@ -331,21 +347,29 @@ export class ChatInterface {
         const toggleRecording = async (e) => {
             e.preventDefault();
             
+            console.log('🔍 [DEBUG] Button clicked! Current state:', this.currentButtonState);
+            console.log('🔍 [DEBUG] Chat input value:', chatInput.value);
+            console.log('🔍 [DEBUG] Input has text:', chatInput.value.trim().length > 0);
+            
             // If in send mode, send the message
             if (this.currentButtonState === 'send') {
+                console.log('✅ [DEBUG] Sending message via button click');
                 this.sendChatMessage(chatInput.value.trim());
                 return;
             }
             
             // If not in mic mode, ignore
             if (this.currentButtonState !== 'mic' && this.currentButtonState !== 'recording') {
+                console.log('🔍 [DEBUG] Ignoring click - not in mic/recording mode');
                 return;
             }
             
             if (!isRecording) {
+                console.log('🎤 [DEBUG] Starting voice recording');
                 await this.startVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
                 isRecording = true;
             } else {
+                console.log('🎤 [DEBUG] Stopping voice recording');
                 await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
                 isRecording = false;
             }
