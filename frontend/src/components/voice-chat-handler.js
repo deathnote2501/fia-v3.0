@@ -4,7 +4,7 @@
  */
 
 export class VoiceChatHandler {
-    constructor(language = 'fr-FR') {
+    constructor(language = 'fr') {
         this.language = language;
         this.recognition = null;
         this.isSupported = this.checkSupport();
@@ -85,13 +85,12 @@ export class VoiceChatHandler {
             this.recognition = new SpeechRecognition();
             
             // Configure recognition settings
-            this.recognition.continuous = true;           // Keep listening continuously
-            this.recognition.interimResults = true;       // Get partial results
-            this.recognition.maxAlternatives = 1;         // Only best result
+            this.recognition.continuous = false;          // Single recognition session
+            this.recognition.interimResults = false;      // Final results only
+            this.recognition.maxAlternatives = 3;         // Multiple alternatives
             this.recognition.lang = this.language;        // Set language
             
-            // Configure timeout for silence (10 seconds)
-            this.recognition.speechTimeoutLength = 10000;
+            // Remove custom timeout - use browser default
             
             // Setup event handlers
             this.setupRecognitionEvents();

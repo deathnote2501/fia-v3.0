@@ -486,9 +486,8 @@ class SlideGenerationServiceOrchestrator:
         # Récupérer les informations de breadcrumb
         breadcrumb_info = await slide_repo.get_slide_breadcrumb(slide.id)
         
-        # Calculer les informations de navigation
-        has_previous = await slide_repo.get_previous_slide(slide.id, training_plan_id) is not None
-        has_next = await slide_repo.get_next_slide(slide.id, training_plan_id) is not None
+        # Récupérer les informations de position complètes incluant total_slides
+        position_info = await slide_repo.get_position_info(slide.id, training_plan_id)
         
         return {
             "slide_id": str(slide.id),
@@ -499,10 +498,7 @@ class SlideGenerationServiceOrchestrator:
             "generation_duration": round(duration, 2),
             "breadcrumb": breadcrumb_info,
             "slide_number": await slide_repo.get_slide_global_number(slide.id, training_plan_id),
-            "position": {
-                "has_previous": has_previous,
-                "has_next": has_next
-            }
+            "position": position_info
         }
     
     def _fix_corrupted_content(self, content: str) -> str:

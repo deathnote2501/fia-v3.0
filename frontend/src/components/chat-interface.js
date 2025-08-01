@@ -179,7 +179,33 @@ export class ChatInterface {
     }
     
     /**
-     * Initialize voice handler with learner's language
+     * Initialize voice handler synchronously (awaitable)
+     */
+    async initializeVoiceHandlerSync() {
+        try {
+            const { VoiceChatHandler } = await import('./voice-chat-handler.js');
+            
+            // Map learner language to speech recognition language codes
+            const languageMap = {
+                'fr': 'fr-FR',
+                'en': 'en-US', 
+                'es': 'es-ES',
+                'de': 'de-DE'
+            };
+            
+            const learnerLang = this.learnerSession?.language || 'fr';
+            const speechLang = languageMap[learnerLang] || 'fr-FR';
+            
+            this.voiceHandler = new VoiceChatHandler(speechLang);
+            
+            console.log('✅ [VOICE] Voice handler initialized synchronously with language:', speechLang);
+        } catch (error) {
+            console.error('❌ [VOICE] Failed to load VoiceChatHandler synchronously:', error);
+        }
+    }
+    
+    /**
+     * Initialize voice handler with learner's language (async version)
      */
     initializeVoiceHandler() {
         // Import VoiceChatHandler dynamically
@@ -221,6 +247,43 @@ export class ChatInterface {
             fallbackBtn.addEventListener('click', () => {
                 this.sendChatMessage(chatInput.value.trim());
             });
+        }
+    }
+    
+    /**
+     * Show message when voice recording is not supported
+     */
+    showVoiceNotSupportedMessage() {
+        // Créer un message temporaire dans le chat
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            const messageHtml = `
+                <div class="p-3">
+                    <div class="message system mb-3">
+                        <div class="d-flex align-items-start">
+                            <div class="message-content">
+                                <div class="bg-warning-subtle text-warning-emphasis p-2 rounded">
+                                    <p class="mb-0 small">
+                                        <i class="bi bi-mic-mute me-2"></i>
+                                        Voice recording is not supported in your browser. Please type your message instead.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Supprimer le message après 3 secondes
+            setTimeout(() => {
+                const systemMessage = chatMessages.querySelector('.message.system:last-child');
+                if (systemMessage) {
+                    systemMessage.remove();
+                }
+            }, 3000);
         }
     }
     
@@ -272,7 +335,7 @@ export class ChatInterface {
         // Initialize button state based on current input
         updateButtonState();
         
-        // Setup voice recording press & hold
+        // Setup voice recording press & hold (async)
         this.setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
     }
     
@@ -321,11 +384,17 @@ export class ChatInterface {
      * @param {HTMLElement} voiceBtnIcon - Voice button icon
      * @param {HTMLTextAreaElement} chatInput - Chat input element
      */
-    setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
+    async setupVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput) {
+        // Si voiceHandler n'est pas encore chargé, essayer de l'initialiser
+        if (!this.voiceHandler) {
+            console.log('🎤 [VOICE] VoiceHandler not loaded yet, attempting to initialize...');
+            await this.initializeVoiceHandlerSync();
+        }
+        
         if (!this.voiceHandler || !this.voiceHandler.isApiSupported()) {
             console.log('🎤 [VOICE] Voice recording not supported, setting up send-only button');
             
-            // Même sans support vocal, on doit configurer le bouton pour l'envoi de messages
+            // Même sans support vocal, on doit configurer le bouton pour l'envoi de messages et la voix fallback
             voiceChatBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('🔍 [DEBUG] Button clicked (no voice support)! Current state:', this.currentButtonState);
@@ -333,6 +402,10 @@ export class ChatInterface {
                 if (this.currentButtonState === 'send') {
                     console.log('✅ [DEBUG] Sending message via button click (no voice support)');
                     this.sendChatMessage(chatInput.value.trim());
+                } else if (this.currentButtonState === 'mic') {
+                    console.log('🎤 [DEBUG] Attempting voice recording (fallback mode)');
+                    // Notification utilisateur
+                    this.showVoiceNotSupportedMessage();
                 }
             });
             

@@ -194,6 +194,10 @@ class TrainingSlideRepository:
             "has_next": False
         }
     
+    async def get_position_info(self, slide_id: UUID, training_plan_id: UUID) -> dict:
+        """Alias for get_slide_position to maintain compatibility"""
+        return await self.get_slide_position(slide_id, training_plan_id)
+    
     async def create_slide(self, training_slide: TrainingSlide) -> TrainingSlideModel:
         """Create a new training slide"""
         if not self.session:
