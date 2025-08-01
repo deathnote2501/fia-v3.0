@@ -71,17 +71,17 @@ class ChatMessageRepository(ChatMessageRepositoryPort):
             id=chat_message.id,
             learner_session_id=chat_message.learner_session_id,
             message=chat_message.content,  # Map content to message
-            message_type=chat_message.sender_type,  # Mapping sender_type to message_type
+            message_type=chat_message.message_type,  # Fixed: use message_type from entity
             created_at=chat_message.created_at
         )
     
     def _model_to_entity(self, model: ChatMessageModel) -> ChatMessage:
         """Convert SQLAlchemy model to domain entity"""
         return ChatMessage(
-            id=model.id,
+            chat_message_id=model.id,
             learner_session_id=model.learner_session_id,
-            slide_number=1,  # Default value since not in DB
-            sender_type=model.message_type,  # Mapping message_type to sender_type
+            message_type=model.message_type,  # Fixed: correct mapping
             content=model.message or model.response or "",  # Use message or response
+            slide_number=None,  # Will be added later if needed
             created_at=model.created_at
         )

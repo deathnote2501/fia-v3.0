@@ -20,9 +20,11 @@ from app.domain.schemas.conversation import (
 )
 from pydantic import BaseModel
 from app.domain.services.conversation_service import ConversationService
+from app.domain.services.chat_history_service import ChatHistoryService
 from app.adapters.outbound.conversation_adapter import ConversationAdapter
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
+from app.adapters.repositories.chat_message_repository import ChatMessageRepository
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -75,12 +77,17 @@ async def chat_with_ai_trainer(
                 detail="Learner session not found"
             )
         
-        # Initialize conversation service
+        # Initialize conversation services with chat history
         conversation_adapter = ConversationAdapter()
         conversation_service = ConversationService(conversation_adapter)
+        chat_message_repo = ChatMessageRepository(db)
+        chat_history_service = ChatHistoryService(conversation_service, chat_message_repo)
         
-        # Process chat request
-        chat_response = await conversation_service.handle_learner_chat(chat_request)
+        # Process chat request with automatic history storage
+        chat_response = await chat_history_service.handle_learner_chat_with_history(
+            chat_request=chat_request,
+            conversation_type="general"
+        )
         
         logger.info(f"✅ CONVERSATION [CHAT] Successfully processed chat for learner session {chat_request.context.learner_session_id}")
         return chat_response
@@ -238,6 +245,66 @@ async def get_conversation_metrics(
 # CONTEXTUAL CHAT ACTION ROUTES (public - no auth required)
 # ============================================================================
 
+async def _handle_contextual_action_with_history(
+    request: SlideContextRequest,
+    action_type: str,
+    adapter_method_name: str,
+    db: AsyncSession
+) -> ChatResponse:
+    """
+    Helper function to handle contextual chat actions with automatic history storage
+    
+    Args:
+        request: Slide context request
+        action_type: Type of action (comment, quiz, examples, key-points)
+        adapter_method_name: Name of the method to call on conversation adapter
+        db: Database session
+        
+    Returns:
+        ChatResponse with AI-generated response
+    """
+    # Validate learner session exists
+    learner_repo = LearnerSessionRepository(db)
+    learner_session = await learner_repo.get_by_id(request.learner_session_id)
+    
+    if not learner_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Learner session not found"
+        )
+    
+    # Prepare learner profile
+    learner_profile = {
+        "experience_level": learner_session.experience_level,
+        "learning_style": learner_session.learning_style,
+        "job_position": learner_session.job_position,
+        "activity_sector": learner_session.activity_sector,
+        "country": learner_session.country,
+        "language": learner_session.language
+    }
+    
+    # Initialize services with chat history
+    conversation_adapter = ConversationAdapter()
+    conversation_service = ConversationService(conversation_adapter)
+    chat_message_repo = ChatMessageRepository(db)
+    chat_history_service = ChatHistoryService(conversation_service, chat_message_repo)
+    
+    # Get the specific adapter method
+    adapter_method = getattr(conversation_adapter, adapter_method_name)
+    
+    # Handle contextual action with automatic history storage
+    chat_response = await chat_history_service.handle_contextual_action_with_history(
+        action_type=action_type,
+        slide_content=request.slide_content,
+        slide_title=request.slide_title,
+        learner_session_id=request.learner_session_id,
+        learner_profile=learner_profile,
+        conversation_adapter_method=adapter_method,
+        current_slide_id=None  # Could be extracted from request if available
+    )
+    
+    return chat_response
+
 @router.post("/api/chat/comment", response_model=ChatResponse, status_code=status.HTTP_200_OK)
 async def comment_slide(
     request: SlideContextRequest,
@@ -252,49 +319,15 @@ async def comment_slide(
     try:
         logger.info(f"🤖 CONVERSATION [COMMENT] Generating comment for learner session {request.learner_session_id}")
         
-        # Validate learner session exists
-        learner_repo = LearnerSessionRepository(db)
-        learner_session = await learner_repo.get_by_id(request.learner_session_id)
-        
-        if not learner_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Learner session not found"
-            )
-        
-        # Prepare learner profile
-        learner_profile = {
-            "experience_level": learner_session.experience_level,
-            "learning_style": learner_session.learning_style,
-            "job_position": learner_session.job_position,
-            "activity_sector": learner_session.activity_sector,
-            "country": learner_session.country,
-            "language": learner_session.language
-        }
-        
-        # Initialize conversation adapter directly
-        conversation_adapter = ConversationAdapter()
-        
-        logger.info(f"🔄 CONVERSATION [COMMENT] Calling adapter with slide_title='{request.slide_title}', content_length={len(request.slide_content)}")
-        
-        # Generate slide comment
-        comment_response = await conversation_adapter.comment_slide(
-            slide_content=request.slide_content,
-            slide_title=request.slide_title,
-            learner_profile=learner_profile
+        chat_response = await _handle_contextual_action_with_history(
+            request=request,
+            action_type="comment",
+            adapter_method_name="comment_slide",
+            db=db
         )
         
-        logger.info(f"✅ CONVERSATION [COMMENT] Adapter response: {comment_response}")
         logger.info(f"✅ CONVERSATION [COMMENT] Successfully generated comment for learner session {request.learner_session_id}")
-        
-        return ChatResponse(
-            response=comment_response["response"],
-            confidence_score=comment_response["confidence_score"],
-            conversation_type="comment",
-            suggested_actions=comment_response["suggested_actions"],
-            related_concepts=comment_response["related_concepts"],
-            metadata=comment_response["metadata"]
-        )
+        return chat_response
         
     except HTTPException:
         raise
@@ -322,49 +355,15 @@ async def generate_quiz(
     try:
         logger.info(f"🤖 CONVERSATION [QUIZ] Generating quiz for learner session {request.learner_session_id}")
         
-        # Validate learner session exists
-        learner_repo = LearnerSessionRepository(db)
-        learner_session = await learner_repo.get_by_id(request.learner_session_id)
-        
-        if not learner_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Learner session not found"
-            )
-        
-        # Prepare learner profile
-        learner_profile = {
-            "experience_level": learner_session.experience_level,
-            "learning_style": learner_session.learning_style,
-            "job_position": learner_session.job_position,
-            "activity_sector": learner_session.activity_sector,
-            "country": learner_session.country,
-            "language": learner_session.language
-        }
-        
-        # Initialize conversation adapter directly
-        conversation_adapter = ConversationAdapter()
-        
-        logger.info(f"🔄 CONVERSATION [QUIZ] Calling adapter with slide_title='{request.slide_title}', content_length={len(request.slide_content)}")
-        
-        # Generate quiz
-        quiz_response = await conversation_adapter.generate_quiz(
-            slide_content=request.slide_content,
-            slide_title=request.slide_title,
-            learner_profile=learner_profile
+        chat_response = await _handle_contextual_action_with_history(
+            request=request,
+            action_type="quiz",
+            adapter_method_name="generate_quiz",
+            db=db
         )
         
-        logger.info(f"✅ CONVERSATION [QUIZ] Adapter response keys: {list(quiz_response.keys())}")
         logger.info(f"✅ CONVERSATION [QUIZ] Successfully generated quiz for learner session {request.learner_session_id}")
-        
-        return ChatResponse(
-            response=quiz_response["response"],
-            confidence_score=quiz_response["confidence_score"],
-            conversation_type="quiz",
-            suggested_actions=quiz_response["suggested_actions"],
-            related_concepts=quiz_response["related_concepts"],
-            metadata=quiz_response["metadata"]
-        )
+        return chat_response
         
     except HTTPException:
         raise
@@ -392,46 +391,15 @@ async def provide_examples(
     try:
         logger.info(f"🤖 CONVERSATION [EXAMPLES] Generating examples for learner session {request.learner_session_id}")
         
-        # Validate learner session exists
-        learner_repo = LearnerSessionRepository(db)
-        learner_session = await learner_repo.get_by_id(request.learner_session_id)
-        
-        if not learner_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Learner session not found"
-            )
-        
-        # Prepare learner profile
-        learner_profile = {
-            "experience_level": learner_session.experience_level,
-            "learning_style": learner_session.learning_style,
-            "job_position": learner_session.job_position,
-            "activity_sector": learner_session.activity_sector,
-            "country": learner_session.country,
-            "language": learner_session.language
-        }
-        
-        # Initialize conversation adapter directly
-        conversation_adapter = ConversationAdapter()
-        
-        # Generate examples
-        examples_response = await conversation_adapter.provide_examples(
-            slide_content=request.slide_content,
-            slide_title=request.slide_title,
-            learner_profile=learner_profile
+        chat_response = await _handle_contextual_action_with_history(
+            request=request,
+            action_type="examples",
+            adapter_method_name="provide_examples",
+            db=db
         )
         
         logger.info(f"✅ CONVERSATION [EXAMPLES] Successfully generated examples for learner session {request.learner_session_id}")
-        
-        return ChatResponse(
-            response=examples_response["response"],
-            confidence_score=examples_response["confidence_score"],
-            conversation_type="examples",
-            suggested_actions=examples_response["suggested_actions"],
-            related_concepts=examples_response["related_concepts"],
-            metadata=examples_response["metadata"]
-        )
+        return chat_response
         
     except HTTPException:
         raise
@@ -457,46 +425,15 @@ async def extract_key_points(
     try:
         logger.info(f"🤖 CONVERSATION [KEY_POINTS] Extracting key points for learner session {request.learner_session_id}")
         
-        # Validate learner session exists
-        learner_repo = LearnerSessionRepository(db)
-        learner_session = await learner_repo.get_by_id(request.learner_session_id)
-        
-        if not learner_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Learner session not found"
-            )
-        
-        # Prepare learner profile
-        learner_profile = {
-            "experience_level": learner_session.experience_level,
-            "learning_style": learner_session.learning_style,
-            "job_position": learner_session.job_position,
-            "activity_sector": learner_session.activity_sector,
-            "country": learner_session.country,
-            "language": learner_session.language
-        }
-        
-        # Initialize conversation adapter directly
-        conversation_adapter = ConversationAdapter()
-        
-        # Extract key points
-        key_points_response = await conversation_adapter.extract_key_points(
-            slide_content=request.slide_content,
-            slide_title=request.slide_title,
-            learner_profile=learner_profile
+        chat_response = await _handle_contextual_action_with_history(
+            request=request,
+            action_type="key-points",
+            adapter_method_name="extract_key_points",
+            db=db
         )
         
         logger.info(f"✅ CONVERSATION [KEY_POINTS] Successfully extracted key points for learner session {request.learner_session_id}")
-        
-        return ChatResponse(
-            response=key_points_response["response"],
-            confidence_score=key_points_response["confidence_score"],
-            conversation_type="key-points",
-            suggested_actions=key_points_response["suggested_actions"],
-            related_concepts=key_points_response["related_concepts"],
-            metadata=key_points_response["metadata"]
-        )
+        return chat_response
         
     except HTTPException:
         raise

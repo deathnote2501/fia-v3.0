@@ -1298,10 +1298,10 @@ export class ChatInterface {
                 if (enabled) {
                     button.disabled = false;
                     // Restore original content
-                    if (actionType === 'comment') button.innerHTML = '<i class="bi bi-chat-text me-1"></i>Comment';
-                    else if (actionType === 'quiz') button.innerHTML = '<i class="bi bi-question-circle me-1"></i>Quiz';
-                    else if (actionType === 'examples') button.innerHTML = '<i class="bi bi-lightbulb me-1"></i>Examples';
-                    else if (actionType === 'key-points') button.innerHTML = '<i class="bi bi-star me-1"></i>Key Points';
+                    if (actionType === 'comment') button.innerHTML = '<i class="bi bi-chat-text me-1"></i>';
+                    else if (actionType === 'quiz') button.innerHTML = '<i class="bi bi-question-circle me-1"></i>';
+                    else if (actionType === 'examples') button.innerHTML = '<i class="bi bi-lightbulb me-1"></i>';
+                    else if (actionType === 'key-points') button.innerHTML = '<i class="bi bi-star me-1"></i>';
                 } else {
                     if (actionType === activeActionType) {
                         button.disabled = true;

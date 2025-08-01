@@ -328,10 +328,7 @@ export class TTSManager {
         // Clean up whitespace
         cleaned = cleaned.replace(/\s+/g, ' ').trim();
         
-        // Limit length (TTS API has limits)
-        if (cleaned.length > 500) {
-            cleaned = cleaned.substring(0, 480) + '...';
-        }
+        // Gemini 2.5 TTS can handle much longer texts without artificial limits
         
         return cleaned;
     }

@@ -313,7 +313,7 @@ Pose maintenant ta question de compréhention adapté au [PROFIL APPRENANT] selo
         
         prompt = f"""
 <ROLE>
-Tu es un formateur pédagogue spécialisé dans le fait d'extraire le plus importants d'un  [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+Tu es un formateur pédagogue spécialisé dans le fait d'extraire le plus importants d'un [SLIDE DE FORMATION] pour un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
 </ROLE>
 
 <OBJECTIF>
@@ -336,7 +336,7 @@ Contenu : {slide_content}
 <STRUCTURE_JSON_ATTENDUE>
 Réponds en format JSON avec cette structure exacte :
 {{
-  "response": "Les 1 à 3 points à retenir absolument de cette slide en 5 à 50 mots maximum"
+  "response": "Les 1 à 3 points à retenir absolument de cette slide en 30 à 80 mots maximum"
 }}
 </STRUCTURE_JSON_ATTENDUE>
 

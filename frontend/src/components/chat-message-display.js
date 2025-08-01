@@ -26,10 +26,10 @@ export class ChatMessageDisplay {
         let actionTypeBadge = '';
         if (metadata.action_type) {
             const badgeConfig = {
-                'comment': { class: 'border border-primary text-primary', icon: 'bi-chat-text', text: 'Comment' },
-                'quiz': { class: 'border border-primary text-primary', icon: 'bi-question-circle', text: 'Quiz' },
-                'examples': { class: 'border border-primary text-primary', icon: 'bi-lightbulb', text: 'Examples' },
-                'key-points': { class: 'border border-primary text-primary', icon: 'bi-star', text: 'Key Points' }
+                'comment': { class: 'border border-primary text-primary', icon: 'bi-chat-text', text: '' },
+                'quiz': { class: 'border border-primary text-primary', icon: 'bi-question-circle', text: '' },
+                'examples': { class: 'border border-primary text-primary', icon: 'bi-lightbulb', text: '' },
+                'key-points': { class: 'border border-primary text-primary', icon: 'bi-star', text: '' }
             };
             
             const config = badgeConfig[metadata.action_type];

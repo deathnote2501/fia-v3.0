@@ -433,7 +433,7 @@ input:checked + .tts-slider:before {
 .audio-toggle-btn {
     margin-right: 0.25rem;
     padding: 0.25rem 0.5rem;
-    font-size: 1.25rem;
+    font-size: 2rem;
     border: none !important;
     background: none !important;
     transition: transform 0.2s ease, opacity 0.2s ease;
