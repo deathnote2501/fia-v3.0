@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Intégration Gemini Live API - FIA v3.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="src/styles/main.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🧪 Test Intégration Gemini Live API - FIA v3.0</h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Simulation Interface Apprenant</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Simulated slide area -->
+                        <div id="slide-area" class="border rounded p-3 mb-3" style="min-height: 200px; background: #f8f9fa;">
+                            <h4 id="slide-title">Slide de Test</h4>
+                            <div id="slide-content">
+                                <p>Ceci est un slide de test pour valider l'intégration du contexte avec Gemini Live API.</p>
+                                <ul>
+                                    <li>Point 1: Concept important</li>
+                                    <li>Point 2: Application pratique</li>
+                                    <li>Point 3: Exercice</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Voice chat controls -->
+                        <div class="d-flex align-items-center mb-3">
+                            <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
+                                    title="Click to start voice recording">
+                                <i class="bi bi-mic" id="voice-btn-icon"></i>
+                            </button>
+                            <!-- GeminiLiveAPI toggle will be added here automatically -->
+                        </div>
+                        
+                        <!-- Voice status -->
+                        <div class="chat-status mb-3" id="voice-status"></div>
+                        
+                        <!-- Navigation simulation -->
+                        <div class="d-flex justify-content-between">
+                            <button id="prev-slide-btn" class="btn btn-primary">
+                                <i class="bi bi-chevron-left"></i> Slide Précédent
+                            </button>
+                            <button id="next-slide-btn" class="btn btn-primary">
+                                Slide Suivant <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5>Session Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Session ID:</strong> <span id="session-id-display">58368a0d-e0ea-4bba-98a9-37982672b334</span></p>
+                        <p><strong>Contexte chargé:</strong> <span id="context-status" class="text-muted">Non chargé</span></p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Chat Messages</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-messages" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                            <p class="text-muted">Les messages de conversation apparaîtront ici...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Logs d'Intégration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="integration-logs" style="height: 200px; overflow-y: auto; background: #000; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                            <p>Logs d'intégration...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script type="module">
+        import { FIATrainingApp } from './src/main.js';
+
+        // Mock learner session and session data
+        const mockLearnerSession = {
+            id: '58368a0d-e0ea-4bba-98a9-37982672b334',
+            email: 'test@example.com',
+            experience_level: 'beginner',
+            job_position: 'Test Developer',
+            objectives: 'Learn FIA integration'
+        };
+
+        const mockSessionData = {
+            training_session: {
+                id: 'test-session-123',
+                title: 'Test Training Session'
+            }
+        };
+
+        // Mock slide data
+        let currentSlideNumber = 1;
+        const mockSlides = [
+            {
+                id: 'slide-1',
+                title: 'Introduction aux Concepts',
+                content: '## Introduction\n\nBienvenue dans cette formation sur les concepts de base.\n\n- Point clé 1\n- Point clé 2\n- Application pratique',
+                number: 1
+            },
+            {
+                id: 'slide-2', 
+                title: 'Applications Pratiques',
+                content: '## Applications Pratiques\n\nMaintenant que nous avons vu les concepts, voyons les applications.\n\n- Exercice 1\n- Exercice 2\n- Cas d\'usage réels',
+                number: 2
+            },
+            {
+                id: 'slide-3',
+                title: 'Conclusion et Synthèse',
+                content: '## Conclusion\n\nRésumons ce que nous avons appris.\n\n- Récapitulatif\n- Points à retenir\n- Prochaines étapes',
+                number: 3
+            }
+        ];
+
+        // Override console.log to show in UI
+        const logsDiv = document.getElementById('integration-logs');
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const logEntry = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logsDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${logEntry}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+
+        // Initialize the FIA app
+        const app = new FIATrainingApp();
+        
+        // Add chat interface mock
+        app.chatInterface = {
+            addMessage: (message, sender) => {
+                const chatMessages = document.getElementById('chat-messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `mb-2 ${sender === 'user' ? 'text-end' : 'text-start'}`;
+                messageDiv.innerHTML = `
+                    <span class="badge ${sender === 'user' ? 'bg-primary' : 'bg-success'}">${sender === 'user' ? 'Vous' : 'Assistant'}</span>
+                    <div class="mt-1">${message}</div>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            },
+            updateCurrentSlide: (slideData, content) => {
+                console.log('📄 [CHAT] Slide updated:', slideData.title);
+            }
+        };
+
+        // Mock container
+        const container = document.getElementById('slide-area');
+        
+        // Initialize with mock data
+        try {
+            await app.initialize(mockLearnerSession, mockSessionData);
+            
+            // Update UI with session info
+            document.getElementById('session-id-display').textContent = mockLearnerSession.id;
+            document.getElementById('context-status').textContent = 'Chargé';
+            document.getElementById('context-status').className = 'text-success';
+            
+            // Display first slide
+            app.displaySlideContent(mockSlides[0]);
+            
+            // Setup navigation buttons
+            document.getElementById('prev-slide-btn').addEventListener('click', () => {
+                if (currentSlideNumber > 1) {
+                    currentSlideNumber--;
+                    app.displaySlideContent(mockSlides[currentSlideNumber - 1]);
+                    console.log(`📄 [NAV] Moved to slide ${currentSlideNumber}`);
+                }
+            });
+            
+            document.getElementById('next-slide-btn').addEventListener('click', () => {
+                if (currentSlideNumber < mockSlides.length) {
+                    currentSlideNumber++;
+                    app.displaySlideContent(mockSlides[currentSlideNumber - 1]);
+                    console.log(`📄 [NAV] Moved to slide ${currentSlideNumber}`);
+                }
+            });
+            
+            console.log('✅ Test integration initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Test integration failed:', error);
+        }
+    </script>
+</body>
+</html>

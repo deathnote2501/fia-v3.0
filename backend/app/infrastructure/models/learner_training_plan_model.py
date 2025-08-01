@@ -19,6 +19,7 @@ class LearnerTrainingPlanModel(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     learner_session_id = Column(UUID(as_uuid=True), ForeignKey("learner_sessions.id"), nullable=False)
+    current_slide_id = Column(UUID(as_uuid=True), ForeignKey("training_slides.id"), nullable=True)  # Current slide for context
     plan_data = Column(JSONB, nullable=False)  # Generated plan structure
     generation_method = Column(String)  # 'gemini', 'vertex', 'manual'
     tokens_used = Column(Integer)
@@ -29,3 +30,4 @@ class LearnerTrainingPlanModel(Base):
     # Relationships
     learner_session = relationship("LearnerSessionModel", back_populates="learner_training_plans")
     training_modules = relationship("TrainingModuleModel", back_populates="learner_training_plan")
+    current_slide = relationship("TrainingSlideModel", foreign_keys=[current_slide_id])

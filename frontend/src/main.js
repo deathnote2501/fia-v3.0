@@ -12,6 +12,7 @@ import { NavigationControls } from './components/navigation-controls.js';
 import { SlideContentManager } from './components/slide-content-manager.js';
 import { ProgressManager } from './utils/progress-manager.js';
 import { AutoExpandingTextarea } from './utils/auto-expanding-textarea.js';
+import { GeminiLiveAPI } from './components/gemini-live-api.js';
 
 /**
  * Main Application Class - Orchestrates all components
@@ -32,6 +33,7 @@ export class FIATrainingApp {
         this.navigationControls = new NavigationControls();
         this.slideContentManager = new SlideContentManager();
         this.progressManager = new ProgressManager();
+        this.geminiLiveAPI = null; // Will use the one from ChatInterface
         
         console.log('🚀 [FIA-APP] FIATrainingApp orchestrator initialized');
     }
@@ -76,6 +78,9 @@ export class FIATrainingApp {
             // Setup navigation buttons
             this.slideControls.setupNavigationButtons();
             
+            // Setup GeminiLiveAPI integration
+            await this.setupGeminiLiveAPIIntegration();
+            
             console.log('✅ [FIA-APP] Application initialized successfully');
             
         } catch (error) {
@@ -91,7 +96,23 @@ export class FIATrainingApp {
         // Set container for slide content manager
         this.slideContentManager.setContainer(this.container);
         
+        // GeminiLiveAPI will be initialized by ChatInterface
+        
         console.log('✅ [FIA-APP] Components initialized');
+    }
+    
+    /**
+     * Setup GeminiLiveAPI integration - get reference from ChatInterface for context updates
+     */
+    async setupGeminiLiveAPIIntegration() {
+        if (this.chatInterface && this.chatInterface.geminiLiveAPI) {
+            // Get reference to the GeminiLiveAPI instance from ChatInterface for context updates
+            this.geminiLiveAPI = this.chatInterface.geminiLiveAPI;
+            
+            console.log('✅ [FIA-APP] GeminiLiveAPI reference obtained from ChatInterface');
+        } else {
+            console.warn('⚠️ [FIA-APP] ChatInterface or GeminiLiveAPI not available');
+        }
     }
     
     /**
@@ -154,6 +175,13 @@ export class FIATrainingApp {
         
         // Update navigation button states
         this.navigationControls.updateNavigationButtonStates(slideData);
+        
+        // Update GeminiLiveAPI context when slide changes
+        if (this.geminiLiveAPI && this.learnerSession && this.learnerSession.id) {
+            this.geminiLiveAPI.updateContext(this.learnerSession.id).catch(error => {
+                // Context update error supprimé pour interface propre
+            });
+        }
         
         console.log('✅ [FIA-APP] Slide content displayed and components updated');
     }

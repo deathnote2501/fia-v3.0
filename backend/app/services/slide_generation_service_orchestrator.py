@@ -169,7 +169,13 @@ class SlideGenerationServiceOrchestrator:
                     current_slide.content = slide_content
                     current_slide.generated_at = datetime.now(timezone.utc)
                 
-                # 5. Construire la réponse
+                # 5. Mettre à jour le current_slide_id dans learner_training_plans
+                await learner_plan_repo.update_current_slide_id(
+                    learner_session.id, current_slide.id
+                )
+                logger.info(f"✅ SLIDE ORCHESTRATOR [CURRENT_SLIDE_UPDATE] Updated current_slide_id to {current_slide.id}")
+                
+                # 6. Construire la réponse
                 result = await self._build_slide_response(
                     slide_repo, current_slide, training_plan.id, time.time() - start_time
                 )

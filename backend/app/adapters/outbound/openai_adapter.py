@@ -34,6 +34,7 @@ class OpenAIAdapter(ImageGenerationServicePort):
     async def generate_infographic(
         self,
         slide_content: str,
+        slide_title: Optional[str] = None,
         learner_profile: Optional[Dict[str, Any]] = None,
         learner_session_id: Optional[UUID] = None,
         slide_id: Optional[UUID] = None
@@ -49,7 +50,7 @@ class OpenAIAdapter(ImageGenerationServicePort):
                 language = learner_profile.get("language")
             
             # Build prompt for infographic generation
-            prompt = self._build_infographic_prompt(slide_content, learner_profile, language)
+            prompt = self._build_infographic_prompt(slide_content, slide_title, learner_profile, language)
             
             logger.debug(f"Generating infographic with prompt: {prompt[:200]}...")
             
@@ -106,7 +107,8 @@ class OpenAIAdapter(ImageGenerationServicePort):
     
     def _build_infographic_prompt(
         self, 
-        slide_content: str, 
+        slide_content: str,
+        slide_title: Optional[str] = None,
         learner_profile: Optional[Dict[str, Any]] = None,
         language: str = "english"
     ) -> str:
@@ -115,35 +117,25 @@ class OpenAIAdapter(ImageGenerationServicePort):
         # Base prompt for educational infographic
         base_prompt = f"""
 <OBJECTIVE>
-Design a **square infographic (1:1 ratio) using **flat design** to visually explain the content of the [SLIDE_CONTENT] provided below.
+Design a ** simple square infographic (1:1 ratio) using **flat design** to visually explain this slide: {slide_title}.
 </OBJECTIVE>
 
 <SPECIFICATIONS>
 The infographic should:
-- Include **6 to 8 simple illustrations** in **outline style** (thin black or grey lines, no fill)
+- Include **6 to 8 simple illustrations** in **outline style** (thin black, grey or blue #0d6efd lines, no fill)
 - Follow a **grid layout** (2x3 or 3x3) with **equal spacing** and **aligned elements**
 - Use **1 to 5 words** per illustration, in {language}, with a **clear sans-serif font**
 - Have a **white background**, minimal padding around the edges, and consistent margins between elements
 </SPECIFICATIONS>
 
-<SLIDE_CONTENT>
-{slide_content}
-</SLIDE_CONTENT>
-
 <CONSTRAINTS>
 - All text must be in {language}, using a simple **sans-serif** font (no serif, no cursive)
-- Use only these authorized colors: **black and grey**
+- Use only these authorized colors: **black, grey and blue #0d6efd**
 - Apply **flat design principles**: no shadows, gradients, or 3D effects
 - Maintain a **clear visual hierarchy**, with the main message easy to read
-- Ensure **each illustration is unique and contextually relevant** to the corresponding part of the content
 </CONSTRAINTS>
 
-<STYLE TONE>
-- The tone of the infographic must be **professional and clean**
-- Avoid playful or decorative elements
-</STYLE TONE>
-
-Create the infographic strictly following these instructions.
+Create thios simple infographic strictly following these instructions.
 """
         
         # Add personalization if learner profile is available

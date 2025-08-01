@@ -1367,18 +1367,14 @@ export class ChatInterface {
                             break;
                     }
                 }
-                
-                console.log(`🎙️ [LIVE-API] Status: ${message} (${type})`);
             },
             
             onTranscriptUpdate: (transcript) => {
-                console.log(`🎙️ [LIVE-API] Transcript: ${transcript}`);
-                // Ne pas afficher dans le chat, juste logger
+                // Transcript logging supprimé
             },
             
             onMessageReceived: (message, isUser) => {
-                console.log(`🎙️ [LIVE-API] Message from ${isUser ? 'User' : 'Assistant'}: ${message}`);
-                // Ne pas afficher dans le chat, juste logger
+                // Message logging supprimé - Live API fonctionne en mode audio pur
             }
         });
         
@@ -1393,6 +1389,12 @@ export class ChatInterface {
                 // Start Live API conversation
                 try {
                     liveApiBtn.disabled = true;
+                    
+                    // Load learner context if available
+                    if (this.learnerSession && this.learnerSession.id) {
+                        await this.geminiLiveAPI.loadLearnerContext(this.learnerSession.id);
+                    }
+                    
                     await this.geminiLiveAPI.start();
                     this.isLiveAPIActive = true;
                     liveApiBtn.disabled = false;

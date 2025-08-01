@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Gemini Live API avec Contexte</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🎙️ Test Gemini Live API avec Contexte FIA</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="sessionId" class="form-label">ID de Session Apprenant</label>
+                            <input type="text" class="form-control" id="sessionId" 
+                                   value="58368a0d-e0ea-4bba-98a9-37982672b334" 
+                                   placeholder="UUID de la session">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button id="loadContextBtn" class="btn btn-info">📋 Charger Contexte</button>
+                            <button id="startBtn" class="btn btn-success">🎙️ Démarrer</button>
+                            <button id="stopBtn" class="btn btn-danger" disabled>🛑 Arrêter</button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Statut</label>
+                            <div id="status" class="alert alert-secondary">Prêt</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Contexte Chargé</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="contextInfo" class="text-muted">
+                            Aucun contexte chargé
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Conversation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="conversation" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                            <p class="text-muted">La conversation apparaîtra ici...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Logs Techniques</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="logs" style="height: 200px; overflow-y: auto; background: #000; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                            <p>Console logs apparaîtront ici...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GeminiLiveAPI } from './src/components/gemini-live-api.js';
+
+        // Initialize components
+        const liveAPI = new GeminiLiveAPI();
+        const sessionIdInput = document.getElementById('sessionId');
+        const loadContextBtn = document.getElementById('loadContextBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDiv = document.getElementById('status');
+        const contextDiv = document.getElementById('contextInfo');
+        const conversationDiv = document.getElementById('conversation');
+        const logsDiv = document.getElementById('logs');
+
+        // Override console.log to show in UI
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const logEntry = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logsDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${logEntry}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+
+        // Configure callbacks
+        liveAPI.setCallbacks({
+            onStatusChange: (status, type) => {
+                statusDiv.textContent = status;
+                statusDiv.className = `alert alert-${type === 'error' ? 'danger' : type === 'connected' ? 'success' : 'info'}`;
+            },
+            onTranscriptUpdate: (transcript) => {
+                console.log('📝 Transcript:', transcript);
+            },
+            onMessageReceived: (message, isUser) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `mb-2 ${isUser ? 'text-end' : 'text-start'}`;
+                messageDiv.innerHTML = `
+                    <span class="badge ${isUser ? 'bg-primary' : 'bg-success'}">${isUser ? 'Vous' : 'Assistant'}</span>
+                    <div class="mt-1">${message}</div>
+                `;
+                conversationDiv.appendChild(messageDiv);
+                conversationDiv.scrollTop = conversationDiv.scrollHeight;
+            }
+        });
+
+        // Event handlers
+        loadContextBtn.addEventListener('click', async () => {
+            const sessionId = sessionIdInput.value.trim();
+            if (!sessionId) {
+                alert('Veuillez saisir un ID de session');
+                return;
+            }
+
+            loadContextBtn.disabled = true;
+            loadContextBtn.textContent = '⏳ Chargement...';
+
+            try {
+                const context = await liveAPI.loadLearnerContext(sessionId);
+                if (context) {
+                    contextDiv.innerHTML = `
+                        <h6>✅ Contexte chargé</h6>
+                        <p><strong>Session:</strong> ${context.learner_session_id}</p>
+                        <p><strong>Slide:</strong> ${context.slide_title || 'Aucun slide spécifique'}</p>
+                        <p><strong>Niveau:</strong> ${context.learner_profile?.niveau || 'Non défini'}</p>
+                        <p><strong>Poste:</strong> ${context.learner_profile?.poste_et_secteur || 'Non défini'}</p>
+                        <div class="mt-2">
+                            <small><strong>System Instruction:</strong></small>
+                            <div style="max-height: 100px; overflow-y: auto; font-size: 11px; background: #f8f9fa; padding: 5px; border-radius: 3px;">
+                                ${context.system_instruction}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    contextDiv.innerHTML = '<div class="text-warning">❌ Impossible de charger le contexte</div>';
+                }
+            } catch (error) {
+                contextDiv.innerHTML = `<div class="text-danger">❌ Erreur: ${error.message}</div>`;
+            } finally {
+                loadContextBtn.disabled = false;
+                loadContextBtn.textContent = '📋 Charger Contexte';
+            }
+        });
+
+        startBtn.addEventListener('click', async () => {
+            const sessionId = sessionIdInput.value.trim();
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            try {
+                await liveAPI.start(sessionId);
+            } catch (error) {
+                console.error('❌ Erreur démarrage:', error);
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            liveAPI.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+
+        // Check browser support
+        if (!liveAPI.isSupported()) {
+            statusDiv.textContent = 'Navigateur non supporté';
+            statusDiv.className = 'alert alert-warning';
+            startBtn.disabled = true;
+        }
+
+        console.log('🎙️ Test Gemini Live API avec Contexte FIA - Prêt');
+    </script>
+</body>
+</html>

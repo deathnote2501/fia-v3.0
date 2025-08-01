@@ -103,6 +103,21 @@ class LearnerTrainingPlanRepository(LearnerTrainingPlanRepositoryPort):
         
         return self._model_to_entity(plan_model)
     
+    async def update_current_slide_id(self, learner_session_id: UUID, slide_id: UUID) -> bool:
+        """Update the current slide ID for a learner training plan"""
+        result = await self.session.execute(
+            select(LearnerTrainingPlanModel)
+            .where(LearnerTrainingPlanModel.learner_session_id == learner_session_id)
+        )
+        plan_model = result.scalar_one_or_none()
+        
+        if not plan_model:
+            return False
+        
+        plan_model.current_slide_id = slide_id
+        await self.session.commit()
+        return True
+    
     async def delete(self, plan_id: UUID) -> bool:
         """Delete a learner training plan"""
         result = await self.session.execute(

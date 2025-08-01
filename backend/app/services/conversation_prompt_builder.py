@@ -471,3 +471,75 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
         
         logger.info(f"✅ CONVERSATION PROMPT BUILDER [VALIDATE] Parameters valid for {prompt_type}")
         return True
+    
+    def _build_live_system_instruction(
+        self,
+        slide_title: str = None,
+        slide_content: str = None,
+        learner_profile: Any = None,
+        training_context: str = None
+    ) -> str:
+        """
+        Construire l'instruction système pour Gemini Live API avec contexte
+        
+        Args:
+            slide_title: Titre du slide courant
+            slide_content: Contenu du slide courant
+            learner_profile: Profil de l'apprenant
+            training_context: Contexte de la formation
+            
+        Returns:
+            System instruction formatée pour Gemini Live API
+        """
+        logger.info("💬 CONVERSATION PROMPT BUILDER [LIVE] Building Live API system instruction")
+        
+        # Extraire les informations du profil
+        profile_info = self._extract_profile_info(learner_profile) if learner_profile else {}
+        enriched_profile = self._extract_enriched_profile(learner_profile) if learner_profile else "Profil en cours d'enrichissement"
+        
+        # Construire l'instruction système
+        instruction = f"""
+<ROLE>
+Tu es un formateur pédagogue qui forme un apprenant qui suit une session de formation interactive sur son ordinateur ou son smartphone.
+</ROLE>
+
+<OBJECTIF>
+Avoir une conversation naturelle avec l'apprenant en fonction du <CONTEXTE ACTUEL DE LA FORMATION> tout en t'adaptant au <PROFIL DE L'APPRENANT>.
+</OBJECTIF>
+
+<CONTEXTE ACTUEL DE LA FORMATION>"""
+        
+        if slide_title and slide_content:
+            # Limiter le contenu du slide pour éviter une instruction trop longue
+            content_preview = slide_content
+            instruction += f"""
+- Slide courant: "{slide_title}"
+- Contenu du slide: {content_preview}"""
+        else:
+            instruction += f"""
+- Slide courant: Formation en cours (pas de slide spécifique)
+</CONTEXTE ACTUEL DE LA FORMATION>
+"""
+        
+        if learner_profile:
+            instruction += f"""
+
+<PROFIL DE L'APPRENANT>
+- Niveau: {profile_info.get('niveau', 'débutant')}
+- Poste et secteur: {profile_info.get('poste_et_secteur', 'professionnel')}
+- Objectifs: {profile_info.get('objectifs', 'développer ses compétences')}
+- Profil enrichi: {enriched_profile}
+- Langue: {profile_info.get('langue', 'fr')}
+</PROFIL DE L'APPRENANT>
+"""
+        
+        logger.info(f"✅ CONVERSATION PROMPT BUILDER [LIVE] System instruction built - {len(instruction)} characters")
+        
+        # LOG LE PROMPT COMPLET POUR DEBUG
+        logger.info("="*80)
+        logger.info("🎯 PROMPT ENVOYÉ À GEMINI LIVE API:")
+        logger.info("="*80)
+        logger.info(instruction)
+        logger.info("="*80)
+        
+        return instruction

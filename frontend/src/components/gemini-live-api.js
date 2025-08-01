@@ -65,6 +65,11 @@ export class GeminiLiveAPI {
         this.onTranscriptUpdate = null;
         this.onMessageReceived = null;
         
+        // Contexte de formation pour personnalisation
+        this.learnerContext = null;
+        this.learnerSessionId = null;
+        this.defaultSystemInstruction = "Tu es un assistant vocal empathique et utile. Parle naturellement en français, adapte ton ton à l'humeur de l'utilisateur, reste concis et clair.";
+        
         console.log('🎙️ [GEMINI-LIVE] GeminiLiveAPI component initialized');
     }
     
@@ -89,13 +94,74 @@ export class GeminiLiveAPI {
         }
     }
     
+    /**
+     * Load learner context from backend for personalized Live API responses
+     */
+    async loadLearnerContext(sessionId) {
+        if (!sessionId) {
+            this.log('CONTEXT', '⚠️ No session ID provided, using default context');
+            this.learnerContext = null;
+            this.learnerSessionId = null;
+            return null;
+        }
+        
+        try {
+            this.log('CONTEXT', `🎯 Loading context for session: ${sessionId}`);
+            
+            const response = await fetch(`/api/config/live-context/${sessionId}`);
+            if (!response.ok) {
+                throw new Error(`Failed to load context: ${response.status} ${response.statusText}`);
+            }
+            
+            const contextData = await response.json();
+            this.learnerContext = contextData;
+            this.learnerSessionId = sessionId;
+            
+            this.log('CONTEXT', `✅ Context loaded for ${contextData.learner_profile?.niveau || 'unknown'} level learner`);
+            this.log('CONTEXT', `Current slide: ${contextData.slide_title || 'No specific slide'}`);
+            
+            return contextData;
+            
+        } catch (error) {
+            this.log('CONTEXT', '❌ Failed to load learner context', error);
+            this.learnerContext = null;
+            this.learnerSessionId = sessionId; // Keep session ID even if context loading fails
+            return null;
+        }
+    }
+    
+    /**
+     * Update learner context (refresh from backend)
+     */
+    async updateContext(sessionId = null) {
+        const targetSessionId = sessionId || this.learnerSessionId;
+        if (!targetSessionId) {
+            this.log('CONTEXT', '⚠️ No session ID available for context update');
+            return null;
+        }
+        
+        this.log('CONTEXT', `🔄 Updating context for session: ${targetSessionId}`);
+        return await this.loadLearnerContext(targetSessionId);
+    }
+    
+    /**
+     * Get system instruction with learner context
+     */
+    getSystemInstruction() {
+        if (!this.learnerContext || !this.learnerContext.system_instruction) {
+            this.log('CONTEXT', '📝 Using default system instruction');
+            return this.defaultSystemInstruction;
+        }
+        
+        this.log('CONTEXT', '📝 Using personalized system instruction');
+        return this.learnerContext.system_instruction;
+    }
+    
     // =============================================================================
     // LOG - Copié exactement du fichier HTML
     // =============================================================================
     log(category, message, data = null) {
-        const ts = new Date().toISOString();
-        const msg = `[${ts}] [${category}] ${message}`;
-        if (data !== null) console.log(msg, data); else console.log(msg);
+        // Logs supprimés pour interface propre
     }
     
     // =============================================================================
@@ -229,7 +295,7 @@ export class GeminiLiveAPI {
             const config = {
                 responseModalities: [Modality.AUDIO],
                 enableAffectiveDialog: true, // 👉 active l'adaptation tonale
-                systemInstruction: "Tu es un assistant vocal empathique et utile. Parle naturellement en français, adapte ton ton à l'humeur de l'utilisateur, reste concis et clair.",
+                systemInstruction: this.getSystemInstruction(),
                 inputAudioTranscription: {},   // pour afficher la transcription d'entrée si disponible
                 outputAudioTranscription: {}   // idem pour la sortie
             };
@@ -402,9 +468,15 @@ export class GeminiLiveAPI {
     // =============================================================================
     
     /**
-     * Démarre la conversation Gemini Live API
+     * Démarre la conversation Gemini Live API avec contexte optionnel
+     * @param {string} sessionId - ID de session optionnel pour charger le contexte
      */
-    async start() {
+    async start(sessionId = null) {
+        // Charger le contexte si un session ID est fourni
+        if (sessionId) {
+            await this.loadLearnerContext(sessionId);
+        }
+        
         return await this.startConversation();
     }
     
@@ -461,7 +533,7 @@ class AudioStreamer {
         // Garde-fou
         this.maxQueueBuffers = 120; // ~20s @ 4096 / 24kHz
         
-        console.log('🎵 [AUDIO_STREAMER] Init streamer', this.config);
+        // Audio streamer init log supprimé pour interface propre
     }
     
     _pcm16BytesToFloat32(pcmBytes) {
@@ -501,7 +573,7 @@ class AudioStreamer {
         
         // Garde-fou
         if (this.audioQueue.length > this.maxQueueBuffers) {
-            console.log(`⚠️ Queue longue (${this.audioQueue.length}) → trimming`);
+            // Queue warning log supprimé pour interface propre
             this.audioQueue.splice(0, this.audioQueue.length - this.maxQueueBuffers);
         }
         
@@ -512,7 +584,7 @@ class AudioStreamer {
         this.isPlaying = true;
         this.scheduledTime = this.context.currentTime + this.config.initialBufferTime;
         this._processQueue();
-        console.log('▶️ Démarrage lecture');
+        // Playback start log supprimé pour interface propre
     }
     
     _createAudioBuffer(samples) {
@@ -560,11 +632,11 @@ class AudioStreamer {
         source.start(start);
         this.scheduledTime = start + d;
         
-        console.log(`🎵 Buffer @${start.toFixed(3)}s (durée ${d.toFixed(3)}s)`);
+        // Buffer log supprimé pour interface propre
     }
     
     flush() {
-        console.log('🔄 Flush en cours');
+        // Flush log supprimé pour interface propre
         if (this.stitch.length > 0) {
             this.audioQueue.push(this.stitch);
             this.stitch = new Float32Array(0);
@@ -573,7 +645,7 @@ class AudioStreamer {
     }
     
     stop() {
-        console.log('🛑 Stop lecture');
+        // Stop lecture log supprimé pour interface propre
         this.isPlaying = false;
         this.audioQueue = [];
         this.stitch = new Float32Array(0);
