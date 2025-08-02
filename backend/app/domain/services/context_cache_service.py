@@ -12,8 +12,8 @@ import hashlib
 
 import google.generativeai as genai
 
-from app.infrastructure.settings import settings
-# DocumentProcessingError will be available through context_cache_service usage
+from app.domain.ports.settings_port import SettingsPort
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,11 +27,13 @@ class ContextCacheError(Exception):
 class ContextCacheService:
     """Service for managing Gemini Context Caching for training documents"""
     
-    def __init__(self):
+    def __init__(self, settings_port: SettingsPort, ai_adapter: AIAdapterPort):
         """Initialize the context cache service"""
+        self.settings = settings_port
+        self.ai_adapter = ai_adapter
         self.client = self._initialize_gemini_client()
-        self.model_name = settings.gemini_model_name
-        self.default_ttl_hours = settings.gemini_context_cache_ttl_hours
+        self.model_name = self.settings.get_gemini_model_name()
+        self.default_ttl_hours = self.settings.get_context_cache_ttl_hours()
         
     def _initialize_gemini_client(self):
         """Initialize Gemini client with API key configuration"""

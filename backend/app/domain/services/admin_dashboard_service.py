@@ -5,9 +5,8 @@ Business logic for admin dashboard statistics and trainer overview
 
 import logging
 from typing import List, Dict, Any
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.repositories.admin_repository import AdminRepository
+from app.domain.ports.admin_repository_port import AdminRepositoryPort
 
 
 logger = logging.getLogger(__name__)
@@ -16,9 +15,8 @@ logger = logging.getLogger(__name__)
 class AdminDashboardService:
     """Service for admin dashboard operations"""
     
-    def __init__(self, session: AsyncSession):
-        self.session = session
-        self.admin_repository = AdminRepository(session)
+    def __init__(self, admin_repository: AdminRepositoryPort):
+        self.admin_repository = admin_repository
     
     async def get_trainers_overview(self) -> List[Dict[str, Any]]:
         """

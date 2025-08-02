@@ -13,9 +13,9 @@ from app.infrastructure.database import AsyncSessionLocal
 from app.adapters.repositories.learner_training_plan_repository import LearnerTrainingPlanRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
-from app.services.slide_structure_formatter import SlideStructureFormatter
-from app.services.slide_content_generator import SlideContentGenerator
-from app.services.slide_content_modifier import SlideContentModifier
+from app.domain.services.slide_structure_formatter import SlideStructureFormatter
+from app.domain.services.slide_content_generator import SlideContentGenerator
+from app.domain.services.slide_content_modifier import SlideContentModifier
 
 logger = logging.getLogger(__name__)
 

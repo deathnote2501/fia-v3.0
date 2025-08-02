@@ -15,7 +15,7 @@ from app.infrastructure.gemini_call_logger import gemini_call_logger
 from app.infrastructure.settings import settings
 from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
-from app.services.conversation_prompt_builder import ConversationPromptBuilder
+from app.domain.services.conversation_prompt_builder import ConversationPromptBuilder
 
 logger = logging.getLogger(__name__)
 

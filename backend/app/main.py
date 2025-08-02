@@ -20,14 +20,13 @@ logging.getLogger('asyncpg').setLevel(logging.CRITICAL)
 logging.getLogger('asyncio').setLevel(logging.ERROR)
 logging.getLogger('aiopg').setLevel(logging.CRITICAL)
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
 from app.infrastructure.auth import fastapi_users, auth_backend
-from app.domain.schemas.user import UserRead, UserCreate, UserUpdate
+from app.infrastructure.schemas.fastapi_user_schemas import UserRead, UserCreate, UserUpdate
 from app.adapters.inbound.training_controller import router as training_router
 from app.adapters.inbound.session_controller import router as session_router
 from app.adapters.inbound.rate_limit_controller import router as rate_limit_router
@@ -54,7 +53,7 @@ except ImportError as e:
 
 # Import unified plan generation controller
 try:
-    from app.controllers.plan_generation_controller import router as plan_generation_router
+    from app.adapters.inbound.plan_generation_controller import router as plan_generation_router
     PLAN_GENERATION_AVAILABLE = True
     logger.info("✅ Unified plan generation controller loaded successfully")
 except ImportError as e:
@@ -87,14 +86,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Mount static files (frontend)
 app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")

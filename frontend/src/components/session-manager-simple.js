@@ -7,7 +7,8 @@
 // CONFIGURATION
 // ============================================================================
 
-const API_BASE = 'http://localhost:8000';
+// Use relative URLs - no need for CORS since frontend and API are on same server
+const API_BASE = '';
 
 // ============================================================================
 // UTILITAIRES
@@ -93,7 +94,7 @@ async function createSession() {
         }
         
         // Direct fetch call
-        const response = await fetch(`${API_BASE}/api/training-sessions`, {
+        const response = await fetch('/api/training-sessions', {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(sessionData)
@@ -132,7 +133,7 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = '<option value="">Loading trainings...</option>';
         
-        const response = await fetch(`${API_BASE}/api/trainings`, {
+        const response = await fetch('/api/trainings', {
             headers: getAuthHeaders()
         });
         
@@ -176,7 +177,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Loading...</td></tr>';
         
         // Build query parameters for date filtering
-        let url = `${API_BASE}/api/training-sessions`;
+        let url = '/api/training-sessions';
         const params = new URLSearchParams();
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
@@ -232,7 +233,8 @@ async function loadSessions(dateFrom = '', dateTo = '') {
  */
 async function copySessionLink(token) {
     try {
-        const link = `${window.location.origin}/frontend/public/training.html?token=${token}`;
+        // Use relative path to avoid HTTP/HTTPS issues
+        const link = `/frontend/public/training.html?token=${token}`;
         await navigator.clipboard.writeText(link);
         showAlert('Session link copied to clipboard!', 'success', 3000);
     } catch (error) {
@@ -250,7 +252,7 @@ async function deleteSession(sessionId) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/api/training-sessions/${sessionId}`, {
+        const response = await fetch(`/api/training-sessions/${sessionId}`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -394,7 +396,7 @@ async function showChatHistory(sessionId, sessionName) {
     modal.show();
     
     try {
-        const response = await fetch(`${API_BASE}/api/dashboard/chat-history/${sessionId}`, {
+        const response = await fetch(`/api/dashboard/chat-history/${sessionId}`, {
             headers: getAuthHeaders()
         });
         

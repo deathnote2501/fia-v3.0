@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from pathlib import Path
 from uuid import UUID
 
-from app.services.slide_generation_service_orchestrator import SlideGenerationServiceOrchestrator
+from app.domain.services.slide_generation_service_orchestrator import SlideGenerationServiceOrchestrator
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)

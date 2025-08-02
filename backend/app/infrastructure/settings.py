@@ -42,16 +42,6 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, description="Server port")
     frontend_url: str = Field(default="http://localhost:8000", description="Frontend base URL")
     
-    # CORS
-    cors_origins: str = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000",
-        description="Comma-separated CORS origins"
-    )
-    
-    @property
-    def cors_origins_list(self) -> List[str]:
-        """Parse CORS origins into list"""
-        return [origin.strip() for origin in self.cors_origins.split(",")]
     
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")

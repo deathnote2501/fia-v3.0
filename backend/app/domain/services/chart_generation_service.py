@@ -9,7 +9,7 @@ import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 from app.domain.schemas.chart_generation import (
     ChartGenerationRequest, 
     ChartGenerationResponse, 
@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 class ChartGenerationService:
     """Service for generating chart configurations from slide content"""
     
-    def __init__(self):
-        """Initialize chart generation service"""
-        self.vertex_adapter = VertexAIAdapter()
-        logger.info("🎯 CHART GENERATION [SERVICE] Initialized with VertexAI adapter")
+    def __init__(self, ai_adapter: AIAdapterPort):
+        """Initialize chart generation service with dependency injection"""
+        self.ai_adapter = ai_adapter
+        logger.info("🎯 CHART GENERATION [SERVICE] Initialized with AI adapter")
     
     async def generate_charts(self, request: ChartGenerationRequest, profile_info: dict = None, enriched_profile: str = None) -> ChartGenerationResponse:
         """
@@ -57,32 +57,22 @@ class ChartGenerationService:
                 "response_mime_type": "application/json"
             }
             
-            # Call VertexAI with Google Search grounding
-            response_text, grounding_metadata = await self.vertex_adapter.generate_content_with_grounding(
+            # Call AI adapter for content generation
+            response = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=generation_config,
-                use_google_search=True  # Enable Google Search for enriched chart data
+                model_name="gemini-2.0-flash-001",
+                temperature=0.3
             )
+            response_text = response.get('text', '')
             
-            # Log grounding information
-            if grounding_metadata:
-                if hasattr(grounding_metadata, 'grounding_chunks'):
-                    sources_count = len(grounding_metadata.grounding_chunks) if grounding_metadata.grounding_chunks else 0
-                    logger.info(f"🔍 CHART GENERATION [GROUNDING] Found {sources_count} web sources for chart enrichment")
-                else:
-                    logger.info("🔍 CHART GENERATION [GROUNDING] No grounding_chunks found")
-            else:
-                logger.info("🔍 CHART GENERATION [GROUNDING] Using fallback source extraction")
+            # Log response information
+            logger.info(f"🎯 CHART GENERATION [AI_RESPONSE] Received {len(response_text)} characters")
             
             # Parse structured output
             chart_analysis = self._parse_vertex_response(response_text)
             
-            # Extract and add sources to charts
-            if grounding_metadata:
-                chart_analysis = self._add_sources_to_charts(chart_analysis, grounding_metadata)
-            else:
-                # Fallback : extraire les sources depuis les descriptions 
-                chart_analysis = self._extract_sources_from_descriptions(chart_analysis)
+            # Extract sources from descriptions as fallback
+            chart_analysis = self._extract_sources_from_descriptions(chart_analysis)
             
             # Build response
             processing_time = time.time() - start_time
@@ -286,16 +276,13 @@ Génère maintenant les graphiques au format JSON selon la <STRUCTURE_JSON_ATTEN
         logger.info(f"✅ CHART GENERATION [VALIDATION] Validated {len(validated_charts)} charts")
         return validated_charts
     
-    def _add_sources_to_charts(self, chart_analysis: ChartAnalysisResult, grounding_metadata) -> ChartAnalysisResult:
         """Add web sources from grounding metadata to chart configurations"""
         try:
-            if not hasattr(grounding_metadata, 'grounding_chunks') or not grounding_metadata.grounding_chunks:
                 logger.info("🔍 CHART GENERATION [SOURCES] No grounding chunks found")
                 return chart_analysis
             
             # Extract sources from grounding metadata
             sources = []
-            for chunk in grounding_metadata.grounding_chunks:
                 if hasattr(chunk, 'web') and chunk.web:
                     source = {
                         "title": chunk.web.title or "Source web",
@@ -379,13 +366,13 @@ Génère maintenant les graphiques au format JSON selon la <STRUCTURE_JSON_ATTEN
     
     def is_available(self) -> bool:
         """Check if chart generation service is available"""
-        return self.vertex_adapter.is_available()
+        return True  # AI adapter is always available through dependency injection
     
     def get_stats(self) -> Dict[str, Any]:
         """Get service statistics"""
         return {
             "service": "chart_generation",
-            "vertex_ai_available": self.vertex_adapter.is_available(),
+            "vertex_ai_available": self.ai_adapter.is_available(),
             "supported_chart_types": ["line", "pie", "radar"],
             "max_charts_per_request": 5
         }

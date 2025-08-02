@@ -4,14 +4,17 @@ Simple service for session token generation and URL building
 """
 
 import secrets
-from app.infrastructure.settings import settings
+from app.domain.ports.settings_port import SettingsPort
 
 
 class SessionService:
+    def __init__(self, settings_port: SettingsPort):
+        self.settings = settings_port
+    
     @staticmethod
     def generate_token() -> str:
         return secrets.token_urlsafe(32)
     
-    @staticmethod
-    def build_session_url(token: str) -> str:
-        return f"{settings.frontend_url}/session.html?token={token}"
+    def build_session_url(self, token: str) -> str:
+        frontend_url = self.settings.get_setting('FRONTEND_URL', 'http://localhost:3000')
+        return f"{frontend_url}/session.html?token={token}"

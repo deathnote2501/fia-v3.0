@@ -233,8 +233,8 @@ async function loadSessions() {
  */
 async function copySessionLink(token) {
     try {
-        // Build full URL if only token provided
-        const link = token.startsWith('http') ? token : `${window.location.origin}/session.html?token=${token}`;
+        // Use relative path to avoid HTTP/HTTPS issues
+        const link = token.startsWith('http') ? token : `/session.html?token=${token}`;
         
         // Copy to clipboard
         await navigator.clipboard.writeText(link);

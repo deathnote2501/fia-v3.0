@@ -29,7 +29,7 @@ from app.domain.schemas.learner_session import (
 from app.adapters.repositories.training_session_repository import TrainingSessionRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_repository import TrainingRepository
-from app.services.plan_generation_service_v2 import PlanGenerationService
+from app.domain.services.plan_generation_service_v2 import PlanGenerationService
 # from app.domain.services.plan_parser_service import PlanParserService
 
 # Configure logging

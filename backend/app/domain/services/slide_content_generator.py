@@ -7,8 +7,8 @@ import logging
 import time
 from typing import Dict, Any, Optional
 
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
-from app.services.slide_prompt_builder import SlidePromptBuilder
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
+from app.domain.services.slide_prompt_builder import SlidePromptBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 class SlideContentGenerator:
     """Service pour générer le contenu des slides avec VertexAI"""
     
-    def __init__(self):
-        """Initialize slide content generator"""
-        self.vertex_adapter = VertexAIAdapter()
+    def __init__(self, ai_adapter: AIAdapterPort):
+        """Initialize slide content generator with dependency injection"""
+        self.ai_adapter = ai_adapter
         self.prompt_builder = SlidePromptBuilder()
         logger.info("🤖 SLIDE CONTENT GENERATOR [SERVICE] Initialized with unified prompt builder")
     
@@ -62,7 +62,7 @@ class SlideContentGenerator:
                 "max_output_tokens": 1024
             }
             
-            content = await self.vertex_adapter.generate_content(
+            content = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
             )
@@ -131,7 +131,7 @@ class SlideContentGenerator:
                 "max_output_tokens": 800
             }
             
-            content = await self.vertex_adapter.generate_content(
+            content = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
             )
@@ -181,7 +181,7 @@ class SlideContentGenerator:
                 "max_output_tokens": 300
             }
             
-            introduction = await self.vertex_adapter.generate_content(
+            introduction = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=generation_config
             )

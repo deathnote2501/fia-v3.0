@@ -14,7 +14,7 @@ from app.infrastructure.settings import settings
 from app.infrastructure.database import get_database_session
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_slide_repository import TrainingSlideRepository
-from app.services.conversation_prompt_builder import ConversationPromptBuilder
+from app.domain.services.conversation_prompt_builder import ConversationPromptBuilder
 
 logger = logging.getLogger(__name__)
 

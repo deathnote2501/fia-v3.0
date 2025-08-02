@@ -3,7 +3,8 @@
  * JavaScript ES6 utilities for backend communication
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+// Use relative URLs - no need for CORS since frontend and API are on same server
+const API_BASE_URL = '';
 
 /**
  * API client with common functionality
@@ -20,7 +21,8 @@ class APIClient {
      * @returns {Promise}
      */
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
+        // Always use relative URLs to avoid HTTPS/HTTP issues
+        const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const startTime = performance.now();
         
         const defaultOptions = {
