@@ -19,11 +19,11 @@ class Settings(BaseSettings):
     )
     
     # Security
-    secret_key: str = Field(..., description="Secret key for JWT and sessions")
-    jwt_secret_key: str = Field(..., description="JWT signing key")
+    secret_key: str = Field(default="dev-secret-key-change-in-production", description="Secret key for JWT and sessions")
+    jwt_secret_key: str = Field(default="dev-jwt-secret-change-in-production", description="JWT signing key")
     
     # Database
-    database_url: str = Field(..., description="PostgreSQL database URL")
+    database_url: str = Field(default="sqlite:///./test.db", description="PostgreSQL database URL")
     
     # Google Gemini AI
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
@@ -61,8 +61,8 @@ class Settings(BaseSettings):
     gemini_context_cache_ttl_hours: int = Field(default=12, description="Context cache TTL in hours")
     
     # Email (Brevo)
-    brevo_api_key: str = Field(..., description="Brevo API key")
-    brevo_sender_email: str = Field(..., description="Brevo sender email")
+    brevo_api_key: str = Field(default="", description="Brevo API key")
+    brevo_sender_email: str = Field(default="noreply@example.com", description="Brevo sender email")
     brevo_sender_name: str = Field(default="FIA v3.0 Team", description="Brevo sender name")
 
 

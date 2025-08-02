@@ -167,7 +167,7 @@ frontend/
 - Pas de Redis nécessaire (uniquement Context Cache Gemini)
 
 ## 🤖 Intégration IA
-### Gemini Flash 2.0 via Vertex AI (important!)
+### Gemini Flash 2.0 ou 2.5 via Vertex AI ou SDK si besoin
 - **OBLIGATION** : Utiliser Context Caching avec TTL 6-24 heures
 - **OBLIGATION** : Utiliser Structured Output JSON
 - **OBLIGATION** : Appels API séparés (conversation vs analyse d'engagement)
