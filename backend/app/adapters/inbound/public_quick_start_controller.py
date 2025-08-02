@@ -212,7 +212,7 @@ Cette formation vous donnera les bases nécessaires pour maîtriser {request.top
             training_session = TrainingSession(
                 training_id=created_training.id,
                 name=f"Session: {training_name}",
-                description="Session générée automatiquement pour formation IA",
+                description="",
                 session_token=session_token,
                 expires_at=expires_at
             )

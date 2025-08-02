@@ -120,12 +120,40 @@ export const en = {
     'learner.chart': 'Chart',
     'learner.image': 'Image',
     
+    // PHASE 4: Interface introduction popovers
+    'intro.chatInput.title': '💬 Chat Zone',
+    'intro.chatInput.content': 'Ask your AI trainer questions here. It will help you understand the content and answer your doubts.',
+    'intro.voiceChat.title': '🎤 Voice Recognition',
+    'intro.voiceChat.content': 'Click to speak directly to your AI trainer. Your voice will be converted to text.',
+    'intro.audioToggle.title': '🔊 Audio Responses',
+    'intro.audioToggle.content': 'Enable this option to hear AI responses out loud.',
+    'intro.vocalChat.title': '🗣️ Voice Conversation',
+    'intro.vocalChat.content': 'Start a real-time voice conversation with Gemini AI.',
+    'intro.nextButton.title': '➡️ Next Navigation',
+    'intro.nextButton.content': 'Navigate between the slides of your personalized training.',
+    'intro.previousButton.title': '⬅️ Previous Navigation',
+    'intro.previousButton.content': 'Navigate between the slides of your personalized training.',
+    'intro.simplifyButton.title': '📝 Simplify Content',
+    'intro.simplifyButton.content': 'Request a simplified version of the current content.',
+    'intro.moreDetailsButton.title': '🔍 More Details',
+    'intro.moreDetailsButton.content': 'Get more details and deeper insights on the subject.',
+    'intro.chartButton.title': '📊 Generate Chart',
+    'intro.chartButton.content': 'Generate a chart or diagram to illustrate the content.',
+    'intro.closeButton': 'Got it',
+    'intro.closeButtonTooltip': 'Close this help',
+    
     // Phase 3: Slide Limitation Modal
     'learner.slideLimitTitle': 'Free Training Limit Reached',
     'learner.slideLimitMessage': 'You have reached the free preview limit of 10 slides.',
     'learner.slideLimitContact': 'To continue your personalized training, please contact us:',
     'learner.slideLimitThanks': 'Thank you for trying FIA v3.0 AI-powered training!',
     'learner.backToHome': 'Back to Home',
+    
+    // Landing Page
+    'landing.title': 'What would you like to learn about?',
+    'landing.placeholder': 'Example: Project management, Digital marketing...',
+    'landing.startButton': 'Start My Training',
+    'landing.brandName': 'Dice3.ai',
     
     // Contextual actions
     'action.comment': 'Comment',

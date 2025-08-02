@@ -120,12 +120,40 @@ export const fr = {
     'learner.chart': 'Graphique',
     'learner.image': 'Image',
     
+    // PHASE 4: Popovers d'introduction de l'interface
+    'intro.chatInput.title': '💬 Zone de Chat',
+    'intro.chatInput.content': 'Posez vos questions à votre formateur IA ici. Il vous aidera à comprendre le contenu et répondra à vos doutes.',
+    'intro.voiceChat.title': '🎤 Reconnaissance Vocale',
+    'intro.voiceChat.content': 'Cliquez pour parler directement à votre formateur IA. Votre voix sera convertie en texte.',
+    'intro.audioToggle.title': '🔊 Audio des Réponses',
+    'intro.audioToggle.content': 'Activez cette option pour entendre les réponses de l\'IA à voix haute.',
+    'intro.vocalChat.title': '🗣️ Conversation Vocale',
+    'intro.vocalChat.content': 'Démarrez une conversation vocale en temps réel avec l\'IA Gemini.',
+    'intro.nextButton.title': '➡️ Navigation Suivante',
+    'intro.nextButton.content': 'Naviguez entre les slides de votre formation personnalisée.',
+    'intro.previousButton.title': '⬅️ Navigation Précédente', 
+    'intro.previousButton.content': 'Naviguez entre les slides de votre formation personnalisée.',
+    'intro.simplifyButton.title': '📝 Simplifier le Contenu',
+    'intro.simplifyButton.content': 'Demandez une version simplifiée du contenu actuel.',
+    'intro.moreDetailsButton.title': '🔍 Plus de Détails',
+    'intro.moreDetailsButton.content': 'Obtenez plus de détails et d\'approfondissement sur le sujet.',
+    'intro.chartButton.title': '📊 Générer un Graphique',
+    'intro.chartButton.content': 'Générez un graphique ou diagramme pour illustrer le contenu.',
+    'intro.closeButton': 'Compris',
+    'intro.closeButtonTooltip': 'Fermer cette aide',
+    
     // Phase 3: Modal de limitation des slides
     'learner.slideLimitTitle': 'Limite de formation gratuite atteinte',
     'learner.slideLimitMessage': 'Vous avez atteint la limite de l\'aperçu gratuit de 10 slides.',
     'learner.slideLimitContact': 'Pour continuer votre formation personnalisée, veuillez nous contacter :',
     'learner.slideLimitThanks': 'Merci d\'avoir essayé la formation IA FIA v3.0 !',
     'learner.backToHome': 'Retour à l\'accueil',
+    
+    // Page d'accueil
+    'landing.title': 'Sur quoi souhaitez-vous vous former ?',
+    'landing.placeholder': 'Exemple : Gestion de projet, Marketing digital...',
+    'landing.startButton': 'Démarrer ma formation',
+    'landing.brandName': 'Dice3.ai',
     
     // Actions contextuelles
     'action.comment': 'Commenter',

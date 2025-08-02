@@ -111,6 +111,11 @@ export class SlideContentManager {
         console.log('📝 [SLIDE-CONTENT] content FINAL (preview):', content ? content.substring(0, 100) + '...' : 'NULL');
         console.log('🎨 [SLIDE-CONTENT] === AVANT PASSAGE À MARKDOWN ===');
         
+        // ========== PHASE 2: DÉTECTION PREMIER SLIDE "PLAN" POUR POPOVERS D'INTRODUCTION ==========
+        this.checkAndTriggerInterfaceIntroduction(slideData);
+        
+        console.log('🎨 [SLIDE-CONTENT] === APRÈS VÉRIFICATION INTERFACE INTRO ===');
+        
         // CORRECTION: Vérifier si le contenu est un objet JSON avec slide_content
         if (typeof content === 'object' && content !== null && content.slide_content) {
             console.log('🔧 [SLIDE-CONTENT] CORRECTION: Contenu est un objet JSON avec slide_content');
@@ -443,5 +448,78 @@ export class SlideContentManager {
         }
         this.currentSlideContent = null;
         console.log('🧹 [SLIDE-CONTENT] Slide content cleared');
+    }
+    
+    /**
+     * PHASE 2: Check if this is the first "plan" slide and trigger interface introduction popovers
+     * @param {Object} slideData - Slide data to analyze
+     */
+    checkAndTriggerInterfaceIntroduction(slideData) {
+        console.log('🎯 [INTERFACE-INTRO] === DÉBUT VÉRIFICATION SLIDE PLAN ===');
+        console.log('🎯 [INTERFACE-INTRO] slideData.slide_type:', slideData.slide_type);
+        console.log('🎯 [INTERFACE-INTRO] slideData.slide?.slide_type:', slideData.slide?.slide_type);
+        
+        // Détecter le slide_type "plan" dans différentes structures
+        let slideType = null;
+        
+        if (slideData.slide_type) {
+            slideType = slideData.slide_type;
+            console.log('🎯 [INTERFACE-INTRO] slide_type trouvé directement:', slideType);
+        } else if (slideData.slide && slideData.slide.slide_type) {
+            slideType = slideData.slide.slide_type;
+            console.log('🎯 [INTERFACE-INTRO] slide_type trouvé dans wrapper slide:', slideType);
+        } else {
+            console.log('🎯 [INTERFACE-INTRO] Aucun slide_type trouvé dans les données');
+        }
+        
+        // Vérifier si c'est un slide de type "plan"
+        if (slideType === 'plan') {
+            console.log('📋 [INTERFACE-INTRO] SLIDE TYPE "PLAN" DÉTECTÉ !');
+            
+            // Déclencher l'introduction avec un délai pour s'assurer que l'interface est rendue
+            setTimeout(() => {
+                this.triggerInterfaceIntroductionPopovers();
+            }, 1000); // 1 seconde de délai pour s'assurer que l'interface est complètement chargée
+            
+        } else {
+            console.log('📄 [INTERFACE-INTRO] Slide type non-plan détecté:', slideType || 'undefined');
+        }
+        
+        console.log('🎯 [INTERFACE-INTRO] === FIN VÉRIFICATION SLIDE PLAN ===');
+    }
+    
+    /**
+     * PHASE 2: Trigger interface introduction popovers by dynamically importing the component
+     */
+    async triggerInterfaceIntroductionPopovers() {
+        try {
+            console.log('🚀 [INTERFACE-INTRO] Démarrage import du composant InterfaceIntroductionPopovers...');
+            
+            // Import dynamique du composant (ES6 modules)
+            const { InterfaceIntroductionPopovers } = await import('./interface-introduction-popovers.js');
+            
+            console.log('✅ [INTERFACE-INTRO] Composant importé avec succès');
+            
+            // Créer une instance du composant
+            const introPopovers = new InterfaceIntroductionPopovers();
+            
+            console.log('🎯 [INTERFACE-INTRO] Instance créée, vérification si introduction nécessaire...');
+            
+            // Vérifier si l'introduction doit être affichée
+            if (introPopovers.shouldShowIntroduction()) {
+                console.log('📢 [INTERFACE-INTRO] DÉMARRAGE INTRODUCTION INTERFACE !');
+                
+                // Afficher les popovers d'introduction
+                introPopovers.showIntroductionPopovers();
+                
+                console.log('✨ [INTERFACE-INTRO] Popovers d\'introduction lancés avec succès');
+            } else {
+                console.log('ℹ️ [INTERFACE-INTRO] Introduction déjà terminée, pas d\'affichage');
+            }
+            
+        } catch (error) {
+            console.error('❌ [INTERFACE-INTRO] Erreur lors du chargement des popovers d\'introduction:', error);
+            // L'erreur n'est pas bloquante, l'utilisateur peut continuer sans l'introduction
+        }
     }
 }

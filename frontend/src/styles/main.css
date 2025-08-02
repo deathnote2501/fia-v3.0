@@ -940,3 +940,218 @@ button:disabled {
 .table-responsive:hover::after {
     opacity: 1;
 }
+
+/* ============================================================================ */
+/* PHASE 3: INTERFACE INTRODUCTION POPOVERS - BOOTSTRAP ENHANCED STYLES       */
+/* ============================================================================ */
+
+/* PHASE 3: Styles de base pour les popovers d'introduction interface */
+.interface-intro-popover.fia-intro-enhanced {
+    /* Configuration z-index pour être au-dessus de tout */
+    z-index: 1060 !important;
+    
+    /* Largeur optimisée pour le contenu */
+    max-width: 320px !important;
+    min-width: 280px !important;
+    
+    /* Ombres Bootstrap avec enhancement */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15), 
+                0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    
+    /* Bordures arrondies Bootstrap */
+    border-radius: 0.375rem !important;
+    border: none !important;
+}
+
+/* PHASE 3: Header optimisé avec style Bootstrap primary */
+.interface-intro-popover.fia-intro-enhanced .popover-header {
+    /* Couleurs Bootstrap primary */
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    color: white !important;
+    border: none !important;
+    
+    /* Typography Bootstrap améliorée */
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    
+    /* Padding optimal */
+    padding: 0.75rem 1rem !important;
+    
+    /* Bordures arrondies top */
+    border-radius: 0.375rem 0.375rem 0 0 !important;
+}
+
+/* PHASE 3: Icône dans le header */
+.interface-intro-popover.fia-intro-enhanced .popover-header .bi {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+/* PHASE 3: Body avec typographie et espacement Bootstrap */
+.interface-intro-popover.fia-intro-enhanced .popover-body {
+    /* Couleur de fond Bootstrap */
+    background-color: #ffffff !important;
+    
+    /* Padding optimisé */
+    padding: 1rem !important;
+    
+    /* Typography Bootstrap */
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    color: #495057 !important;
+}
+
+/* PHASE 3: Contenu du popover */
+.interface-intro-popover.fia-intro-enhanced .interface-intro-content p {
+    /* Typography responsive Bootstrap */
+    margin-bottom: 0.75rem !important;
+    color: #6c757d !important;
+    font-weight: 400 !important;
+    line-height: 1.6 !important;
+}
+
+/* PHASE 3: Section d'action avec bouton */
+.interface-intro-popover.fia-intro-enhanced .interface-intro-content .d-flex {
+    /* Bordure subtile Bootstrap */
+    border-top: 1px solid #e9ecef !important;
+    margin-top: 0.75rem !important;
+    padding-top: 0.75rem !important;
+}
+
+/* PHASE 3: Bouton de fermeture Bootstrap enhanced */
+.interface-intro-popover.fia-intro-enhanced .interface-intro-close {
+    /* Couleurs Bootstrap primary avec enhancement */
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    border: none !important;
+    color: white !important;
+    
+    /* Typography */
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    
+    /* Dimensions et spacing */
+    padding: 0.4rem 0.8rem !important;
+    border-radius: 0.25rem !important;
+    
+    /* Effets visuels */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+/* PHASE 3: États hover et focus du bouton */
+.interface-intro-popover.fia-intro-enhanced .interface-intro-close:hover {
+    /* Effet hover Bootstrap enhanced */
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%) !important;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-1px) !important;
+    color: white !important;
+}
+
+.interface-intro-popover.fia-intro-enhanced .interface-intro-close:focus {
+    /* Focus Bootstrap avec outline personnalisé */
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+    outline: none !important;
+    color: white !important;
+}
+
+.interface-intro-popover.fia-intro-enhanced .interface-intro-close:active {
+    /* État active/pressed */
+    transform: translateY(0) !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* PHASE 3: Flèche Bootstrap avec style cohérent */
+.interface-intro-popover.fia-intro-enhanced .popover-arrow::before,
+.interface-intro-popover.fia-intro-enhanced .popover-arrow::after {
+    border-color: #0d6efd transparent !important;
+}
+
+/* PHASE 3: Animation d'apparition fluide */
+.interface-intro-popover.fia-intro-enhanced.show {
+    animation: popoverFadeIn 0.3s ease-out !important;
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* PHASE 3: Animation de disparition */
+.interface-intro-popover.fia-intro-enhanced.fade:not(.show) {
+    animation: popoverFadeOut 0.15s ease-in !important;
+}
+
+@keyframes popoverFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(-5px);
+    }
+}
+
+/* PHASE 3: Responsive adaptations */
+@media (max-width: 768px) {
+    .interface-intro-popover.fia-intro-enhanced {
+        /* Adaptation mobile */
+        max-width: 280px !important;
+        min-width: 250px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .popover-header {
+        font-size: 0.85rem !important;
+        padding: 0.6rem 0.8rem !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .popover-body {
+        padding: 0.8rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .interface-intro-close {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.7rem !important;
+    }
+}
+
+/* PHASE 3: Accessibilité et contraste */
+@media (prefers-reduced-motion: reduce) {
+    .interface-intro-popover.fia-intro-enhanced.show,
+    .interface-intro-popover.fia-intro-enhanced.fade:not(.show) {
+        animation: none !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .interface-intro-close {
+        transition: none !important;
+    }
+}
+
+/* PHASE 3: High contrast mode */
+@media (prefers-contrast: high) {
+    .interface-intro-popover.fia-intro-enhanced {
+        border: 2px solid #000 !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .popover-header {
+        background: #000 !important;
+        color: #fff !important;
+    }
+    
+    .interface-intro-popover.fia-intro-enhanced .interface-intro-close {
+        background: #000 !important;
+        border: 1px solid #fff !important;
+    }
+}
+
+/* ============================================================================ */
+/* FIN STYLES INTERFACE INTRODUCTION POPOVERS                                  */
+/* ============================================================================ */
