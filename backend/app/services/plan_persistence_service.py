@@ -314,12 +314,12 @@ class PlanPersistenceService:
                 await self._create_slide_with_type(submodule_id, stage_slide_data, slide_order, SlideType.STAGE)
                 slide_order += 1
         
-        # 3. Si c'est le premier sous-module du module, créer la slide de module
-        if is_first_submodule:
-            module_slide_data = module.get("module_slide", {})
-            if module_slide_data:
-                await self._create_slide_with_type(submodule_id, module_slide_data, slide_order, SlideType.MODULE)
-                slide_order += 1
+        # # 3. Si c'est le premier sous-module du module, créer la slide de module > commenté volontairement ne pas décommenter !!!
+        # if is_first_submodule:
+        #     module_slide_data = module.get("module_slide", {})
+        #     if module_slide_data:
+        #         await self._create_slide_with_type(submodule_id, module_slide_data, slide_order, SlideType.MODULE)
+        #         slide_order += 1
         
         # 4. Créer les slides de contenu du sous-module
         slide_count = submodule.get("slide_count", 0)

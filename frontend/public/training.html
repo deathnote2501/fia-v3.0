@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIA v3.0 - Personal Training Plan</title>
+    <title data-i18n="learner.trainingPlan">FIA v3.0 - Personal Training Plan</title>
     
     <!-- Prevent favicon 404 error -->
     <link rel="icon" href="data:,">
@@ -24,7 +24,7 @@
         <!-- 1. HEADER: Progress Bar (toute la largeur) -->
         <div class="slide-header">
             <div id="progress-breadcrumb" class="progress-breadcrumb">
-                <span class="progress-text">Training Plan</span>
+                <span class="progress-text" data-i18n="learner.trainingPlan">Training Plan</span>
             </div>
             <div class="progress-section">
                 <div class="progress">
@@ -46,16 +46,16 @@
             <!-- Action Buttons -->
             <div class="chat-actions">
                 <div class="btn-group w-100" role="group" aria-label="Chat actions">
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn" title="Ask for comments or feedback on this slide">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn" data-i18n-title="tooltip.comment" title="Ask for comments or feedback on this slide">
                         <i class="bi bi-chat-text me-1"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn" title="Generate a quiz to test your understanding">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn" data-i18n-title="tooltip.quiz" title="Generate a quiz to test your understanding">
                         <i class="bi bi-question-circle me-1"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn" title="Get practical examples related to this content">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn" data-i18n-title="tooltip.examples" title="Get practical examples related to this content">
                         <i class="bi bi-lightbulb me-1"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn" title="Highlight the key points of this slide">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn" data-i18n-title="tooltip.keyPoints" title="Highlight the key points of this slide">
                         <i class="bi bi-star me-1"></i>
                     </button>
                 </div>
@@ -81,12 +81,12 @@
                             <input type="checkbox" id="tts-toggle">
                             <span class="tts-slider"></span>
                         </label>
-                        <label for="tts-toggle" class="tts-label">Enable Audio</label>
+                        <label for="tts-toggle" class="tts-label" data-i18n="learner.enableAudio">Enable Audio</label>
                     </div>
                     <div class="live-api-button-container">
-                    <button type="button" class="btn btn-success" id="live-api-btn" title="Start Live Voice Conversation with Gemini">
+                    <button type="button" class="btn btn-success" id="live-api-btn" data-i18n-title="tooltip.vocal" title="Start Live Voice Conversation with Gemini">
                         <i class="bi bi-soundwave me-1" id="live-api-icon"></i>
-                        <span id="live-api-text">Vocal</span>
+                        <span id="live-api-text" data-i18n="learner.vocal">Vocal</span>
                     </button>
                     </div>
                 </div>
@@ -94,12 +94,12 @@
                 <!-- Chat Input avec bouton voix -->
                 <div class="chat-input-wrapper">
                     <textarea class="form-control" id="chat-input" 
-                              placeholder="Ask your AI trainer..." maxlength="500"
+                              data-i18n-placeholder="learner.askTrainer" placeholder="Ask your AI trainer..." maxlength="500"
                               rows="1" style="resize: none; overflow: hidden;"></textarea>
                     
                     <!-- Voice Chat Button (adaptive) -->
                     <button class="btn voice-chat-btn state-mic" type="button" id="voice-chat-btn" 
-                            title="Click to start voice recording">
+                            data-i18n-title="tooltip.voice" title="Click to start voice recording">
                         <i class="bi bi-mic" id="voice-btn-icon"></i>
                     </button>
                     
@@ -118,26 +118,26 @@
             <!-- Navigation Section (75% droite) -->
             <div class="footer-nav-section">
                 <button id="new-previous-btn" class="btn btn-primary" disabled>
-                    <i class="bi bi-chevron-left me-1"></i>Previous
+                    <i class="bi bi-chevron-left me-1"></i><span data-i18n="learner.previous">Previous</span>
                 </button>
                 
                 <div class="interaction-buttons">
                     <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-arrows-collapse me-1"></i>Simplify
+                        <i class="bi bi-arrows-collapse me-1"></i><span data-i18n="learner.simplify">Simplify</span>
                     </button>
                     <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-arrows-expand me-1"></i>Deepen
+                        <i class="bi bi-arrows-expand me-1"></i><span data-i18n="learner.deepen">Deepen</span>
                     </button>
                     <button id="generate-chart-btn" class="btn btn-outline-primary">
-                        <i class="bi bi-graph-up me-1"></i>Chart
+                        <i class="bi bi-graph-up me-1"></i><span data-i18n="learner.chart">Chart</span>
                     </button>
                     <button id="generate-image-btn" class="btn btn-outline-primary me-2" style="visibility: hidden;">
-                        <i class="bi bi-image me-1"></i>Image
+                        <i class="bi bi-image me-1"></i><span data-i18n="learner.image">Image</span>
                     </button>
                 </div>
                 
                 <button id="new-next-btn" class="btn btn-primary">
-                    Next<i class="bi bi-chevron-right ms-1"></i>
+                    <span data-i18n="learner.next">Next</span><i class="bi bi-chevron-right ms-1"></i>
                 </button>
             </div>
         </div>
@@ -152,6 +152,109 @@
     
     <!-- Chart.js for chart generation -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- i18n Service for Learners -->
+    <script type="module">
+        import { initializeI18n, setupGlobalTranslation } from '../src/i18n/i18n-helper.js';
+        
+        // Initialize i18n service for learners
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🌐 [training] Initializing i18n service for learner...');
+            
+            // Initialize i18n with learner language detection
+            await initializeLearnerI18n();
+            setupGlobalTranslation();
+            
+            console.log('✅ [training] i18n service initialized for learner');
+        });
+        
+        async function initializeLearnerI18n() {
+            try {
+                // Try to detect learner language from session
+                const learnerLanguage = await detectLearnerLanguage();
+                
+                // Initialize i18n service
+                await initializeI18n();
+                
+                // Set detected language if different from default
+                if (learnerLanguage && window.i18n && learnerLanguage !== window.i18n.getCurrentLanguage()) {
+                    await window.i18n.setLanguage(learnerLanguage);
+                    console.log(`🌐 [training] Learner language set to: ${learnerLanguage}`);
+                }
+                
+                // Apply translations including custom attributes
+                if (window.i18n) {
+                    updateLearnerInterface();
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ [training] Error initializing learner i18n:', error);
+                // Fallback to default initialization
+                await initializeI18n();
+                setupGlobalTranslation();
+            }
+        }
+        
+        async function detectLearnerLanguage() {
+            try {
+                // Get token from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                
+                if (!token) {
+                    console.log('🔍 [training] No session token found, using browser language');
+                    return null;
+                }
+                
+                // Get session data including learner language
+                const response = await fetch(`/api/session/${token}`);
+                if (response.ok) {
+                    const sessionData = await response.json();
+                    const learnerLanguage = sessionData.learner_session?.language;
+                    
+                    if (learnerLanguage) {
+                        console.log(`🎯 [training] Detected learner language from session: ${learnerLanguage}`);
+                        return learnerLanguage;
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ [training] Error detecting learner language from API:', error);
+            }
+            
+            return null;
+        }
+        
+        function updateLearnerInterface() {
+            // Update standard data-i18n elements
+            window.i18n.updateDOM();
+            
+            // Update custom attributes (title, placeholder)
+            document.querySelectorAll('[data-i18n-title]').forEach(element => {
+                const key = element.getAttribute('data-i18n-title');
+                element.title = window.i18n.t(key);
+            });
+            
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                element.placeholder = window.i18n.t(key);
+            });
+            
+            // Update document title
+            const titleElement = document.querySelector('title[data-i18n]');
+            if (titleElement) {
+                const key = titleElement.getAttribute('data-i18n');
+                document.title = window.i18n.t(key);
+            }
+            
+            console.log('🔄 [training] Learner interface updated with translations');
+        }
+        
+        // Listen for language changes to update custom attributes
+        window.addEventListener('languageChanged', updateLearnerInterface);
+        
+        // Make updateLearnerInterface available globally for dynamic updates
+        window.updateLearnerInterface = updateLearnerInterface;
+    </script>
     
     <!-- FIA v3.0 Training Page Initialization -->
     <script type="module" src="../src/training-init.js"></script>

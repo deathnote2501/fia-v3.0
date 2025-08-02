@@ -21,8 +21,9 @@ nosetests.xml
 .dmypy.json
 dmypy.json
 
-# Poetry
+# Poetry (but keep lock file)
 .venv
+!backend/poetry.lock
 
 # Environment files
 .env

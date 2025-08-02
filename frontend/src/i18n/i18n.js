@@ -103,6 +103,18 @@ class I18n {
             element.textContent = this.t(key);
         });
         
+        // Mettre à jour les attributs title avec data-i18n-title
+        document.querySelectorAll('[data-i18n-title]').forEach(element => {
+            const key = element.getAttribute('data-i18n-title');
+            element.title = this.t(key);
+        });
+        
+        // Mettre à jour les attributs placeholder avec data-i18n-placeholder
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            element.placeholder = this.t(key);
+        });
+        
         // Mettre à jour l'attribut lang du document
         document.documentElement.lang = this.currentLanguage;
         

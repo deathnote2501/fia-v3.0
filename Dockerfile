@@ -1,35 +1,9 @@
-# FIA v3.0 - Multi-stage Docker build with Poetry
-FROM python:3.11-slim as builder
+# FIA v3.0 - Simplified Docker build with pip
+FROM python:3.11-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry
-RUN pip install poetry==1.8.3
-
-# Configure Poetry
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VENV_IN_PROJECT=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
-
-# Set work directory
-WORKDIR /app
-
-# Copy Poetry files from backend directory  
-COPY backend/pyproject.toml ./pyproject.toml
-COPY backend/poetry.lock ./poetry.lock
-
-# Install dependencies
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
-
-# Production stage
-FROM python:3.11-slim as production
-
-# Install runtime dependencies (minimal for Python apps)
-RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,14 +12,14 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PYTHONDONTWRITEBYTECODE=1
 
 # Set work directory
 WORKDIR /app
 
-# Copy virtual environment from builder stage
-COPY --from=builder /app/.venv /app/.venv
+# Copy requirements and install Python dependencies
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY backend/ ./backend/
@@ -63,7 +37,7 @@ USER appuser
 # Expose port
 EXPOSE 8080
 
-# Health check using curl instead of python requests
+# Health check using curl
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
 

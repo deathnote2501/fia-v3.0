@@ -1,10 +1,15 @@
 /**
  * FIA v3.0 - Trainer Dashboard Component
- * Handles trainer dashboard functionality
+ * Handles trainer dashboard functionality with i18n support
  */
 
 console.log('🚨 ÉTAPE 4 - trainer-dashboard.js RECHARGÉ À:', new Date().toISOString());
-console.log('🚨 ÉTAPE 4 - VERSION DU FICHIER: v4.debug.001');
+console.log('🚨 ÉTAPE 4 - VERSION DU FICHIER: v4.debug.001.i18n');
+
+// Helper function for translations
+function t(key) {
+    return window.t ? window.t(key) : key;
+}
 
 // NAVIGATION HASH ROBUSTE - Version déterministe sans timeouts
 function handleHashNavigation() {
@@ -229,8 +234,8 @@ class TrainerDashboard {
         if (isAIGenerated) {
             // AI mode
             toggleIcon.className = 'bi bi-toggle-on me-2 text-primary';
-            toggleText.textContent = 'Generated with AI';
-            toggleHelpText.innerHTML = '<i class="bi bi-robot me-1 text-primary"></i>AI will generate comprehensive training content based on your description';
+            toggleText.textContent = t('training.aiGenerated');
+            toggleHelpText.innerHTML = `<i class="bi bi-robot me-1 text-primary"></i>${t('training.aiToggleHelp')}`;
             
             // Disable file upload
             fileSection.style.opacity = '0.5';
@@ -242,13 +247,13 @@ class TrainerDashboard {
             descriptionField.placeholder = 'Describe the training topic in detail for AI generation...';
             
             // Update submit button
-            submitBtn.innerHTML = '<i class="bi bi-robot me-2"></i>Generate Training with AI';
+            submitBtn.innerHTML = `<i class="bi bi-robot me-2"></i>${t('training.generateWithAI')}`;
             submitBtn.className = 'btn btn-success';
             
         } else {
             // File upload mode
             toggleIcon.className = 'bi bi-toggle-off me-2';
-            toggleText.textContent = 'Generated with AI';
+            toggleText.textContent = t('training.aiGenerated');
             toggleHelpText.innerHTML = '<i class="bi bi-info-circle me-1"></i>Generate training content automatically using AI instead of uploading a file';
             
             // Enable file upload
@@ -261,7 +266,7 @@ class TrainerDashboard {
             descriptionField.placeholder = '';
             
             // Reset submit button
-            submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Create Training';
+            submitBtn.innerHTML = `<i class="bi bi-upload me-2"></i>${t('training.create')}`;
             submitBtn.className = 'btn btn-primary';
         }
     }
@@ -322,7 +327,7 @@ class TrainerDashboard {
                 progressContainer.classList.remove('d-none');
                 progressBar.style.width = '30%';
                 progressBar.setAttribute('aria-valuenow', '30');
-                statusDiv.textContent = 'AI is generating your training content...';
+                statusDiv.textContent = t('status.aiGenerating');
                 progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
             } else {
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
@@ -447,10 +452,10 @@ class TrainerDashboard {
             // Reset button to current mode
             const toggle = document.getElementById('ai-generated-toggle');
             if (toggle.checked) {
-                submitBtn.innerHTML = '<i class="bi bi-robot me-2"></i>Generate Training with AI';
+                submitBtn.innerHTML = `<i class="bi bi-robot me-2"></i>${t('training.generateWithAI')}`;
                 submitBtn.className = 'btn btn-success';
             } else {
-                submitBtn.innerHTML = '<i class="bi bi-upload me-2"></i>Create Training';
+                submitBtn.innerHTML = `<i class="bi bi-upload me-2"></i>${t('training.create')}`;
                 submitBtn.className = 'btn btn-primary';
             }
             
@@ -502,7 +507,7 @@ class TrainerDashboard {
             
             if (select) {
                 // Clear existing options except the first one
-                select.innerHTML = '<option value="">Choose a training...</option>';
+                select.innerHTML = `<option value="">${t('session.chooseTraining')}</option>`;
                 
                 trainings.forEach(training => {
                     const option = document.createElement('option');
@@ -552,7 +557,7 @@ class TrainerDashboard {
             // Reset button state
             const submitBtn = form.querySelector('button[type="submit"]');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-calendar-plus me-2"></i>Generate Session Link';
+            submitBtn.innerHTML = `<i class="bi bi-calendar-plus me-2"></i>${t('session.generateLink')}`;
         }
     }
 
@@ -645,7 +650,7 @@ class TrainerDashboard {
             
             if (container) {
                 if (activities.length === 0) {
-                    container.innerHTML = '<p class="text-muted">No recent activity</p>';
+                    container.innerHTML = `<p class="text-muted">${t('dashboard.noActivity')}</p>`;
                 } else {
                     const activityHtml = activities.map(activity => `
                         <div class="d-flex align-items-center mb-2">

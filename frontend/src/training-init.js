@@ -1,9 +1,15 @@
 /**
  * FIA v3.0 - Unified Training Page Initialization
  * Handles complete learner journey: token validation → profile → plan → training
+ * Now with i18n support for learners
  */
 
 import { initializeFIAApp } from './main.js';
+
+// Helper function for translations (available after i18n initialization)
+function t(key) {
+    return window.t ? window.t(key) : key;
+}
 
 // Application States
 const APP_STATES = {
@@ -193,8 +199,8 @@ class UnifiedTrainingApp {
                 <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <h4>Validating Session</h4>
-                <p class="mt-3 text-muted">Please wait while we verify your session token...</p>
+                <h4>${t('status.validatingSession')}</h4>
+                <p class="mt-3 text-muted">${t('status.validatingSessionMessage')}</p>
             </div>
         `;
     }
@@ -516,13 +522,13 @@ class UnifiedTrainingApp {
         // Show plan generation state
         document.getElementById('main-content').innerHTML = `
             <div class="text-center p-5">
-                <h3>Generating Your Personalized Training Plan</h3>
+                <h3>${t('status.generatingPlan')}</h3>
                 <div class="progress mt-3" style="height: 25px;">
                     <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
                          role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                     </div>
                 </div>
-                <p class="mt-3 text-muted">This may take a few moments...</p>
+                <p class="mt-3 text-muted">${t('status.generatingPlanMessage')}</p>
             </div>
         `;
         
@@ -611,8 +617,8 @@ class UnifiedTrainingApp {
                 <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <h4>Loading Your Training Session</h4>
-                <p class="mt-3 text-muted">Loading your current slide...</p>
+                <h4>${t('status.loadingSession')}</h4>
+                <p class="mt-3 text-muted">${t('status.loadingSessionMessage')}</p>
             </div>
         `;
         
