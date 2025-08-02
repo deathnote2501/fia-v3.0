@@ -58,12 +58,11 @@ class ChartGenerationService:
             }
             
             # Call AI adapter for content generation
-            response = await self.ai_adapter.generate_content(
+            response_text = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 model_name="gemini-2.0-flash-001",
                 temperature=0.3
             )
-            response_text = response.get('text', '')
             
             # Log response information
             logger.info(f"🎯 CHART GENERATION [AI_RESPONSE] Received {len(response_text)} characters")
