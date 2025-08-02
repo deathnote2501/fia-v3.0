@@ -10,15 +10,17 @@ from typing import BinaryIO, Tuple
 from uuid import UUID
 
 from app.domain.ports.file_storage import FileStoragePort
-from app.infrastructure.settings import settings
+from app.domain.ports.settings_port import SettingsPort
 
 
 class FileStorageService(FileStoragePort):
     """Local file system implementation of file storage"""
     
-    def __init__(self):
-        # Base upload directory
-        self.uploads_dir = Path(__file__).parent.parent.parent.parent / "uploads" / "trainings"
+    def __init__(self, settings_port: SettingsPort):
+        self.settings = settings_port
+        # Base upload directory from settings
+        storage_path = self.settings.get_storage_path()
+        self.uploads_dir = Path(storage_path) / "trainings"
         # Ensure directory exists
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
     

@@ -9,12 +9,10 @@ import time
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
-# Infrastructure adapter
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter, VertexAIError
-from app.infrastructure.settings import settings
-
-# Rate limiting
-from app.infrastructure.rate_limiter import gemini_rate_limiter, RateLimitExceeded
+# Domain ports
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError, RateLimitExceededException
+from app.domain.ports.settings_port import SettingsPort
+from app.domain.ports.rate_limiter_port import RateLimiterPort
 
 # Vertex AI imports for specialized model
 try:
@@ -48,9 +46,16 @@ class AITrainingGenerationService:
     # Standard error message for users
     USER_ERROR_MESSAGE = "AI training generation is temporarily unavailable. Please try again later or contact support."
     
-    def __init__(self):
-        """Initialize AI training generation service"""
-        self.vertex_adapter = VertexAIAdapter()
+    def __init__(
+        self, 
+        ai_adapter: AIAdapterPort, 
+        settings_port: SettingsPort, 
+        rate_limiter: RateLimiterPort
+    ):
+        """Initialize AI training generation service with dependency injection"""
+        self.ai_adapter = ai_adapter
+        self.settings = settings_port
+        self.rate_limiter = rate_limiter
         self.api_call_counter = 0
         self.model_name = AI_TRAINING_MODEL  # Use specialized model for training generation
         self.specialized_client = None
@@ -69,8 +74,8 @@ class AITrainingGenerationService:
                 return
             
             # Set up project and location
-            project_id = settings.google_cloud_project
-            location = settings.google_cloud_region or "europe-west1"
+            project_id = self.settings.get_google_cloud_project()
+            location = self.settings.get_google_cloud_region() or "europe-west1"
             
             if not project_id:
                 logger.error("⚠️ AI_TRAINING_GEN [CLIENT] GOOGLE_CLOUD_PROJECT not configured")
@@ -78,17 +83,18 @@ class AITrainingGenerationService:
                 return
             
             # Setup credentials if provided as JSON
-            if settings.google_credentials_json:
+            google_credentials_json = self.settings.get_setting('GOOGLE_CREDENTIALS_JSON')
+            if google_credentials_json:
                 import json
                 
                 # Write credentials to temporary file
-                credentials_dict = json.loads(settings.google_credentials_json)
+                credentials_dict = json.loads(google_credentials_json)
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
                     json.dump(credentials_dict, f)
                     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f.name
                     logger.info("🔑 AI_TRAINING_GEN [CLIENT] Using JSON credentials")
-            elif settings.google_application_credentials:
-                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = settings.google_application_credentials
+            elif self.settings.get_setting('GOOGLE_APPLICATION_CREDENTIALS'):
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = self.settings.get_setting('GOOGLE_APPLICATION_CREDENTIALS')
                 logger.info("🔑 AI_TRAINING_GEN [CLIENT] Using credentials file")
             
             # Initialize Vertex AI

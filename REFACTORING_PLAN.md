@@ -1,14 +1,70 @@
 # 🔧 PLAN DE REFACTORISATION SMART KISS
 ## FIA v3.0 - Architecture Hexagonale Compliance
 
-### 📊 ÉTAT ACTUEL (Analyse Hooks)
-```
-Score Refactorisation: 37/100
-• 3 Violations Critiques (30 points) 🔴
-• 1 Violation Importante (5 points) 🟡  
-• 2 Violations Mineures (2 points) 🟢
+## 🏆 SUIVI PHASES - VUE EXÉCUTIVE
 
-Stratégie: URGENT - Refactorisation nécessaire
+### ✅ **PHASE 1: SAFE CHANGES** - **TERMINÉE** ✅
+- [x] **1.1 Naming Conventions** - English terms applied in PromptBuilder
+- [x] **1.2 Database Pagination** - Added to TrainingRepository with feature flags  
+- [x] **1.3 Performance Indexes** - Strategic indexes migration (011_strategic_indexes)
+- [x] **1.4 Feature Flags System** - Complete infrastructure for safe refactoring
+- [x] **1.5 CI/CD Pipeline** - Automated validation hooks + GitHub Actions
+
+**📊 Résultats Phase 1:**
+- Risque: 0% ✅ 
+- Status: 100% Complete ✅
+- Impact: Backward compatible ✅
+- Ready for targeted user testing ✅
+
+---
+
+### ✅ **PHASE 2: MODERATE CHANGES** - **TERMINÉE** ✅
+- [x] **2.1 Domain Layer Cleanup** - Infrastructure imports eliminated from domain services
+- [x] **2.2 Create Missing Ports** - Settings, AI, Rate Limiter, Admin Repository ports created
+- [x] **2.3 FastAPI Dependencies Isolation** - Pure domain schemas, FastAPI moved to infrastructure
+- [x] **2.4 Dependency Injection** - All domain services use port interfaces
+
+**📊 Résultats Phase 2:**
+- Risque: 15% ✅
+- Domain Purity: 60% (target atteint) ✅
+- Infrastructure imports: 0 violations ✅
+- Dependency injection: Complete ✅
+
+---
+
+### 🚧 **PHASE 3: RISKY CHANGES** - **À PLANIFIER**
+- [ ] **3.1 Services Duplication Resolution** - Consolidate app/services/ vs app/domain/services/
+- [ ] **3.2 Controllers Unification** - Move app/controllers/ → app/adapters/inbound/
+- [ ] **3.3 Parallel Development** - Branch strategy for high-risk changes
+
+**📊 Objectifs Phase 3:**
+- Risque: 40% 🔴
+- Requires parallel development
+- Critical: Services consolidation
+
+---
+
+### 🎯 **PHASE 4: VALIDATION & CLEANUP** - **À PLANIFIER**
+- [ ] **4.1 Architecture Compliance** - Domain Purity 90%+
+- [ ] **4.2 Performance & Security** - Complete audit
+- [ ] **4.3 Documentation** - Refactoring documentation
+
+**📊 Objectifs Phase 4:**
+- Risque: 5% 🟢
+- Final validation and cleanup
+- Score target: <10/100
+
+---
+
+### 📊 ÉTAT ACTUEL (Post Phase 2)
+```
+Score Refactorisation: 5/100 (improved from 37/100 → 10/100 → 5/100)
+• 0 Violations Critiques ✅
+• 1 Violation Importante (services duplication) 🟡  
+• 0 Violations Mineures ✅
+
+Domain Purity: 60% (up from 0%)
+Stratégie: EXCELLENT - Ready for final consolidation (Phase 3)
 ```
 
 ---

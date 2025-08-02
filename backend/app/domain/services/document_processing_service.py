@@ -11,7 +11,8 @@ import io
 
 import google.generativeai as genai
 
-from app.infrastructure.settings import settings
+from app.domain.ports.settings_port import SettingsPort
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 from app.domain.services.context_cache_service import ContextCacheService, ContextCacheError
 
 
@@ -27,11 +28,13 @@ class DocumentProcessingError(Exception):
 class DocumentProcessingService:
     """Service for processing PDF/PowerPoint documents using Gemini API"""
     
-    def __init__(self):
+    def __init__(self, settings_port: SettingsPort, ai_adapter: AIAdapterPort):
         """Initialize the document processing service"""
-        self.model_name = settings.gemini_model_name
+        self.settings = settings_port
+        self.ai_adapter = ai_adapter
+        self.model_name = self.settings.get_gemini_model_name()
         self.client = self._initialize_gemini_client()
-        self.cache_service = ContextCacheService()
+        self.cache_service = ContextCacheService(self.settings, self.ai_adapter)
         
     def _initialize_gemini_client(self) -> genai.Client:
         """Initialize Gemini client with Vertex AI configuration"""
