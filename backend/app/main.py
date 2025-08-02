@@ -11,11 +11,14 @@ logging.basicConfig(
     force=True  # Force override de la config existante
 )
 
-# 🔍 DÉSACTIVER LES LOGS SQL POUR ÉVITER LA POLLUTION
-logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
-logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
-logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
-logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
+# 🔍 DÉSACTIVER TOUS LES LOGS POSTGRESQL/SQLALCHEMY POUR ÉVITER LA POLLUTION
+logging.getLogger('sqlalchemy.engine').setLevel(logging.CRITICAL)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.CRITICAL)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.CRITICAL)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.CRITICAL)
+logging.getLogger('asyncpg').setLevel(logging.CRITICAL)
+logging.getLogger('asyncio').setLevel(logging.ERROR)
+logging.getLogger('aiopg').setLevel(logging.CRITICAL)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles

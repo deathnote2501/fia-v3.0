@@ -18,8 +18,9 @@ ENV POETRY_NO_INTERACTION=1 \
 # Set work directory
 WORKDIR /app
 
-# Copy Poetry files
-COPY backend/pyproject.toml backend/poetry.lock ./
+# Copy Poetry files from backend directory  
+COPY backend/pyproject.toml ./pyproject.toml
+COPY backend/poetry.lock ./poetry.lock
 
 # Install dependencies
 RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
@@ -27,8 +28,9 @@ RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
 # Production stage
 FROM python:3.11-slim as production
 
-# Install runtime dependencies
+# Install runtime dependencies (minimal for Python apps)
 RUN apt-get update && apt-get install -y \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -61,9 +63,9 @@ USER appuser
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check using curl instead of python requests
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8080/api/health')" || exit 1
+    CMD curl -f http://localhost:8080/api/health || exit 1
 
 # Set working directory to backend for app execution
 WORKDIR /app/backend

@@ -16,7 +16,7 @@ class Base(DeclarativeBase):
 # Create async engine
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,  # Log SQL queries in debug mode
+    echo=False,  # Disable SQL query logging to avoid log pollution
     future=True,
     pool_pre_ping=True,  # Verify connections before use
     pool_recycle=300,    # Recycle connections every 5 minutes
