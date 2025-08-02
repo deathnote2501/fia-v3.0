@@ -66,20 +66,6 @@
                                 Session
                             </a>
                         </li>
-                        
-                        <!-- Admin-only separator -->
-                        <li class="nav-item admin-only">
-                            <hr class="my-2">
-                            <small class="text-muted px-3">Administration</small>
-                        </li>
-                        
-                        <!-- Admin-only tabs -->
-                        <li class="nav-item admin-only">
-                            <a class="nav-link" href="#admin-trainers" data-bs-toggle="tab">
-                                <i class="bi bi-people me-2"></i>
-                                Trainers
-                            </a>
-                        </li>
                     </ul>
                 </div>
             </nav>
@@ -441,106 +427,6 @@
                         </div>
                     </div>
 
-                    <!-- Admin Trainers Tab -->
-                    <div class="tab-pane fade admin-only admin-trainers" id="admin-trainers">
-                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <h1 class="h2">Trainers Overview</h1>
-                            <div class="btn-toolbar mb-2 mb-md-0">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="refreshTrainersOverview()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>
-                                    Refresh
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Trainers Overview Table -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">
-                                            <i class="bi bi-people me-2"></i>
-                                            All Trainers Statistics
-                                            <small class="text-muted d-block d-md-none mt-1">
-                                                <i class="bi bi-info-circle me-1"></i>
-                                                Swipe to see more columns
-                                            </small>
-                                        </h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-hover sortable-table" id="trainers-overview-table">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th class="sortable" data-column="first_name">
-                                                            Prénom
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="last_name">
-                                                            Nom
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="email">
-                                                            Email
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="created_at">
-                                                            Date création
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="trainings_with_support">
-                                                            Formations Support
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="trainings_ai_generated">
-                                                            Formations IA
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="active_sessions">
-                                                            Sessions Actives
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="total_sessions">
-                                                            Sessions Total
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="unique_learners">
-                                                            Apprenants
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="total_time_all_learners">
-                                                            Temps Total
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="average_time_per_slide">
-                                                            Temps/Slide
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="total_slides_generated">
-                                                            Slides Total
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                        <th class="sortable" data-column="average_slides_per_training">
-                                                            Slides Moy/Formation
-                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="trainers-overview-body">
-                                                    <tr>
-                                                        <td colspan="13" class="text-center text-muted py-4">
-                                                            <i class="bi bi-hourglass-split display-6"></i>
-                                                            <p class="mt-2">Loading trainers overview...</p>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
             </main>

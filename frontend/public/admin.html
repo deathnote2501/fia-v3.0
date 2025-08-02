@@ -49,27 +49,15 @@
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#trainers-overview" data-bs-toggle="tab">
+                            <a class="nav-link active" href="#trainers" data-bs-toggle="tab">
                                 <i class="bi bi-people me-2"></i>
-                                Trainers Overview
-                            </a>
-                        </li>
-                        
-                        <!-- Future admin features -->
-                        <li class="nav-item">
-                            <hr class="my-2">
-                            <small class="text-muted px-3">Future Features</small>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link disabled" href="#" aria-disabled="true">
-                                <i class="bi bi-bar-chart me-2"></i>
-                                Global Analytics
+                                Trainers
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link disabled" href="#" aria-disabled="true">
-                                <i class="bi bi-gear me-2"></i>
-                                System Settings
+                            <a class="nav-link" href="#trainees" data-bs-toggle="tab">
+                                <i class="bi bi-person-check me-2"></i>
+                                Trainees
                             </a>
                         </li>
                     </ul>
@@ -82,10 +70,10 @@
                 <div id="alert-container" class="mb-3"></div>
                 
                 <div class="tab-content" id="admin-tabs">
-                    <!-- Trainers Overview Tab -->
-                    <div class="tab-pane fade show active" id="trainers-overview">
+                    <!-- Trainers Tab -->
+                    <div class="tab-pane fade show active" id="trainers">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <h1 class="h2">Trainers Overview</h1>
+                            <h1 class="h2">Trainers</h1>
                             <div class="btn-toolbar mb-2 mb-md-0">
                                 <button class="btn btn-sm btn-outline-secondary" onclick="refreshTrainersOverview()">
                                     <i class="bi bi-arrow-clockwise me-1"></i>
@@ -94,14 +82,14 @@
                             </div>
                         </div>
 
-                        <!-- Trainers Overview Table -->
+                        <!-- Trainers Table -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="mb-0">
                                             <i class="bi bi-people me-2"></i>
-                                            All Trainers Statistics
+                                            All Trainers
                                             <small class="text-muted d-block d-md-none mt-1">
                                                 <i class="bi bi-info-circle me-1"></i>
                                                 Swipe to see more columns
@@ -172,6 +160,95 @@
                                                         <td colspan="13" class="text-center text-muted py-4">
                                                             <i class="bi bi-hourglass-split display-6"></i>
                                                             <p class="mt-2">Loading trainers overview...</p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trainees Tab -->
+                    <div class="tab-pane fade" id="trainees">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Trainees</h1>
+                            <div class="btn-toolbar mb-2 mb-md-0">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="refreshTraineesOverview()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Trainees Table -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-person-check me-2"></i>
+                                            All Trainees
+                                            <small class="text-muted d-block d-md-none mt-1">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Swipe to see more columns
+                                            </small>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover sortable-table" id="trainees-overview-table">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="sortable" data-column="email">
+                                                            Email
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="level">
+                                                            Niveau
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="job_sector">
+                                                            Poste et secteur
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="objective">
+                                                            Objectif
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="enriched_profile">
+                                                            Profil enrichi
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_sessions">
+                                                            Sessions totales
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="ai_sessions">
+                                                            Sessions IA
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="trainer_sessions">
+                                                            Sessions formateur
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_time">
+                                                            Temps total
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_slides_viewed">
+                                                            Slides vues
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="trainees-overview-body">
+                                                    <tr>
+                                                        <td colspan="10" class="text-center text-muted py-4">
+                                                            <i class="bi bi-hourglass-split display-6"></i>
+                                                            <p class="mt-2">Loading trainees overview...</p>
                                                         </td>
                                                     </tr>
                                                 </tbody>

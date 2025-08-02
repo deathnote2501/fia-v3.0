@@ -124,6 +124,81 @@ class AdminRepository:
         
         return trainers_stats
     
+    async def get_trainees_overview_statistics(self) -> List[Dict[str, Any]]:
+        """
+        Get comprehensive statistics for all trainees with their learning metrics
+        Returns: List of trainee statistics dictionaries
+        """
+        # Simplify the query to avoid complex subqueries that may cause errors
+        query = select(
+            LearnerSessionModel.email,
+            LearnerSessionModel.experience_level,
+            LearnerSessionModel.job_position,
+            LearnerSessionModel.activity_sector,
+            LearnerSessionModel.objectives,
+            LearnerSessionModel.enriched_profile,
+            
+            # Count total sessions for this learner
+            func.count(distinct(LearnerSessionModel.training_session_id)).label('total_sessions'),
+            
+            # Total slides viewed - using current_slide_number as proxy
+            func.coalesce(func.max(LearnerSessionModel.current_slide_number), 0).label('total_slides_viewed'),
+            
+            # Total time spent across all sessions
+            func.coalesce(func.sum(LearnerSessionModel.total_time_spent), 0).label('total_time_seconds')
+            
+        ).select_from(
+            LearnerSessionModel
+        ).group_by(
+            LearnerSessionModel.email,
+            LearnerSessionModel.experience_level,
+            LearnerSessionModel.job_position,
+            LearnerSessionModel.activity_sector,
+            LearnerSessionModel.objectives,
+            LearnerSessionModel.enriched_profile
+        ).order_by(
+            LearnerSessionModel.email
+        )
+        
+        result = await self.session.execute(query)
+        rows = result.fetchall()
+        
+        # Process results and format data
+        trainees_stats = []
+        for row in rows:
+            # Format job and sector
+            job_sector = []
+            if row.job_position:
+                job_sector.append(row.job_position)
+            if row.activity_sector:
+                job_sector.append(row.activity_sector)
+            job_sector_str = " - ".join(job_sector) if job_sector else "N/A"
+            
+            # For now, set placeholder values for AI vs trainer sessions
+            # This would require a separate query to get training type information
+            ai_sessions = 0  # Placeholder
+            trainer_sessions = row.total_sessions  # Placeholder
+            
+            # Format total time
+            total_time_hours = row.total_time_seconds / 3600 if row.total_time_seconds else 0
+            
+            trainee_stats = {
+                "email": row.email,
+                "level": row.experience_level or "N/A",
+                "job_sector": job_sector_str,
+                "objective": row.objectives or "N/A",
+                "enriched_profile": row.enriched_profile,
+                "total_sessions": row.total_sessions,
+                "ai_sessions": ai_sessions,
+                "trainer_sessions": trainer_sessions,
+                "total_time": self._format_duration(total_time_hours),
+                "total_slides_viewed": row.total_slides_viewed
+            }
+            
+            trainees_stats.append(trainee_stats)
+        
+        return trainees_stats
+    
     async def get_global_admin_statistics(self) -> Dict[str, Any]:
         """
         Get global statistics for admin dashboard

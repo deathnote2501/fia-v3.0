@@ -55,6 +55,29 @@ async def get_trainers_overview(
         raise HTTPException(status_code=500, detail="Failed to retrieve trainers overview")
 
 
+@router.get("/trainees-overview")
+async def get_trainees_overview(
+    admin_trainer: Trainer = Depends(get_current_admin_trainer),
+    session: AsyncSession = Depends(get_database_session)
+) -> List[Dict[str, Any]]:
+    """
+    Get overview of all trainees with their learning statistics
+    """
+    logger.info(f"Admin {admin_trainer.email} requested trainees overview")
+    
+    try:
+        # Use the admin dashboard service to get trainees statistics
+        admin_service = AdminDashboardService(session)
+        trainees_overview = await admin_service.get_trainees_overview()
+        
+        logger.info(f"Successfully retrieved overview for {len(trainees_overview)} trainees")
+        return trainees_overview
+        
+    except Exception as e:
+        logger.error(f"Failed to get trainees overview: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve trainees overview")
+
+
 @router.get("/stats")
 async def get_admin_stats(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),

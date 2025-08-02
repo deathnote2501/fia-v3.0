@@ -53,6 +53,9 @@ class AdminDashboard {
         console.log('🔄 ADMIN - Chargement tableau trainers...');
         this.loadTrainersOverview();
         
+        // Setup tab switching to load trainees when tab is activated
+        this.setupTabSwitching();
+        
         console.log('✅ ADMIN - AdminDashboard.init() terminé');
     }
 
@@ -145,6 +148,25 @@ class AdminDashboard {
             }
         } catch (error) {
             console.error('Failed to refresh user data:', error);
+        }
+    }
+
+    setupTabSwitching() {
+        const trainersTab = document.querySelector('a[href="#trainers"]');
+        const traineesTab = document.querySelector('a[href="#trainees"]');
+        
+        if (trainersTab) {
+            trainersTab.addEventListener('shown.bs.tab', () => {
+                console.log('🔥 ADMIN - Trainers tab activated');
+                this.loadTrainersOverview();
+            });
+        }
+        
+        if (traineesTab) {
+            traineesTab.addEventListener('shown.bs.tab', () => {
+                console.log('🔥 ADMIN - Trainees tab activated');
+                this.loadTraineesOverview();
+            });
         }
     }
 
@@ -287,6 +309,195 @@ class AdminDashboard {
                 stack: error.stack
             });
         }
+    }
+
+    // ============================================================================
+    // TRAINEES OVERVIEW FUNCTIONALITY 
+    // ============================================================================
+
+    async loadTraineesOverview(retryCount = 0) {
+        console.log('🔥 ADMIN - Loading trainees overview...');
+        const tableBody = document.getElementById('trainees-overview-body');
+        if (!tableBody) {
+            console.error('🚨 ADMIN - Element trainees-overview-body not found!');
+            return;
+        }
+        console.log('✅ ADMIN - Found trainees table body element:', tableBody);
+
+        try {
+            // Show loading state
+            this.showTraineesLoadingState(tableBody);
+
+            // Fetch trainees overview data
+            console.log('📡 ADMIN - Fetching trainees overview data...');
+            const traineesData = await apiClient.get('/api/admin/trainees-overview');
+            console.log('📊 ADMIN - Received trainees data:', traineesData.length, 'trainees');
+
+            // Validate response data structure
+            if (!Array.isArray(traineesData)) {
+                throw new Error('Invalid response format: Expected array of trainees');
+            }
+
+            if (traineesData.length === 0) {
+                this.showTraineesEmptyState(tableBody);
+                return;
+            }
+
+            // Validate each trainee object has required fields
+            const requiredFields = ['email'];
+            for (let i = 0; i < traineesData.length; i++) {
+                const trainee = traineesData[i];
+                for (const field of requiredFields) {
+                    if (!trainee.hasOwnProperty(field)) {
+                        console.warn(`Trainee at index ${i} missing required field: ${field}`);
+                        trainee[field] = 'N/A';
+                    }
+                }
+                
+                // Ensure numeric fields are numbers
+                const numericFields = [
+                    'total_sessions', 'ai_sessions', 'trainer_sessions', 'total_slides_viewed'
+                ];
+                numericFields.forEach(field => {
+                    if (trainee[field] === null || trainee[field] === undefined) {
+                        trainee[field] = 0;
+                    }
+                });
+            }
+
+            // Render trainees data
+            const traineesHtml = traineesData.map(trainee => `
+                <tr data-trainee-email="${trainee.email}">
+                    <td>
+                        <strong>${this.escapeHtml(trainee.email)}</strong>
+                    </td>
+                    <td>
+                        <span class="text-muted">${this.escapeHtml(trainee.level || 'N/A')}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${this.escapeHtml(trainee.job_sector || 'N/A')}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${this.escapeHtml(trainee.objective || 'N/A')}</span>
+                    </td>
+                    <td>
+                        <div class="text-truncate" style="max-width: 200px;" title="${this.escapeHtml(JSON.stringify(trainee.enriched_profile || {}))}">
+                            ${trainee.enriched_profile ? '<i class="bi bi-check-circle text-success me-1"></i>Enrichi' : '<i class="bi bi-circle text-muted me-1"></i>Basique'}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">${this.formatNumber(trainee.total_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success">${this.formatNumber(trainee.ai_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">${this.formatNumber(trainee.trainer_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${trainee.total_time || '0min'}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">${this.formatNumber(trainee.total_slides_viewed)}</span>
+                    </td>
+                </tr>
+            `).join('');
+
+            console.log('🎨 ADMIN - Setting trainees HTML:', traineesHtml.length, 'characters');
+            tableBody.innerHTML = traineesHtml;
+            console.log('✅ ADMIN - Trainees table updated with', traineesData.length, 'trainees');
+
+        } catch (error) {
+            console.error('🚨 ADMIN - Failed to load trainees overview:', error);
+            
+            // Enhanced error handling with specific messaging
+            let errorMessage = 'Failed to load trainees overview. Please try again.';
+            
+            if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage = 'Access denied: Administrator privileges required to view trainee statistics.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Authentication expired. Please log in again.';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+                errorMessage = 'Server error occurred while calculating trainee statistics.';
+            } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+                errorMessage = 'Network connection error. Please check your internet connection and try again.';
+            }
+            
+            this.showTraineesErrorState(tableBody, errorMessage);
+            
+            // Log additional context for debugging
+            console.error('🚨 ADMIN - Trainees overview error context:', {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                error: error.toString(),
+                stack: error.stack
+            });
+        }
+    }
+
+    showTraineesLoadingState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div>
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-1 fw-medium">Loading trainees overview...</p>
+                        <small class="text-muted">Fetching trainee statistics and learning data</small>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px; width: 200px; margin: 0 auto;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTraineesEmptyState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted py-5">
+                    <div>
+                        <i class="bi bi-person-check display-4 mb-3 text-secondary"></i>
+                        <h6 class="text-muted mb-2">No Trainees Found</h6>
+                        <p class="small mb-3">There are currently no trainees who have participated in training sessions.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTraineesOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTraineesErrorState(tableBody, errorMessage = 'Failed to load trainees overview') {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-5">
+                    <div>
+                        <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
+                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <p class="text-muted small mb-3">${errorMessage}</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTraineesOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 
     setupTableSorting() {
@@ -535,6 +746,32 @@ async function refreshTrainersOverview() {
         }
     } catch (error) {
         console.error('🚨 ADMIN - Error refreshing trainers overview:', error);
+    } finally {
+        // Restore button state
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalContent;
+    }
+}
+
+// Global function to refresh trainees overview
+async function refreshTraineesOverview() {
+    const refreshBtn = document.querySelector('button[onclick="refreshTraineesOverview()"]');
+    
+    const originalContent = refreshBtn.innerHTML;
+    
+    try {
+        // Show loading state on button
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Refreshing...
+        `;
+        
+        if (window.adminDashboard && window.adminDashboard.loadTraineesOverview) {
+            await window.adminDashboard.loadTraineesOverview();
+        }
+    } catch (error) {
+        console.error('🚨 ADMIN - Error refreshing trainees overview:', error);
     } finally {
         // Restore button state
         refreshBtn.disabled = false;
