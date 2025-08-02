@@ -1,6 +1,6 @@
 """
 FIA v3.0 - AI Training Generation Service
-Service for generating training content using VertexAI Gemini 2.0 Flash
+Service for generating training content using VertexAI Gemini 2.5 Flash
 """
 
 import logging
@@ -11,12 +11,27 @@ from datetime import datetime, timezone
 
 # Infrastructure adapter
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter, VertexAIError
+from app.infrastructure.settings import settings
 
 # Rate limiting
 from app.infrastructure.rate_limiter import gemini_rate_limiter, RateLimitExceeded
 
+# Vertex AI imports for specialized model
+try:
+    import vertexai
+    from vertexai.generative_models import GenerativeModel
+    import os
+    import tempfile
+    VERTEX_AI_AVAILABLE = True
+except ImportError:
+    VERTEX_AI_AVAILABLE = False
+    GenerativeModel = None
+
 # Configure logger
 logger = logging.getLogger(__name__)
+
+# Model configuration for AI training generation
+AI_TRAINING_MODEL = "gemini-2.5-flash-001"  # Thinking mode for complex training content generation
 
 
 class AITrainingGenerationError(Exception):
@@ -37,8 +52,94 @@ class AITrainingGenerationService:
         """Initialize AI training generation service"""
         self.vertex_adapter = VertexAIAdapter()
         self.api_call_counter = 0
+        self.model_name = AI_TRAINING_MODEL  # Use specialized model for training generation
+        self.specialized_client = None
         
-        logger.info("🤖 AI_TRAINING_GEN [SERVICE] Initialized successfully")
+        # Initialize specialized client for AI training generation
+        self._initialize_specialized_client()
+        
+        logger.info(f"🤖 AI_TRAINING_GEN [SERVICE] Initialized with model: {self.model_name}")
+    
+    def _initialize_specialized_client(self):
+        """Initialize specialized Vertex AI client with Gemini 2.5 Flash"""
+        try:
+            if not VERTEX_AI_AVAILABLE or not vertexai:
+                logger.warning("⚠️ AI_TRAINING_GEN [CLIENT] Vertex AI module not available")
+                self.specialized_client = None
+                return
+            
+            # Set up project and location
+            project_id = settings.google_cloud_project
+            location = settings.google_cloud_region or "europe-west1"
+            
+            if not project_id:
+                logger.error("⚠️ AI_TRAINING_GEN [CLIENT] GOOGLE_CLOUD_PROJECT not configured")
+                self.specialized_client = None
+                return
+            
+            # Setup credentials if provided as JSON
+            if settings.google_credentials_json:
+                import json
+                
+                # Write credentials to temporary file
+                credentials_dict = json.loads(settings.google_credentials_json)
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                    json.dump(credentials_dict, f)
+                    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = f.name
+                    logger.info("🔑 AI_TRAINING_GEN [CLIENT] Using JSON credentials")
+            elif settings.google_application_credentials:
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = settings.google_application_credentials
+                logger.info("🔑 AI_TRAINING_GEN [CLIENT] Using credentials file")
+            
+            # Initialize Vertex AI
+            vertexai.init(project=project_id, location=location)
+            
+            # Create specialized generative model for training content
+            self.specialized_client = GenerativeModel(
+                model_name=self.model_name,
+                system_instruction=[
+                    "Tu es un expert pédagogue et créateur de contenu de formation professionnelle.",
+                    "Tu crées du contenu de formation détaillé, structuré et engageant.",
+                    "Tu utilises le format Markdown avec une hiérarchie claire.",
+                    "Tu inclus des exemples concrets et des cas pratiques."
+                ]
+            )
+            
+            logger.info(f"🤖 AI_TRAINING_GEN [CLIENT] Specialized client configured - Model: {self.model_name}")
+            
+        except Exception as e:
+            logger.error(f"❌ AI_TRAINING_GEN [CLIENT] Failed to initialize specialized client: {str(e)}")
+            self.specialized_client = None
+    
+    async def _generate_with_specialized_client(self, prompt: str, generation_config: Dict[str, Any]):
+        """Generate content using the specialized Gemini 2.5 Flash client"""
+        try:
+            # Create generation config for the specialized client
+            config = {
+                "temperature": generation_config.get("temperature", 0.7),
+                "top_p": generation_config.get("top_p", 0.9),
+                "top_k": generation_config.get("top_k", 40),
+                "max_output_tokens": generation_config.get("max_output_tokens", 8192),
+            }
+            
+            logger.info(f"🎯 AI_TRAINING_GEN [SPECIALIZED] Generating with {self.model_name}")
+            
+            # Generate content using the specialized client
+            response = self.specialized_client.generate_content(
+                prompt,
+                generation_config=config
+            )
+            
+            logger.info(f"✅ AI_TRAINING_GEN [SPECIALIZED] Content generated successfully")
+            return response
+            
+        except Exception as e:
+            logger.error(f"❌ AI_TRAINING_GEN [SPECIALIZED] Generation failed: {str(e)}")
+            raise AITrainingGenerationError(
+                f"Specialized model generation failed: {str(e)}",
+                error_type="specialized_generation_error",
+                original_error=e
+            ) from e
     
     def _build_training_generation_prompt(self, name: str, description: str) -> str:
         """
@@ -125,11 +226,18 @@ Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."
             await gemini_rate_limiter.acquire(wait=True, max_wait_seconds=300)
             logger.info(f"✅ AI_TRAINING_GEN [RATE_LIMIT] Rate limit slot acquired")
             
-            # Generate content using VertexAI
-            result = await self.vertex_adapter.generate_content(
-                prompt=prompt,
-                generation_config=generation_config
-            )
+            # Generate content using specialized Gemini 2.5 Flash client
+            if not self.specialized_client:
+                raise AITrainingGenerationError(
+                    "Specialized AI client not available",
+                    error_type="client_unavailable"
+                )
+            
+            logger.info(f"🚀 AI_TRAINING_GEN [GENERATE] Using specialized model: {self.model_name}")
+            
+            # Generate content with specialized client
+            response = await self._generate_with_specialized_client(prompt, generation_config)
+            result = response.text if hasattr(response, 'text') else str(response)
             
             if not result or not result.strip():
                 raise AITrainingGenerationError(

@@ -662,8 +662,8 @@ input:checked + .tts-slider:before {
     box-shadow: none !important;
 }
 
-/* Prevent body scrollbar */
-body {
+/* Prevent body scrollbar only for slide viewport (training.html) */
+body.slide-viewport {
     overflow: hidden;
 }
 
@@ -689,6 +689,17 @@ body.is-admin .nav-item.admin-only {
 /* Special handling for tab-pane admin elements */
 body.is-admin .tab-pane.admin-only {
     display: block !important;
+}
+
+/* CRITICAL: Ensure admin trainers tab ONLY shows in admin section */
+#create-session .admin-trainers,
+#create-session #admin-trainers,
+.tab-pane:not(#admin-trainers) .admin-trainers {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
 }
 
 /* Sortable table styles for admin tables */

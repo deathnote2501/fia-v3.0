@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 # Domain services
 from app.domain.services.document_processor import DocumentProcessor, DocumentProcessingError
-from app.domain.services.prompt_builder import PromptBuilder
+from app.domain.services.prompt_builder import PromptBuilder, PLAN_GENERATION_MODEL
 from app.domain.services.plan_validator import PlanValidator, PlanValidationError
 
 # Infrastructure adapter
@@ -60,7 +60,8 @@ class PlanGenerationService:
         self.plan_validator = PlanValidator()
         
         # Use specialized model for plan generation (2.5 Flash for thinking mode)
-        self.plan_model = self.prompt_builder.plan_model
+        self.plan_model = PLAN_GENERATION_MODEL
+        logger.info(f"🎯 PLAN_GEN [SERVICE] Using specialized model: {self.plan_model}")
         
         # Optional ports for architecture flexibility
         self.gemini_service = gemini_service

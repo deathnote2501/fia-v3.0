@@ -161,8 +161,8 @@ export class TTSManager {
             // Show loading state
             this.showLoadingState(messageElement);
             
-            // Clean text for TTS (remove HTML tags, etc.)
-            const cleanText = this.cleanTextForTTS(text);
+            // Send raw text to backend for consistent cleaning
+            const cleanText = text;
             
             // Call TTS API
             const response = await fetch('/api/tts/generate', {

@@ -4,6 +4,141 @@
  */
 
 console.log('🚨 ÉTAPE 4 - trainer-dashboard.js RECHARGÉ À:', new Date().toISOString());
+console.log('🚨 ÉTAPE 4 - VERSION DU FICHIER: v4.debug.001');
+
+// NAVIGATION HASH ROBUSTE - Version déterministe sans timeouts
+function handleHashNavigation() {
+    const hash = window.location.hash || '#dashboard';
+    console.log('🔗 Navigation hash:', hash);
+    
+    // Attendre que le DOM soit prêt
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => handleHashNavigation());
+        return;
+    }
+    
+    // Trouver le lien de l'onglet correspondant
+    const targetTabLink = document.querySelector(`a[href="${hash}"]`);
+    
+    if (!targetTabLink) {
+        console.warn('❌ Onglet non trouvé pour:', hash, '- Redirection vers dashboard');
+        // Rediriger vers dashboard si onglet inexistant
+        window.location.hash = '#dashboard';
+        return;
+    }
+    
+    // Vérifier les permissions pour les onglets admin
+    if (hash === '#admin-trainers') {
+        if (!window.authManager || !window.authManager.hasAdminAccess()) {
+            console.warn('❌ Accès admin requis pour:', hash, '- Redirection vers dashboard');
+            window.location.hash = '#dashboard';
+            return;
+        }
+    }
+    
+    console.log('🎯 Activation onglet:', hash);
+    
+    // Utiliser l'API Bootstrap pour activer l'onglet
+    const tab = new bootstrap.Tab(targetTabLink);
+    tab.show();
+    
+    console.log('✅ Onglet activé:', hash);
+    
+    // Charger les données spécifiques à l'onglet si nécessaire
+    loadTabSpecificData(hash);
+}
+
+// Charger les données spécifiques à chaque onglet
+function loadTabSpecificData(hash) {
+    if (!window.trainerDashboard) return;
+    
+    // CRITICAL: Hide admin content from create-session
+    if (hash === '#create-session') {
+        console.log('🚫 Cleaning admin content from create-session tab');
+        setTimeout(() => {
+            const adminElements = document.querySelectorAll('#create-session .admin-trainers, #create-session #admin-trainers');
+            adminElements.forEach(el => {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+            });
+        }, 50);
+    }
+    
+    switch (hash) {
+        case '#admin-trainers':
+            console.log('🎯 Chargement données admin...');
+            if (window.trainerDashboard.loadTrainersOverview) {
+                window.trainerDashboard.loadTrainersOverview();
+            }
+            break;
+        case '#create-training':
+            // Actualiser la liste des formations si nécessaire
+            if (window.trainerDashboard.loadTrainings) {
+                window.trainerDashboard.loadTrainings();
+            }
+            break;
+        case '#create-session':
+            // Actualiser la liste des formations pour les sessions
+            if (window.trainerDashboard.loadTrainingsForSession) {
+                window.trainerDashboard.loadTrainingsForSession();
+            }
+            break;
+        case '#dashboard':
+            // Actualiser les statistiques du dashboard
+            if (window.trainerDashboard.loadDashboardData) {
+                window.trainerDashboard.loadDashboardData();
+            }
+            break;
+    }
+}
+
+// Vérifier l'URL au chargement et aux changements
+window.addEventListener('hashchange', handleHashNavigation);
+
+// Synchroniser les clics sur les onglets avec l'URL
+function setupTabClickListeners() {
+    const tabLinks = document.querySelectorAll('a[data-bs-toggle="tab"]');
+    
+    tabLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const hash = link.getAttribute('href');
+            console.log('🔗 Clic onglet détecté:', hash);
+            
+            // Vérifier les permissions pour les onglets admin
+            if (hash === '#admin-trainers') {
+                if (!window.authManager || !window.authManager.hasAdminAccess()) {
+                    console.warn('❌ Accès admin requis pour:', hash);
+                    e.preventDefault();
+                    showAlert('Access denied: Administrator privileges required.', 'error');
+                    return;
+                }
+            }
+            
+            // Mettre à jour l'URL si nécessaire
+            if (window.location.hash !== hash) {
+                window.location.hash = hash;
+            }
+        });
+    });
+}
+
+// Capturer toutes les erreurs JavaScript
+window.addEventListener('error', (event) => {
+    console.error('🚨 ÉTAPE 4 - ERREUR JS GLOBALE:', {
+        message: event.message,
+        filename: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error
+    });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('🚨 ÉTAPE 4 - PROMESSE REJETÉE:', event.reason);
+});
 
 class TrainerDashboard {
     constructor() {
@@ -12,22 +147,34 @@ class TrainerDashboard {
     }
 
     init() {
-        console.log('🚀 ÉTAPE 3 - TrainerDashboard.init() démarré');
+        console.log('🚀 ÉTAPE 4 - TrainerDashboard.init() démarré');
         
-        // Require authentication
-        if (!authManager.requireAuth()) {
-            console.log('❌ ÉTAPE 3 - Authentication échouée, arrêt de init()');
+        // Vérifier que authManager existe
+        if (typeof authManager === 'undefined') {
+            console.error('🚨 ÉTAPE 4 - authManager non défini !');
             return;
         }
-        console.log('✅ ÉTAPE 3 - Authentication OK');
+        console.log('✅ ÉTAPE 4 - authManager trouvé:', authManager);
+        
+        // Require authentication
+        try {
+            if (!authManager.requireAuth()) {
+                console.log('❌ ÉTAPE 4 - Authentication échouée, arrêt de init()');
+                return;
+            }
+            console.log('✅ ÉTAPE 4 - Authentication OK');
+        } catch (error) {
+            console.error('🚨 ÉTAPE 4 - Erreur dans requireAuth():', error);
+            return;
+        }
 
-        console.log('🔄 ÉTAPE 3 - Début loadUserData()');
+        console.log('🔄 ÉTAPE 4 - Début loadUserData()');
         this.loadUserData();
         
-        console.log('🔄 ÉTAPE 3 - Début checkAndShowAdminMenus()');
+        console.log('🔄 ÉTAPE 4 - Début checkAndShowAdminMenus()');
         this.checkAndShowAdminMenus();
         
-        console.log('🔄 ÉTAPE 3 - Configuration des autres composants...');
+        console.log('🔄 ÉTAPE 4 - Configuration des autres composants...');
         this.setupLogout();
         this.setupTrainingForm();
         this.setupAIToggle();
@@ -805,36 +952,26 @@ class TrainerDashboard {
         const bodyStyle = window.getComputedStyle(document.body);
         console.log('🎯 ÉTAPE 3 - Body font-family (pour vérifier CSS):', bodyStyle.fontFamily);
         
-        // Force d'affichage si nécessaire (temporaire pour debug)
-        console.log('🎯 ÉTAPE 3 - Vérification finale de la visibilité des éléments admin');
+        // Force admin elements to display since CSS rules don't work properly
+        console.log('🎯 ÉTAPE 3 - Forçage d\'affichage des éléments admin');
         setTimeout(() => {
-            const finalCheck = document.querySelectorAll('.admin-only');
-            let visibleCount = 0;
-            finalCheck.forEach(element => {
-                const style = window.getComputedStyle(element);
-                if (style.display !== 'none') {
-                    visibleCount++;
+            const adminElements = document.querySelectorAll('.admin-only');
+            console.log(`🎯 ÉTAPE 3 - Trouvé ${adminElements.length} éléments .admin-only`);
+            
+            adminElements.forEach((element, index) => {
+                if (element.classList.contains('nav-item')) {
+                    element.style.display = 'list-item';
+                    console.log(`🔧 ÉTAPE 3 - Élément ${index + 1}: nav-item forcé à list-item`);
+                } else if (element.classList.contains('tab-pane')) {
+                    element.style.display = 'block';
+                    console.log(`🔧 ÉTAPE 3 - Élément ${index + 1}: tab-pane forcé à block`);
+                } else {
+                    element.style.display = 'block';
+                    console.log(`🔧 ÉTAPE 3 - Élément ${index + 1}: autre élément forcé à block`);
                 }
             });
-            console.log(`🎯 ÉTAPE 3 - RÉSULTAT FINAL: ${visibleCount}/${finalCheck.length} éléments admin visibles`);
             
-            if (visibleCount === 0) {
-                console.log('🚨 ÉTAPE 3 - AUCUN élément admin visible, forçage d\'affichage...');
-                finalCheck.forEach(element => {
-                    if (element.classList.contains('nav-item')) {
-                        element.style.display = 'list-item';
-                        console.log('🔧 ÉTAPE 3 - Forcé nav-item à list-item');
-                    } else if (element.classList.contains('tab-pane')) {
-                        element.style.display = 'block';
-                        console.log('🔧 ÉTAPE 3 - Forcé tab-pane à block');
-                    } else {
-                        element.style.display = 'block';
-                        console.log('🔧 ÉTAPE 3 - Forcé autre élément à block');
-                    }
-                });
-            } else {
-                console.log('✅ ÉTAPE 3 - Des éléments admin sont visibles !');
-            }
+            console.log('✅ ÉTAPE 3 - Tous les éléments admin forcés visibles');
         }, 100);
     }
 
@@ -869,6 +1006,14 @@ class TrainerDashboard {
 
     async loadTrainersOverview(retryCount = 0) {
         console.log('Loading trainers overview...');
+        
+        // CRITICAL: Only load if we're in the admin-trainers tab
+        const adminTab = document.querySelector('#admin-trainers');
+        if (!adminTab || !adminTab.classList.contains('show') && !adminTab.classList.contains('active')) {
+            console.log('❌ Trainers overview NOT loaded - admin tab not active');
+            return;
+        }
+        
         const tableBody = document.getElementById('trainers-overview-body');
         if (!tableBody) {
             console.error('Element trainers-overview-body not found!');
@@ -972,6 +1117,20 @@ class TrainerDashboard {
             console.log('Setting trainers HTML:', trainersHtml.length, 'characters');
             tableBody.innerHTML = trainersHtml;
             console.log('Trainers table updated with', trainersData.length, 'trainers');
+            
+            // DEBUG ÉTAPE 5 - Vérification post-update et forçage d'affichage
+            setTimeout(() => {
+                console.log('🚨 ÉTAPE 5 - Vérification post-update tableBody.innerHTML:', tableBody.innerHTML.substring(0, 200));
+                console.log('🚨 ÉTAPE 5 - Nombre de <tr> dans le tableau:', tableBody.querySelectorAll('tr').length);
+                
+                // Forcer l'affichage de l'onglet admin après chargement des données
+                const adminTab = document.querySelector('#admin-trainers');
+                if (adminTab) {
+                    adminTab.style.display = 'block';
+                    adminTab.style.opacity = '1';
+                    console.log('🚨 ÉTAPE 5 - Onglet admin forcé visible après chargement données');
+                }
+            }, 100);
 
             // Setup table sorting if not already done
             this.setupTableSorting();
@@ -1399,7 +1558,25 @@ async function refreshTrainersOverview() {
 }
 
 // Initialize when DOM is loaded
+console.log('🚨 ÉTAPE 4 - Ajout du listener DOMContentLoaded');
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🌐 ÉTAPE 3 - DOM chargé, instanciation TrainerDashboard');
+    console.log('🌐 ÉTAPE 4 - DOM chargé, instanciation TrainerDashboard');
+    console.log('🌐 ÉTAPE 4 - document.readyState:', document.readyState);
     window.trainerDashboard = new TrainerDashboard();
+    
+    // Initialiser la navigation hash après l'instanciation du dashboard
+    setupTabClickListeners();
+    handleHashNavigation();
 });
+
+// Fallback si le DOM est déjà chargé
+if (document.readyState === 'loading') {
+    console.log('🚨 ÉTAPE 4 - DOM en cours de chargement, attente DOMContentLoaded');
+} else {
+    console.log('🚨 ÉTAPE 4 - DOM déjà chargé, instanciation immédiate');
+    window.trainerDashboard = new TrainerDashboard();
+    
+    // Initialiser la navigation hash après l'instanciation du dashboard
+    setupTabClickListeners();
+    handleHashNavigation();
+}

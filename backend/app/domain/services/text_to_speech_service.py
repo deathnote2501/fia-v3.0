@@ -214,18 +214,7 @@ class TextToSpeechService:
         text = re.sub(r'\n\s*\n', '\n\n', text)
         text = re.sub(r'\s+', ' ', text)
         
-        # Limit length for TTS (max 500 characters to avoid too long audio)
-        if len(text) > 500:
-            # Try to cut at sentence boundary
-            sentences = text.split('. ')
-            truncated = ""
-            for sentence in sentences:
-                if len(truncated + sentence + '. ') <= 480:  # Leave room for "..."
-                    truncated += sentence + '. '
-                else:
-                    break
-            text = truncated.strip() + "..."
-        
+        # Gemini 2.5 TTS can handle long texts without limits
         return text.strip()
     
     def _extract_speech_text_from_slide(self, slide_content: str, slide_title: str) -> str:
