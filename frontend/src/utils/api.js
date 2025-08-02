@@ -3,7 +3,21 @@
  * JavaScript ES6 utilities for backend communication
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+// Auto-detect API base URL based on environment
+const API_BASE_URL = (() => {
+    // If running on Railway production
+    if (window.location.hostname.includes('railway.app')) {
+        return window.location.origin;
+    }
+    
+    // If running on custom domain
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return window.location.origin;
+    }
+    
+    // Default to localhost for development
+    return 'http://localhost:8000';
+})();
 
 /**
  * API client with common functionality
