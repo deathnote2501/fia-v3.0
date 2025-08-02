@@ -48,6 +48,7 @@ async def get_current_trainer(
         is_active=user_model.is_active,
         is_verified=user_model.is_verified,
         is_superuser=user_model.is_superuser,
+        language=getattr(user_model, 'language', 'en'),  # Default to 'en' if not present
         created_at=user_model.created_at,
         updated_at=user_model.updated_at
     )

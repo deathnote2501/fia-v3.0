@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, description="Server port")
     frontend_url: str = Field(default="http://localhost:8000", description="Frontend base URL")
     
+    # File Storage
+    storage_path: str = Field(default="./uploads", description="File storage base path")
+    
     
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")

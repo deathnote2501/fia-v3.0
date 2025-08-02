@@ -261,7 +261,7 @@ Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."
             
             return cleaned_content
             
-        except RateLimitExceeded as e:
+        except RateLimitExceededException as e:
             duration = time.time() - start_time
             logger.error(f"🚦 AI_TRAINING_GEN [RATE_LIMIT_ERROR] Rate limit exceeded after {duration:.2f}s: {str(e)}")
             raise AITrainingGenerationError(
@@ -270,7 +270,7 @@ Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."
                 original_error=e
             ) from e
             
-        except VertexAIError as e:
+        except AIError as e:
             duration = time.time() - start_time
             logger.error(f"❌ AI_TRAINING_GEN [VERTEX_ERROR] VertexAI error after {duration:.2f}s: {str(e)}")
             raise AITrainingGenerationError(

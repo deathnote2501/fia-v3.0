@@ -14,14 +14,22 @@ class RateLimiterAdapter(RateLimiterPort):
     async def check_rate_limit(self, key: str, limit_per_minute: int) -> bool:
         """Check if operation is within rate limit"""
         try:
-            return await gemini_rate_limiter.check_rate_limit(key, limit_per_minute)
+            # Use the gemini rate limiter to check if requests are allowed
+            await gemini_rate_limiter.acquire(wait=False)
+            return True
         except RateLimitExceeded as e:
-            raise RateLimitExceededException(str(e), retry_after=e.retry_after) from e
+            # Extract retry time if available
+            status = gemini_rate_limiter.get_status()
+            retry_after = int(status.get('reset_in_seconds', 60))
+            raise RateLimitExceededException(str(e), retry_after=retry_after) from e
     
     async def get_remaining_requests(self, key: str) -> Optional[int]:
         """Get remaining requests for the current window"""
-        return await gemini_rate_limiter.get_remaining_requests(key)
+        status = gemini_rate_limiter.get_status()
+        return status.get('remaining_requests')
     
     async def reset_rate_limit(self, key: str) -> bool:
         """Reset rate limit for a specific key"""
-        return await gemini_rate_limiter.reset_rate_limit(key)
+        # Clear the rate limiter for the given key
+        gemini_rate_limiter.rate_limiter.clear_key(key)
+        return True

@@ -4,9 +4,9 @@ Main FastAPI application entry point
 """
 
 import logging
-# 🔍 FORCER LA CONFIGURATION DE LOGGING POUR VOIR NOS LOGS
+# 🔍 FORCER LA CONFIGURATION DE LOGGING POUR VOIR NOS LOGS EN DEBUG
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(name)s: %(message)s',
     force=True  # Force override de la config existante
 )
@@ -19,10 +19,12 @@ logging.getLogger('sqlalchemy.orm').setLevel(logging.CRITICAL)
 logging.getLogger('asyncpg').setLevel(logging.CRITICAL)
 logging.getLogger('asyncio').setLevel(logging.ERROR)
 logging.getLogger('aiopg').setLevel(logging.CRITICAL)
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import traceback
 from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
 from app.infrastructure.auth import fastapi_users, auth_backend
@@ -82,9 +84,43 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    debug=settings.debug,
+    debug=True,  # Force debug mode pour plus de logs
     lifespan=lifespan,
 )
+
+# Add global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler to log all unhandled exceptions"""
+    logger.error(f"🚨 GLOBAL EXCEPTION [URL]: {request.method} {request.url}")
+    logger.error(f"🚨 GLOBAL EXCEPTION [ERROR]: {exc}")
+    logger.error(f"🚨 GLOBAL EXCEPTION [TRACEBACK]: {traceback.format_exc()}")
+    
+    # Return generic error response
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "error_type": type(exc).__name__,
+            "url": str(request.url),
+            "method": request.method
+        }
+    )
+
+# Add middleware to log requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all HTTP requests"""
+    logger.info(f"📥 REQUEST [START]: {request.method} {request.url}")
+    
+    try:
+        response = await call_next(request)
+        logger.info(f"📤 RESPONSE [SUCCESS]: {request.method} {request.url} - {response.status_code}")
+        return response
+    except Exception as exc:
+        logger.error(f"🚨 REQUEST [ERROR]: {request.method} {request.url} - {exc}")
+        logger.error(f"🚨 REQUEST [TRACEBACK]: {traceback.format_exc()}")
+        raise
 
 
 # Mount static files (frontend)

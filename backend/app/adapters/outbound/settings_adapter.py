@@ -12,31 +12,31 @@ class SettingsAdapter(SettingsPort):
     
     def get_gemini_model_name(self) -> str:
         """Get the Gemini model name"""
-        return settings.GEMINI_MODEL_NAME
+        return settings.gemini_model_name
     
     def get_gemini_api_key(self) -> str:
         """Get the Gemini API key"""
-        return settings.GEMINI_API_KEY
+        return settings.gemini_api_key
     
     def get_google_cloud_project(self) -> str:
         """Get the Google Cloud project ID"""
-        return settings.GOOGLE_CLOUD_PROJECT
+        return settings.google_cloud_project
     
     def get_google_cloud_region(self) -> str:
         """Get the Google Cloud region"""
-        return settings.GOOGLE_CLOUD_REGION
+        return settings.google_cloud_region
     
     def get_storage_path(self) -> str:
         """Get the file storage path"""
-        return settings.STORAGE_PATH
+        return settings.storage_path
     
     def get_context_cache_ttl_hours(self) -> int:
         """Get the context cache TTL in hours"""
-        return settings.GEMINI_CONTEXT_CACHE_TTL_HOURS
+        return settings.gemini_context_cache_ttl_hours
     
     def get_rate_limit_per_minute(self) -> int:
         """Get the rate limit per minute for Gemini API"""
-        return settings.GEMINI_RATE_LIMIT_PER_MINUTE
+        return settings.gemini_rate_limit_per_minute
     
     def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get any setting by key with optional default"""

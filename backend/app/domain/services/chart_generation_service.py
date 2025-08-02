@@ -276,13 +276,16 @@ Génère maintenant les graphiques au format JSON selon la <STRUCTURE_JSON_ATTEN
         logger.info(f"✅ CHART GENERATION [VALIDATION] Validated {len(validated_charts)} charts")
         return validated_charts
     
+    def _add_sources_from_grounding_metadata(self, chart_analysis: ChartAnalysisResult, grounding_chunks = None) -> ChartAnalysisResult:
         """Add web sources from grounding metadata to chart configurations"""
         try:
+            if not grounding_chunks:
                 logger.info("🔍 CHART GENERATION [SOURCES] No grounding chunks found")
                 return chart_analysis
             
             # Extract sources from grounding metadata
             sources = []
+            for chunk in grounding_chunks:
                 if hasattr(chunk, 'web') and chunk.web:
                     source = {
                         "title": chunk.web.title or "Source web",

@@ -21,6 +21,9 @@ from app.domain.schemas.training import TrainingUpload, TrainingResponse, Traini
 from app.domain.services.file_storage_service import FileStorageService
 from app.domain.services.ai_training_generation_service import AITrainingGenerationService, AITrainingGenerationError
 from app.adapters.repositories.training_repository import TrainingRepository
+from app.adapters.outbound.settings_adapter import SettingsAdapter
+from app.adapters.outbound.ai_adapter import AIAdapter
+from app.adapters.outbound.rate_limiter_adapter import RateLimiterAdapter
 from app.utils.file_validation import validate_training_file, get_file_type_from_extension, FileValidationError
 
 # Configure logging
@@ -49,6 +52,9 @@ async def create_training(
     """
     
     try:
+        logger.info(f"🎯 TRAINING [START] Creating training: name='{name}', is_ai_generated={is_ai_generated}")
+        logger.info(f"🎯 TRAINING [TRAINER] Trainer ID: {current_trainer.id}")
+        
         # Validate training type and requirements
         if not is_ai_generated:
             # Non-AI trainings require file
@@ -75,9 +81,24 @@ async def create_training(
             mime_type = "text/markdown"
         
         # Initialize services
-        file_storage = FileStorageService()
+        logger.info("🔧 TRAINING [SERVICES] Initializing services...")
+        settings_adapter = SettingsAdapter()
+        logger.info("✅ TRAINING [SERVICES] SettingsAdapter created")
+        
+        ai_adapter = AIAdapter()
+        logger.info("✅ TRAINING [SERVICES] AIAdapter created")
+        
+        rate_limiter_adapter = RateLimiterAdapter()
+        logger.info("✅ TRAINING [SERVICES] RateLimiterAdapter created")
+        
+        file_storage = FileStorageService(settings_adapter)
+        logger.info("✅ TRAINING [SERVICES] FileStorageService created")
+        
         training_repo = TrainingRepository(db)
-        ai_generation_service = AITrainingGenerationService()
+        logger.info("✅ TRAINING [SERVICES] TrainingRepository created")
+        
+        ai_generation_service = AITrainingGenerationService(ai_adapter, settings_adapter, rate_limiter_adapter)
+        logger.info("✅ TRAINING [SERVICES] All services initialized successfully")
         
         # Create training entity
         temp_training = Training(
@@ -303,7 +324,8 @@ async def delete_training(
     try:
         # Delete file first
         if training.file_path:
-            file_storage = FileStorageService()
+            settings_adapter = SettingsAdapter()
+            file_storage = FileStorageService(settings_adapter)
             await file_storage.delete_training_file(training.file_path)
         
         # Delete from database
@@ -359,7 +381,8 @@ async def download_training_file(
         )
     
     # Get file storage service and check if file exists
-    file_storage = FileStorageService()
+    settings_adapter = SettingsAdapter()
+    file_storage = FileStorageService(settings_adapter)
     file_exists = await file_storage.file_exists(training.file_path)
     
     if not file_exists:
