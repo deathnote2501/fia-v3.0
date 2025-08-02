@@ -10,8 +10,8 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.plan_generation_service_v2 import PlanGenerationService
-from app.services.plan_persistence_service import PlanPersistenceService
+from app.domain.services.plan_generation_service_v2 import PlanGenerationService
+from app.domain.services.plan_persistence_service import PlanPersistenceService
 from app.domain.entities.learner_training_plan import LearnerTrainingPlan
 from app.domain.entities.api_log import ApiLog
 from app.domain.ports.repositories import LearnerTrainingPlanRepositoryPort, ApiLogRepositoryPort

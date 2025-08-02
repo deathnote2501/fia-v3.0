@@ -8,7 +8,7 @@ import time
 from typing import Dict, Any, Optional
 
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
-from app.services.slide_prompt_builder import SlidePromptBuilder
+from app.domain.services.slide_prompt_builder import SlidePromptBuilder
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 from uuid import UUID
 
-from app.services.chart_generation_service import ChartGenerationService
+from app.domain.services.chart_generation_service import ChartGenerationService
 from app.domain.schemas.chart_generation import ChartGenerationRequest, ChartGenerationResponse
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
