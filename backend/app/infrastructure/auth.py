@@ -4,6 +4,7 @@ FastAPI-Users authentication setup with Bearer transport and JWT strategy
 """
 
 import uuid
+from fastapi import Depends
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import BearerTransport, JWTStrategy, AuthenticationBackend
 from app.infrastructure.settings import settings
@@ -32,5 +33,21 @@ fastapi_users = FastAPIUsers[TrainerModel, uuid.UUID](
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
-# Alias for training context
-get_current_trainer = current_active_user
+# Convert to domain entity
+async def get_current_trainer(
+    user_model: TrainerModel = Depends(current_active_user)
+) -> 'Trainer':
+    """Convert TrainerModel to Trainer domain entity"""
+    from app.domain.entities.trainer import Trainer
+    
+    return Trainer(
+        email=user_model.email,
+        first_name=user_model.first_name,
+        last_name=user_model.last_name,
+        trainer_id=user_model.id,
+        is_active=user_model.is_active,
+        is_verified=user_model.is_verified,
+        is_superuser=user_model.is_superuser,
+        created_at=user_model.created_at,
+        updated_at=user_model.updated_at
+    )

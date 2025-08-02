@@ -68,14 +68,15 @@ export class TTSManager {
     }
     
     /**
-     * Update audio controls visibility on all messages
+     * Update audio controls visibility on all messages (always visible now)
      */
     updateMessageAudioControls(enabled) {
         const messages = document.querySelectorAll('.message.assistant');
         messages.forEach(message => {
             const controls = message.querySelector('.message-audio-controls');
             if (controls) {
-                controls.style.display = enabled ? 'block' : 'none';
+                // Always visible - the toggle only controls auto-play functionality
+                controls.style.display = 'block';
             }
         });
     }
@@ -143,9 +144,10 @@ export class TTSManager {
      * Generate speech for text and auto-play if enabled
      */
     async generateAndPlaySpeech(text, messageElement, autoPlay = true) {
-        if (!this.enabled) {
-            console.log('🔊 TTS [MANAGER] TTS disabled, skipping speech generation');
-            return;
+        // Always generate audio for manual playback, but respect autoPlay setting
+        if (!this.enabled && autoPlay) {
+            console.log('🔊 TTS [MANAGER] TTS disabled, generating audio without auto-play');
+            autoPlay = false; // Generate audio but don't auto-play
         }
         
         if (!text || text.trim().length === 0) {

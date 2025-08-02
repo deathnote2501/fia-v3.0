@@ -3,17 +3,31 @@
  * Handles trainer dashboard functionality
  */
 
+console.log('🚨 ÉTAPE 4 - trainer-dashboard.js RECHARGÉ À:', new Date().toISOString());
+
 class TrainerDashboard {
     constructor() {
+        console.log('🚨 ÉTAPE 4 - TrainerDashboard constructor appelé');
         this.init();
     }
 
     init() {
+        console.log('🚀 ÉTAPE 3 - TrainerDashboard.init() démarré');
+        
         // Require authentication
-        if (!authManager.requireAuth()) return;
+        if (!authManager.requireAuth()) {
+            console.log('❌ ÉTAPE 3 - Authentication échouée, arrêt de init()');
+            return;
+        }
+        console.log('✅ ÉTAPE 3 - Authentication OK');
 
+        console.log('🔄 ÉTAPE 3 - Début loadUserData()');
         this.loadUserData();
+        
+        console.log('🔄 ÉTAPE 3 - Début checkAndShowAdminMenus()');
         this.checkAndShowAdminMenus();
+        
+        console.log('🔄 ÉTAPE 3 - Configuration des autres composants...');
         this.setupLogout();
         this.setupTrainingForm();
         this.setupAIToggle();
@@ -22,6 +36,8 @@ class TrainerDashboard {
         this.setupFileUpload();
         this.loadDashboardData();
         this.loadTrainings();
+        
+        console.log('✅ ÉTAPE 3 - TrainerDashboard.init() terminé');
     }
 
     loadUserData() {
@@ -679,48 +695,195 @@ class TrainerDashboard {
     // ============================================================================
 
     checkAndShowAdminMenus() {
-        if (authManager.isSuperUser()) {
+        // Debug: Vérifier les données utilisateur
+        const user = authManager.getUser();
+        console.log('🔍 ÉTAPE 2 - Données utilisateur récupérées:', user);
+        console.log('🔍 ÉTAPE 2 - is_superuser:', user?.is_superuser);
+        console.log('🔍 ÉTAPE 2 - isAuthenticated():', authManager.isAuthenticated());
+        console.log('🔍 ÉTAPE 2 - isSuperUser():', authManager.isSuperUser());
+        console.log('🔍 ÉTAPE 2 - hasAdminAccess():', authManager.hasAdminAccess());
+        
+        if (authManager.hasAdminAccess()) {
+            console.log('✅ ÉTAPE 2 - Accès admin accordé, affichage des menus');
             this.showAdminMenus();
             this.setupAdminFunctionality();
+        } else {
+            console.log('❌ ÉTAPE 2 - Accès admin refusé');
         }
     }
 
     showAdminMenus() {
+        console.log('🎯 ÉTAPE 3 - showAdminMenus() appelée');
+        
         // Add admin class to body to show admin-only elements
+        console.log('🎯 ÉTAPE 3 - Avant ajout is-admin, body.className:', document.body.className);
         document.body.classList.add('is-admin');
+        console.log('🎯 ÉTAPE 3 - Après ajout is-admin, body.className:', document.body.className);
+        console.log('🎯 ÉTAPE 3 - Vérification body.classList.contains("is-admin"):', document.body.classList.contains('is-admin'));
         
-        console.log('Admin menus enabled for superuser');
-        
-        // Log for debugging
+        // Check if admin elements exist
         const adminElements = document.querySelectorAll('.admin-only');
-        console.log(`Found ${adminElements.length} admin-only elements`);
+        console.log(`🎯 ÉTAPE 3 - Trouvé ${adminElements.length} éléments .admin-only`);
+        
+        // Detailed analysis of each admin element
+        adminElements.forEach((element, index) => {
+            const computedStyle = window.getComputedStyle(element);
+            console.log(`🎯 ÉTAPE 3 - Élément ${index + 1}:`, {
+                tagName: element.tagName,
+                className: element.className,
+                id: element.id,
+                display: computedStyle.display,
+                visibility: computedStyle.visibility,
+                position: computedStyle.position,
+                zIndex: computedStyle.zIndex
+            });
+            
+            // Special check for nav item
+            if (element.classList.contains('nav-item')) {
+                console.log(`🎯 ÉTAPE 3 - Nav item content:`, element.innerHTML.replace(/\n\s+/g, ' ').trim());
+            }
+        });
+        
+        // Test CSS rules application
+        console.log('🎯 ÉTAPE 3 - Test des règles CSS:');
+        const navTestElement = document.querySelector('.nav-item.admin-only');
+        if (navTestElement) {
+            const navComputedStyle = window.getComputedStyle(navTestElement);
+            console.log('🎯 ÉTAPE 3 - Nav .admin-only computed style:', {
+                display: navComputedStyle.display,
+                visibility: navComputedStyle.visibility,
+                opacity: navComputedStyle.opacity
+            });
+        }
+        
+        const tabTestElement = document.querySelector('.tab-pane.admin-only');
+        if (tabTestElement) {
+            const tabComputedStyle = window.getComputedStyle(tabTestElement);
+            console.log('🎯 ÉTAPE 3 - Tab .admin-only computed style:', {
+                display: tabComputedStyle.display,
+                visibility: tabComputedStyle.visibility,
+                opacity: tabComputedStyle.opacity
+            });
+        }
+        
+        // Check if CSS file is loaded
+        const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+        console.log('🎯 ÉTAPE 3 - Fichiers CSS chargés:', Array.from(cssLinks).map(link => link.href));
+        
+        // Test direct CSS rule
+        try {
+            const testDiv = document.createElement('div');
+            testDiv.className = 'admin-only';
+            document.body.appendChild(testDiv);
+            const testStyle = window.getComputedStyle(testDiv);
+            console.log('🎯 ÉTAPE 3 - Test direct .admin-only display:', testStyle.display);
+            document.body.removeChild(testDiv);
+            
+            // Test with body.is-admin
+            document.body.classList.add('test-admin-class');
+            const testDiv2 = document.createElement('div');
+            testDiv2.className = 'admin-only';
+            document.body.appendChild(testDiv2);
+            const testStyle2 = window.getComputedStyle(testDiv2);
+            console.log('🎯 ÉTAPE 3 - Test .admin-only avec body.is-admin:', testStyle2.display);
+            document.body.removeChild(testDiv2);
+            document.body.classList.remove('test-admin-class');
+            
+            // Test spécifique nav-item
+            const testNav = document.createElement('li');
+            testNav.className = 'nav-item admin-only';
+            document.body.appendChild(testNav);
+            const testNavStyle = window.getComputedStyle(testNav);
+            console.log('🎯 ÉTAPE 3 - Test .nav-item.admin-only display:', testNavStyle.display);
+            document.body.removeChild(testNav);
+            
+        } catch (e) {
+            console.error('🎯 ÉTAPE 3 - Erreur test CSS:', e);
+        }
+        
+        // Check if main.css styles are applied
+        const bodyStyle = window.getComputedStyle(document.body);
+        console.log('🎯 ÉTAPE 3 - Body font-family (pour vérifier CSS):', bodyStyle.fontFamily);
+        
+        // Force d'affichage si nécessaire (temporaire pour debug)
+        console.log('🎯 ÉTAPE 3 - Vérification finale de la visibilité des éléments admin');
+        setTimeout(() => {
+            const finalCheck = document.querySelectorAll('.admin-only');
+            let visibleCount = 0;
+            finalCheck.forEach(element => {
+                const style = window.getComputedStyle(element);
+                if (style.display !== 'none') {
+                    visibleCount++;
+                }
+            });
+            console.log(`🎯 ÉTAPE 3 - RÉSULTAT FINAL: ${visibleCount}/${finalCheck.length} éléments admin visibles`);
+            
+            if (visibleCount === 0) {
+                console.log('🚨 ÉTAPE 3 - AUCUN élément admin visible, forçage d\'affichage...');
+                finalCheck.forEach(element => {
+                    if (element.classList.contains('nav-item')) {
+                        element.style.display = 'list-item';
+                        console.log('🔧 ÉTAPE 3 - Forcé nav-item à list-item');
+                    } else if (element.classList.contains('tab-pane')) {
+                        element.style.display = 'block';
+                        console.log('🔧 ÉTAPE 3 - Forcé tab-pane à block');
+                    } else {
+                        element.style.display = 'block';
+                        console.log('🔧 ÉTAPE 3 - Forcé autre élément à block');
+                    }
+                });
+            } else {
+                console.log('✅ ÉTAPE 3 - Des éléments admin sont visibles !');
+            }
+        }, 100);
     }
 
     setupAdminFunctionality() {
         // Setup admin-specific event handlers and functionality
         this.setupTrainersOverviewTab();
+        
+        // Pre-load trainers data for admin users
+        console.log('Pre-loading trainers data for admin user');
+        setTimeout(() => {
+            this.loadTrainersOverview();
+        }, 500); // Small delay to ensure DOM is ready
     }
 
     setupTrainersOverviewTab() {
         // Setup click handler for admin trainers tab
         const trainersTab = document.querySelector('a[href="#admin-trainers"]');
+        console.log('Setting up trainers tab event listener, found element:', trainersTab);
         if (trainersTab) {
             trainersTab.addEventListener('shown.bs.tab', () => {
+                console.log('Trainers tab shown event triggered');
                 this.loadTrainersOverview();
             });
+            
+            // Also try to load immediately if this tab is already active
+            if (trainersTab.classList.contains('active')) {
+                console.log('Trainers tab is already active, loading immediately');
+                this.loadTrainersOverview();
+            }
         }
     }
 
     async loadTrainersOverview(retryCount = 0) {
+        console.log('Loading trainers overview...');
         const tableBody = document.getElementById('trainers-overview-body');
-        if (!tableBody) return;
+        if (!tableBody) {
+            console.error('Element trainers-overview-body not found!');
+            return;
+        }
+        console.log('Found table body element:', tableBody);
 
         try {
             // Show loading state - consistent with existing patterns
             this.showTrainersLoadingState(tableBody);
 
             // Fetch trainers overview data
+            console.log('Fetching trainers overview data...');
             const trainersData = await apiClient.get('/api/admin/trainers-overview');
+            console.log('Received trainers data:', trainersData.length, 'trainers');
 
             // Validate response data structure
             if (!Array.isArray(trainersData)) {
@@ -806,7 +969,9 @@ class TrainerDashboard {
                 </tr>
             `).join('');
 
+            console.log('Setting trainers HTML:', trainersHtml.length, 'characters');
             tableBody.innerHTML = trainersHtml;
+            console.log('Trainers table updated with', trainersData.length, 'trainers');
 
             // Setup table sorting if not already done
             this.setupTableSorting();
@@ -1235,5 +1400,6 @@ async function refreshTrainersOverview() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🌐 ÉTAPE 3 - DOM chargé, instanciation TrainerDashboard');
     window.trainerDashboard = new TrainerDashboard();
 });

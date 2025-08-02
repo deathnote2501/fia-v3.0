@@ -26,7 +26,7 @@ router = APIRouter(tags=["tts"])
 
 class TTSGenerateRequest(BaseModel):
     """Request model for TTS generation"""
-    message: str = Field(..., min_length=1, max_length=500, description="Text to convert to speech")
+    message: str = Field(..., min_length=1, description="Text to convert to speech")
     voice: str = Field(default="Kore", description="Voice name to use (e.g., 'Kore', 'Puck', 'Aoede')")
     language: str = Field(default="fr", description="Language code (e.g., 'fr', 'en', 'es', 'de')")
     voice_style: str = Field(default="default", description="Voice style (default, friendly, formal)")

@@ -77,7 +77,7 @@ Créer une [BASE DE CONNAISSANCE] qui sera utilisée pour créer une formation c
 POINTS ESSENTIELS À RESPECTER :
 - Formation complète sur : {name} - {description}
 - Structure Markdown hiérarchique obligatoire
-- Contenu minimum 1500 mots
+- Contenu entre 2500 et 4500 mots
 - Format Markdown pur sans balises de code
 </RECAP>
 

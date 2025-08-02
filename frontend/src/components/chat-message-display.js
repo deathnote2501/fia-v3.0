@@ -41,11 +41,11 @@ export class ChatMessageDisplay {
         // Generate unique message ID for TTS
         const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
-        // Add audio controls for assistant messages
+        // Add audio controls for assistant messages (always visible)
         let audioControls = '';
         if (!isUser && !metadata.error) {
             audioControls = `
-                <div class="message-audio-controls" style="display: ${this.ttsManager.enabled ? 'block' : 'none'}">
+                <div class="message-audio-controls" style="display: block">
                     <button class="audio-toggle-btn stopped" onclick="app.toggleMessageAudio('${messageId}')" data-message-id="${messageId}">
                         <i class="bi bi-play-circle"></i>
                     </button>
@@ -84,12 +84,13 @@ export class ChatMessageDisplay {
         chatMessages.insertAdjacentHTML('beforeend', messageHtml);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        // Auto-generate TTS for assistant messages if enabled
-        if (!isUser && !metadata.error && this.ttsManager.enabled) {
+        // Always generate TTS for assistant messages (for manual buttons)
+        if (!isUser && !metadata.error) {
             const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
             if (messageElement) {
-                // Generate and auto-play TTS
-                this.ttsManager.generateAndPlaySpeech(content, messageElement, true);
+                // Generate audio, auto-play only if TTS enabled
+                const autoPlay = this.ttsManager.enabled;
+                this.ttsManager.generateAndPlaySpeech(content, messageElement, autoPlay);
             }
         }
         

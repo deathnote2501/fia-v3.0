@@ -25,6 +25,7 @@ async def get_current_admin_trainer(
     current_trainer: Trainer = Depends(get_current_trainer)
 ) -> Trainer:
     """Dependency to ensure current trainer has admin privileges"""
+    logger.info(f"Admin check for trainer: {current_trainer.email}, superuser: {current_trainer.is_superuser}, active: {current_trainer.is_active}")
     if not current_trainer.has_admin_privileges():
         logger.warning(f"Non-admin trainer {current_trainer.email} attempted to access admin endpoint")
         raise HTTPException(status_code=403, detail="Admin privileges required")
@@ -50,7 +51,7 @@ async def get_trainers_overview(
         return trainers_overview
         
     except Exception as e:
-        logger.error(f"Failed to get trainers overview: {str(e)}")
+        logger.error(f"Failed to get trainers overview: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve trainers overview")
 
 

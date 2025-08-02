@@ -122,8 +122,10 @@ class AuthManager {
                 
                 // Get user profile after login
                 const userProfile = await this.getUserProfile();
+                console.log('🔍 ÉTAPE 2 - Profil utilisateur récupéré:', userProfile);
                 if (userProfile) {
                     this.setUser(userProfile);
+                    console.log('🔍 ÉTAPE 2 - Données stockées dans localStorage:', this.getUser());
                 }
                 
                 return { success: true, user: userProfile };
