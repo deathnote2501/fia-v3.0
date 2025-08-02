@@ -23,6 +23,7 @@ from app.adapters.repositories.learner_training_plan_repository import LearnerTr
 from app.adapters.repositories.api_log_repository import ApiLogRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.domain.services.plan_generation_service_v2 import PlanGenerationError
+from app.adapters.outbound.settings_adapter import SettingsAdapter
 from app.domain.services.document_processor import DocumentProcessingError
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIError
 from app.infrastructure.database import get_async_session
@@ -100,7 +101,8 @@ async def generate_plan_integrated(
         
         # Résoudre le chemin complet du fichier de formation
         from app.domain.services.file_storage_service import FileStorageService
-        file_storage = FileStorageService()
+        settings_adapter = SettingsAdapter()
+        file_storage = FileStorageService(settings_adapter)
         full_file_path = await file_storage.get_training_file_path(training.file_path)
         
         # Vérifier que le fichier existe

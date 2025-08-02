@@ -92,7 +92,7 @@ async def create_training_session(
         created_session = await session_repo.create(training_session)
         
         # Generate session link
-        session_link = f"{settings.frontend_url}/training.html?token={session_token}"
+        session_link = f"{settings.frontend_url}/frontend/public/training.html?token={session_token}"
         
         # Build response with link
         response_data = TrainingSessionResponse.model_validate(created_session)

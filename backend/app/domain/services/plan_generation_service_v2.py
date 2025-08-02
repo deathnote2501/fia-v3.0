@@ -16,6 +16,7 @@ from app.domain.services.plan_validator import PlanValidator, PlanValidationErro
 
 # Infrastructure adapter
 from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
+from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 
 # Optional architecture support
 if TYPE_CHECKING:
