@@ -16,6 +16,7 @@ from app.adapters.repositories.training_slide_repository import TrainingSlideRep
 from app.domain.services.slide_structure_formatter import SlideStructureFormatter
 from app.domain.services.slide_content_generator import SlideContentGenerator
 from app.domain.services.slide_content_modifier import SlideContentModifier
+from app.adapters.outbound.ai_adapter import AIAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,12 @@ class SlideGenerationServiceOrchestrator:
     
     def __init__(self):
         """Initialize slide generation orchestrator"""
+        # Initialize AI adapter for content generation
+        ai_adapter = AIAdapter()
+        
         self.structure_formatter = SlideStructureFormatter()
-        self.content_generator = SlideContentGenerator()
-        self.content_modifier = SlideContentModifier()
+        self.content_generator = SlideContentGenerator(ai_adapter)
+        self.content_modifier = SlideContentModifier(ai_adapter)
         logger.info("🎯 SLIDE ORCHESTRATOR [SERVICE] Initialized with specialized services")
     
     async def generate_first_slide_content(self, learner_session_id: str) -> Dict[str, Any]:
