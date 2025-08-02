@@ -126,7 +126,49 @@ export const fr = {
     'tooltip.examples': 'Obtenir des exemples pratiques liés à ce contenu',
     'tooltip.keyPoints': 'Mettre en évidence les points clés de cette diapositive',
     'tooltip.vocal': 'Démarrer une conversation vocale en direct avec Gemini',
-    'tooltip.voice': 'Cliquer pour commencer l\'enregistrement vocal'
+    'tooltip.voice': 'Cliquer pour commencer l\'enregistrement vocal',
+    
+    // Messages d'erreur
+    'error.network': 'Échec de la connexion réseau. Veuillez vérifier votre connexion internet.',
+    'error.server': 'Erreur serveur. Veuillez réessayer plus tard.',
+    'error.database': 'Erreur de connexion à la base de données. Veuillez contacter le support.',
+    'error.auth.failed': 'Échec de l\'authentification. Veuillez vérifier vos identifiants.',
+    'error.auth.system': 'Erreur système d\'authentification. Veuillez contacter le support.',
+    'error.validation': 'Veuillez vérifier votre saisie et réessayer.',
+    'error.file.upload': 'Échec du téléchargement de fichier. Veuillez réessayer.',
+    'error.file.size': 'Taille de fichier trop importante. Maximum 50MB.',
+    'error.file.format': 'Format de fichier non supporté. Veuillez utiliser PDF, PPT ou PPTX.',
+    'error.api.critical': 'Erreur API critique. Veuillez contacter le support.',
+    'error.unexpected': 'Une erreur inattendue s\'est produite. Veuillez contacter le support.',
+    'error.system': 'Erreur système. Veuillez contacter le support.',
+    'error.timeout': 'Délai d\'attente dépassé. Veuillez réessayer.',
+    'error.forbidden': 'Accès refusé. Vous n\'avez pas la permission pour cette action.',
+    'error.notfound': 'Ressource demandée non trouvée.',
+    'error.session.expired': 'Votre session a expiré. Veuillez vous reconnecter.',
+    'error.session.invalid': 'Session invalide. Veuillez vous reconnecter.',
+    
+    // Messages de succès
+    'success.saved': 'Sauvegardé avec succès !',
+    'success.created': 'Créé avec succès !',
+    'success.updated': 'Mis à jour avec succès !',
+    'success.deleted': 'Supprimé avec succès !',
+    'success.uploaded': 'Fichier téléchargé avec succès !',
+    'success.login': 'Connexion réussie !',
+    'success.logout': 'Déconnexion réussie !',
+    'success.registered': 'Compte créé avec succès !',
+    
+    // Messages d'avertissement
+    'warning.unsaved': 'Vous avez des modifications non sauvegardées.',
+    'warning.delete': 'Cette action ne peut pas être annulée.',
+    'warning.session.expiring': 'Votre session va bientôt expirer.',
+    
+    // Messages d'information
+    'info.loading': 'Chargement...',
+    'info.processing': 'Traitement de votre demande...',
+    'info.uploading': 'Téléchargement du fichier...',
+    
+    // Contact support
+    'contact.support': 'Contacter le support : jerome.iavarone@gmail.com'
 };
 
 export default fr;

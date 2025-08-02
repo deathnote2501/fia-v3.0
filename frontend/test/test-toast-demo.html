@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toast Manager Demo - FIA v3.0</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light p-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-bell-fill me-2"></i>
+                            Toast Notification Manager Demo
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Test des notifications toast en haut à droite avec messages i18n et contact jerome.iavarone@gmail.com pour erreurs critiques.
+                        </p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h5>Types de Messages</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" onclick="testSuccess()">
+                                        <i class="bi bi-check-circle me-2"></i>Success Toast
+                                    </button>
+                                    <button class="btn btn-info" onclick="testInfo()">
+                                        <i class="bi bi-info-circle me-2"></i>Info Toast
+                                    </button>
+                                    <button class="btn btn-warning" onclick="testWarning()">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>Warning Toast
+                                    </button>
+                                    <button class="btn btn-danger" onclick="testError()">
+                                        <i class="bi bi-x-circle me-2"></i>Error Toast
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Erreurs Critiques (avec contact)</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-danger" onclick="testCriticalError()">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Server Error
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testSystemError()">
+                                        <i class="bi bi-gear-fill me-2"></i>System Error
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testDatabaseError()">
+                                        <i class="bi bi-database-fill me-2"></i>Database Error
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testAuthSystemError()">
+                                        <i class="bi bi-shield-fill me-2"></i>Auth System Error
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h5>Actions</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-secondary" onclick="testMultiple()">
+                                        <i class="bi bi-stack me-2"></i>Multiple Toasts
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearAllToasts()">
+                                        <i class="bi bi-x-square me-2"></i>Clear All Toasts
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Langue</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" onclick="switchToFrench()">
+                                        <i class="bi bi-translate me-2"></i>Switch to French
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="switchToEnglish()">
+                                        <i class="bi bi-translate me-2"></i>Switch to English
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Instructions :</strong> 
+                            Les toasts apparaissent en haut à droite. Les erreurs critiques incluent automatiquement 
+                            le contact jerome.iavarone@gmail.com. Testez le changement de langue pour voir les traductions.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- I18n System -->
+    <script src="../src/i18n/i18n.js" type="module"></script>
+    
+    <!-- Toast Manager -->
+    <script src="../src/utils/toast-manager.js" type="module"></script>
+
+    <script>
+        // Initialize i18n
+        let i18n;
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing Toast Demo...');
+            
+            // Wait a bit for modules to load
+            setTimeout(() => {
+                if (window.I18n) {
+                    i18n = new window.I18n();
+                    window.i18n = i18n;
+                    console.log('✅ I18n initialized');
+                } else {
+                    console.warn('⚠️ I18n not available');
+                }
+                
+                if (window.toastManager) {
+                    console.log('✅ Toast Manager ready');
+                } else {
+                    console.warn('⚠️ Toast Manager not available');
+                }
+            }, 100);
+        });
+
+        // Test functions
+        function testSuccess() {
+            showToast('success.saved', 'success');
+        }
+
+        function testInfo() {
+            showToast('info.processing', 'info');
+        }
+
+        function testWarning() {
+            showToast('warning.unsaved', 'warning');
+        }
+
+        function testError() {
+            showToast('error.validation', 'error');
+        }
+
+        function testCriticalError() {
+            showToast('error.server', 'error');
+        }
+
+        function testSystemError() {
+            showToast('error.system', 'error');
+        }
+
+        function testDatabaseError() {
+            showToast('error.database', 'error');
+        }
+
+        function testAuthSystemError() {
+            showToast('error.auth.system', 'error');
+        }
+
+        function testMultiple() {
+            showToast('success.uploaded', 'success');
+            setTimeout(() => showToast('info.loading', 'info'), 500);
+            setTimeout(() => showToast('warning.session.expiring', 'warning'), 1000);
+        }
+
+        function clearAllToasts() {
+            if (window.toastManager) {
+                window.toastManager.clearAll();
+            }
+        }
+
+        function switchToFrench() {
+            if (i18n) {
+                i18n.setLanguage('fr').then(() => {
+                    showToast('Langue changée en français', 'success');
+                });
+            }
+        }
+
+        function switchToEnglish() {
+            if (i18n) {
+                i18n.setLanguage('en').then(() => {
+                    showToast('Language changed to English', 'success');
+                });
+            }
+        }
+
+        // Fallback if toast manager not loaded
+        function showToast(message, type) {
+            if (window.showToast) {
+                window.showToast(message, type);
+            } else {
+                console.warn('Toast Manager not available, using alert:', message);
+                alert(`[${type.toUpperCase()}] ${message}`);
+            }
+        }
+    </script>
+</body>
+</html>
