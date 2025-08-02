@@ -25,8 +25,8 @@ class PromptBuilder:
         """Extract and normalize learner profile data"""
         return {
             'experience_level': learner_data.get('experience_level', 'beginner'),
-            'job_and_sector': learner_data.get('job_and_sector') or learner_data.get('job_position', 'professionnel'),
-            'objectives': learner_data.get('objectives', 'développer mes compétences'),
+            'job_and_sector': learner_data.get('job_and_sector') or learner_data.get('job_position', 'professional'),
+            'objectives': learner_data.get('objectives', 'develop my skills'),
             'training_duration': learner_data.get('training_duration', '4h'),
             'language': learner_data.get('language', 'fr')
         }
