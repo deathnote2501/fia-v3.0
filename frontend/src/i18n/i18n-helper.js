@@ -16,6 +16,49 @@ export async function initializeI18n() {
 }
 
 /**
+ * Safe translation function with intelligent fallbacks
+ * @param {string} key - Translation key
+ * @param {string} customFallback - Custom fallback text
+ * @returns {string} Translated text or smart fallback
+ */
+export function safeT(key, customFallback = null) {
+    // If i18n is ready, try to get translation
+    if (window.i18n && window.i18n.translations && window.i18n.translations[window.i18n.currentLanguage]) {
+        const translation = window.i18n.t(key);
+        // If translation exists and is not the key itself, return it
+        if (translation && translation !== key) {
+            return translation;
+        }
+    }
+    
+    // Use custom fallback if provided
+    if (customFallback) {
+        return customFallback;
+    }
+    
+    // Smart fallbacks for common keys to avoid technical display
+    const smartFallbacks = {
+        'status.validatingSession': 'Validating Session',
+        'status.validatingSessionMessage': 'Please wait while we verify your session...',
+        'status.generatingPlan': 'Generating Your Training Plan',
+        'status.generatingPlanMessage': 'This may take a few moments...',
+        'status.loadingSession': 'Loading Your Session',
+        'status.loadingSessionMessage': 'Loading your training content...',
+        'status.loading': 'Loading...',
+        'status.loadingGeneric': 'Loading...',
+        'status.loadingTrainings': 'Loading trainings...',
+        'status.loadingSlideContent': 'Loading slide content...',
+        'status.loadingData': 'Loading data...',
+        'error.generic': 'An error occurred',
+        'error.loadingTrainings': 'Error loading trainings',
+        'error.loadingSessions': 'Error loading sessions',
+        'error.loadingData': 'Error loading data'
+    };
+    
+    return smartFallbacks[key] || 'Loading...';
+}
+
+/**
  * Fonction raccourci pour traduire (disponible globalement)
  */
 export function setupGlobalTranslation() {
@@ -23,7 +66,10 @@ export function setupGlobalTranslation() {
         return window.i18n ? window.i18n.t(key) : key;
     };
     
-    console.log('🔧 [i18n-helper] Fonction t() disponible globalement');
+    // Add safeT globally
+    window.safeT = safeT;
+    
+    console.log('🔧 [i18n-helper] Fonctions t() et safeT() disponibles globalement');
 }
 
 /**

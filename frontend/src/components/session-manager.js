@@ -79,7 +79,7 @@ async function loadTrainings() {
     
     try {
         // Show loading state
-        select.innerHTML = '<option value="">Loading trainings...</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         select.disabled = true;
         
         // Make API call
@@ -101,7 +101,7 @@ async function loadTrainings() {
         
     } catch (error) {
         console.error('Error loading trainings:', error);
-        select.innerHTML = '<option value="">Error loading trainings</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('error.loadingTrainings') : 'Error loading trainings'}</option>`;
         showAlert('Failed to load trainings. Please refresh the page.', 'warning');
     } finally {
         select.disabled = false;
@@ -220,7 +220,7 @@ async function loadSessions() {
         sessionsList.innerHTML = `
             <div class="text-center text-danger py-4">
                 <i class="bi bi-exclamation-triangle"></i>
-                <p class="mt-2">Error loading sessions</p>
+                <p class="mt-2">${window.safeT ? window.safeT('error.loadingSessions') : 'Error loading sessions'}</p>
             </div>
         `;
         showAlert('Failed to load sessions. Please try again.', 'danger');

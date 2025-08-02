@@ -102,6 +102,12 @@ export const fr = {
     'status.loadingSession': 'Chargement de votre session de formation',
     'status.loadingSessionMessage': 'Chargement de votre diapositive actuelle...',
     
+    // Messages de chargement génériques
+    'status.loadingGeneric': 'Chargement...',
+    'status.loadingTrainings': 'Chargement des formations...',
+    'status.loadingSlideContent': 'Chargement du contenu des diapositives...',
+    'status.loadingData': 'Chargement des données...',
+    
     // Formation des apprenants (training.html)
     'learner.trainingPlan': 'Plan de formation',
     'learner.askTrainer': 'Demandez à votre formateur IA...',
@@ -129,6 +135,10 @@ export const fr = {
     'tooltip.voice': 'Cliquer pour commencer l\'enregistrement vocal',
     
     // Messages d'erreur
+    'error.generic': 'Une erreur est survenue',
+    'error.loadingTrainings': 'Erreur lors du chargement des formations',
+    'error.loadingSessions': 'Erreur lors du chargement des sessions',
+    'error.loadingData': 'Erreur lors du chargement des données',
     'error.network': 'Échec de la connexion réseau. Veuillez vérifier votre connexion internet.',
     'error.server': 'Erreur serveur. Veuillez réessayer plus tard.',
     'error.database': 'Erreur de connexion à la base de données. Veuillez contacter le support.',

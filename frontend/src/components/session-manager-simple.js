@@ -131,7 +131,7 @@ async function loadTrainings() {
     
     try {
         select.disabled = true;
-        select.innerHTML = '<option value="">Loading trainings...</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
         const response = await fetch('/api/trainings', {
             headers: getAuthHeaders()
@@ -159,7 +159,7 @@ async function loadTrainings() {
         
     } catch (error) {
         console.error('Error loading trainings:', error);
-        select.innerHTML = '<option value="">Error loading trainings</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('error.loadingTrainings') : 'Error loading trainings'}</option>`;
         showAlert('Failed to load trainings', 'warning');
     } finally {
         select.disabled = false;
@@ -174,7 +174,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
     
     try {
         // Show loading
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Loading...</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}</td></tr>`;
         
         // Build query parameters for date filtering
         let url = '/api/training-sessions';
@@ -223,7 +223,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         
     } catch (error) {
         console.error('Error loading sessions:', error);
-        sessionsList.innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle"></i><p class="mt-2">Error loading sessions</p></div>';
+        sessionsList.innerHTML = `<div class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle"></i><p class="mt-2">${window.safeT ? window.safeT('error.loadingSessions') : 'Error loading sessions'}</p></div>`;
         showAlert('Failed to load sessions', 'danger');
     }
 }

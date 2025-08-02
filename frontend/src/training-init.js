@@ -6,9 +6,32 @@
 
 import { initializeFIAApp } from './main.js';
 
-// Helper function for translations (available after i18n initialization)
+// Safe translation function with user-friendly fallbacks
 function t(key) {
-    return window.t ? window.t(key) : key;
+    if (window.t) {
+        return window.t(key);
+    }
+    
+    // User-friendly fallbacks for common keys
+    const fallbacks = {
+        'status.validatingSession': 'Validating Session',
+        'status.validatingSessionMessage': 'Please wait while we verify your session...',
+        'status.generatingPlan': 'Generating Your Training Plan',
+        'status.generatingPlanMessage': 'This may take a few moments...',
+        'status.loadingSession': 'Loading Your Session',
+        'status.loadingSessionMessage': 'Loading your training content...',
+        'status.loading': 'Loading...',
+        'status.loadingGeneric': 'Loading...',
+        'status.loadingTrainings': 'Loading trainings...',
+        'status.loadingSlideContent': 'Loading slide content...',
+        'status.loadingData': 'Loading data...',
+        'error.generic': 'An error occurred',
+        'error.loadingTrainings': 'Error loading trainings',
+        'error.loadingSessions': 'Error loading sessions',
+        'error.loadingData': 'Error loading data'
+    };
+    
+    return fallbacks[key] || 'Loading...';
 }
 
 // Application States
@@ -43,12 +66,52 @@ class UnifiedTrainingApp {
         try {
             console.log('🌟 [UNIFIED-APP] Starting unified training application...');
             
+            // Initialize i18n first to avoid showing keys
+            await this.initializeI18n();
+            
             await this.validateToken();
             await this.checkProfileAndPlan();
             
         } catch (error) {
             console.error('❌ [UNIFIED-APP] Application initialization failed:', error);
             this.showErrorState('Application Error', error.message);
+        }
+    }
+    
+    /**
+     * Initialize i18n service
+     */
+    async initializeI18n() {
+        try {
+            const { initializeI18n, setupGlobalTranslation } = await import('./i18n/i18n-helper.js');
+            await initializeI18n();
+            setupGlobalTranslation();
+            
+            // Re-translate any existing content after i18n is ready
+            this.refreshTranslations();
+            
+            console.log('✅ [UNIFIED-APP] i18n initialized successfully');
+        } catch (error) {
+            console.warn('⚠️ [UNIFIED-APP] Failed to initialize i18n:', error);
+            // Continue with fallback behavior
+        }
+    }
+    
+    /**
+     * Refresh all translations in the current view
+     */
+    refreshTranslations() {
+        // Update all elements with data-i18n attributes
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            if (window.t) {
+                element.textContent = window.t(key);
+            }
+        });
+        
+        // Re-render current state with proper translations
+        if (this.currentState === APP_STATES.VALIDATING) {
+            this.showValidatingState();
         }
     }
     

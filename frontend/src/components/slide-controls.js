@@ -75,7 +75,7 @@ export class SlideControls {
             // Désactiver le bouton pendant le traitement
             if (newNextBtn) {
                 newNextBtn.disabled = true;
-                newNextBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                newNextBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}`;
             }
             
             // Obtenir l'ID de la slide actuelle
@@ -158,7 +158,7 @@ export class SlideControls {
             // Désactiver le bouton pendant le traitement
             if (newPreviousBtn) {
                 newPreviousBtn.disabled = true;
-                newPreviousBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                newPreviousBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}`;
             }
             
             // Obtenir l'ID de la slide actuelle

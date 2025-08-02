@@ -56,7 +56,7 @@ is_valid, message = await service.validate_document_for_training(
 GOOGLE_CLOUD_PROJECT=your-project-id
 GOOGLE_CLOUD_REGION=europe-west1
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-GEMINI_MODEL_NAME=gemini-2.0-flash-001
+GEMINI_MODEL_NAME=gemini-2.5-flash
 ```
 
 ### Types MIME supportés

@@ -210,7 +210,9 @@ class ConversationAdapter(ConversationServicePort):
             prompt = self.prompt_builder.build_message_response_prompt(
                 message=message,
                 conversation_history=conversation_history,
-                training_context=training_context,
+                slide_content=training_context,  # Pour l'instant, utiliser training_context comme contenu
+                slide_title="Formation en cours",  # Titre par défaut
+                slide_type="content",  # Type par défaut
                 learner_profile=learner_profile
             )
             

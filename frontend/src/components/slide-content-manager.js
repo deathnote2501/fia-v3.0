@@ -439,7 +439,7 @@ export class SlideContentManager {
      */
     clearSlideContent() {
         if (this.container) {
-            this.container.innerHTML = '<p>Loading slide content...</p>';
+            this.container.innerHTML = `<p>${window.safeT ? window.safeT('status.loadingSlideContent') : 'Loading slide content...'}</p>`;
         }
         this.currentSlideContent = null;
         console.log('🧹 [SLIDE-CONTENT] Slide content cleared');

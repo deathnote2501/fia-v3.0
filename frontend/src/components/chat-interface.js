@@ -1309,7 +1309,7 @@ export class ChatInterface {
                 } else {
                     if (actionType === activeActionType) {
                         button.disabled = true;
-                        button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Loading...';
+                        button.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}`;
                     } else {
                         button.disabled = true;
                     }

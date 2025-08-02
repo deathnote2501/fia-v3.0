@@ -502,7 +502,7 @@ class AdminDashboard {
                 <td colspan="10" class="text-center py-5">
                     <div>
                         <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
-                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <h6 class="text-danger mb-2">${window.safeT ? window.safeT('error.loadingData', 'Error Loading Data') : 'Error Loading Data'}</h6>
                         <p class="text-muted small mb-3">${errorMessage}</p>
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-sm btn-outline-primary" onclick="refreshTraineesOverview()">
@@ -686,7 +686,7 @@ class AdminDashboard {
                 <td colspan="8" class="text-center py-5">
                     <div>
                         <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
-                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <h6 class="text-danger mb-2">${window.safeT ? window.safeT('error.loadingData', 'Error Loading Data') : 'Error Loading Data'}</h6>
                         <p class="text-muted small mb-3">${errorMessage}</p>
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainingsOverview()">
@@ -945,7 +945,7 @@ class AdminDashboard {
                 <td colspan="9" class="text-center py-5">
                     <div>
                         <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
-                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <h6 class="text-danger mb-2">${window.safeT ? window.safeT('error.loadingData', 'Error Loading Data') : 'Error Loading Data'}</h6>
                         <p class="text-muted small mb-3">${errorMessage}</p>
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-sm btn-outline-primary" onclick="refreshSessionsOverview()">
@@ -1171,7 +1171,7 @@ class AdminDashboard {
                 <td colspan="13" class="text-center py-5">
                     <div>
                         <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
-                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <h6 class="text-danger mb-2">${window.safeT ? window.safeT('error.loadingData', 'Error Loading Data') : 'Error Loading Data'}</h6>
                         <p class="text-muted small mb-3">${errorMessage}</p>
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainersOverview()">

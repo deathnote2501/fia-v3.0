@@ -5,7 +5,7 @@ Service centralisé pour construire tous les prompts de conversation et chat IA
 
 import logging
 import json
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,9 @@ class ConversationPromptBuilder:
         self,
         message: str,
         conversation_history: List[Dict[str, Any]],
-        training_context: str,
+        slide_content: str,
+        slide_title: str,
+        slide_type: str,
         learner_profile: Any
     ) -> str:
         """
@@ -30,7 +32,9 @@ class ConversationPromptBuilder:
         Args:
             message: Message de l'apprenant
             conversation_history: Historique de conversation
-            training_context: Contexte de la formation
+            slide_content: Contenu de la slide courante
+            slide_title: Titre de la slide courante
+            slide_type: Type de la slide courante
             learner_profile: Profil de l'apprenant
             
         Returns:
@@ -60,9 +64,17 @@ Répondre au [MESSAGE] de l'apprenant qui suit une session de formation interact
 - Langue : {profile_info['langue']}
 </PROFIL_APPRENANT>
 
-<CONTEXTE_FORMATION>
-{training_context[:1000]}...
-</CONTEXTE_FORMATION>
+<SLIDE_COURANT>
+Titre : {slide_title}
+Type de slide : {slide_type}
+Contenu : {slide_content}
+</SLIDE_COURANT>
+
+<TYPE_DE_REPONSE>
+- Type de slide = "plan/stage/module/" : Présente le déroulé du module, crée de l’engagement, relie aux objectifs de l’apprenant.
+- Type de slide = "content" : Reformule ou simplifie, illustre par un exemple concret, met en valeur les points clés, fait le lien avec le métier de l’apprenant.
+- Type de slide = "quiz" : Demande à l'apprenant de répondre aux questions du slide via le chat ou en vocal.
+</TYPE_DE_REPONSE>
 
 <HISTORIQUE_CONVERSATION>
 {history_text}
@@ -403,7 +415,7 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
             return "Pas d'historique de conversation"
         
         history_text = ""
-        for msg in conversation_history[-5:]:  # Derniers 5 messages pour le contexte
+        for msg in conversation_history[-10:]:  # Derniers 10 messages pour le contexte
             role = "Apprenant" if msg["role"] == "user" else "Formateur IA"
             history_text += f"{role}: {msg['content']}\n"
         
@@ -413,10 +425,10 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
         """Obtenir la liste des prompts supportés"""
         return {
             "message_response": {
-                "description": "Prompt pour répondre aux messages avec enrichissement profil",
+                "description": "Prompt pour répondre aux messages avec enrichissement profil basé sur le slide courant",
                 "method": "build_message_response_prompt",
                 "output_format": "JSON avec response et learner_profile",
-                "features": ["chat", "profile_enrichment", "suggestions"]
+                "features": ["chat", "profile_enrichment", "slide_context", "conversation_history"]
             },
             "slide_commentary": {
                 "description": "Prompt pour commenter et analyser une slide",
@@ -456,7 +468,7 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
             True si les paramètres sont valides
         """
         required_params = {
-            "message_response": ["message", "conversation_history", "training_context", "learner_profile"],
+            "message_response": ["message", "conversation_history", "slide_content", "slide_title", "slide_type", "learner_profile"],
             "slide_commentary": ["slide_content", "slide_title", "learner_profile"],
             "example_generation": ["slide_content", "slide_title", "learner_profile"],
             "comprehension_question": ["slide_content", "slide_title", "learner_profile"],
@@ -483,8 +495,7 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
         self,
         slide_title: str = None,
         slide_content: str = None,
-        learner_profile: Any = None,
-        training_context: str = None
+        learner_profile: Any = None
     ) -> str:
         """
         Construire l'instruction système pour Gemini Live API avec contexte
@@ -493,7 +504,6 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
             slide_title: Titre du slide courant
             slide_content: Contenu du slide courant
             learner_profile: Profil de l'apprenant
-            training_context: Contexte de la formation
             
         Returns:
             System instruction formatée pour Gemini Live API

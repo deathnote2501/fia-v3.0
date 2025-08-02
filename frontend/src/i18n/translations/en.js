@@ -102,6 +102,12 @@ export const en = {
     'status.loadingSession': 'Loading Your Training Session',
     'status.loadingSessionMessage': 'Loading your current slide...',
     
+    // Generic loading messages
+    'status.loadingGeneric': 'Loading...',
+    'status.loadingTrainings': 'Loading trainings...',
+    'status.loadingSlideContent': 'Loading slide content...',
+    'status.loadingData': 'Loading data...',
+    
     // Learner training (training.html)
     'learner.trainingPlan': 'Training Plan',
     'learner.askTrainer': 'Ask your AI trainer...',
@@ -129,6 +135,10 @@ export const en = {
     'tooltip.voice': 'Click to start voice recording',
     
     // Error messages
+    'error.generic': 'An error occurred',
+    'error.loadingTrainings': 'Error loading trainings',
+    'error.loadingSessions': 'Error loading sessions',
+    'error.loadingData': 'Error loading data',
     'error.network': 'Network connection failed. Please check your internet connection.',
     'error.server': 'Server error occurred. Please try again later.',
     'error.database': 'Database connection error. Please contact support.',
