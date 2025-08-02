@@ -7,21 +7,8 @@
 // CONFIGURATION
 // ============================================================================
 
-// Auto-detect API base URL based on environment
-const API_BASE = (() => {
-    // If running on Railway production
-    if (window.location.hostname.includes('railway.app')) {
-        return window.location.origin;
-    }
-    
-    // If running on custom domain
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        return window.location.origin;
-    }
-    
-    // Default to localhost for development
-    return 'http://localhost:8000';
-})();
+// Use relative URLs - no need for CORS since frontend and API are on same server
+const API_BASE = '';
 
 // ============================================================================
 // UTILITAIRES

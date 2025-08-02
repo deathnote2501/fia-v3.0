@@ -20,7 +20,6 @@ logging.getLogger('asyncpg').setLevel(logging.CRITICAL)
 logging.getLogger('asyncio').setLevel(logging.ERROR)
 logging.getLogger('aiopg').setLevel(logging.CRITICAL)
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
@@ -87,38 +86,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS with custom origin validation for Railway
-def is_valid_origin(origin: str) -> bool:
-    """Check if origin is allowed"""
-    allowed_origins = settings.cors_origins_list
-    
-    # Check exact matches first
-    if origin in allowed_origins:
-        return True
-    
-    # For production, allow Railway domains
-    if settings.environment == "production" and origin.endswith(".up.railway.app"):
-        return True
-    
-    return False
-
-# Use allow_origin_regex for Railway domains in production
-if settings.environment == "production":
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"https://.*\.up\.railway\.app",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
 
 # Mount static files (frontend)
 app.mount("/frontend", StaticFiles(directory="../frontend"), name="frontend")
