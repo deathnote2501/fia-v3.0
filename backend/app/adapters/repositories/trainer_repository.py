@@ -2,10 +2,14 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import logging
 
 from app.domain.entities.trainer import Trainer
 from app.domain.ports.repositories import TrainerRepositoryPort
 from app.infrastructure.models.trainer_model import TrainerModel
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class TrainerRepository(TrainerRepositoryPort):
@@ -103,6 +107,50 @@ class TrainerRepository(TrainerRepositoryPort):
         )
         trainer_models = result.scalars().all()
         return [self._to_entity(model) for model in trainer_models]
+    
+    async def get_or_create_anonymous_trainer(self) -> Trainer:
+        """Get or create anonymous trainer for public quick start workflow"""
+        anonymous_email = "anonymous@fia-v3.system"
+        
+        # Try to get existing anonymous trainer
+        existing_trainer = await self.get_by_email(anonymous_email)
+        if existing_trainer:
+            logger.info(f"🔍 TRAINER_REPO [FOUND] Anonymous trainer exists: {existing_trainer.id}")
+            return existing_trainer
+        
+        # Create new anonymous trainer directly with SQLAlchemy (bypass domain entity for this special case)
+        logger.info("🆕 TRAINER_REPO [CREATE] Creating new anonymous trainer with hashed password")
+        
+        from app.infrastructure.models.trainer_model import TrainerModel
+        from fastapi_users.password import PasswordHelper
+        import uuid
+        
+        # Generate a secure password hash for the anonymous user
+        password_helper = PasswordHelper()
+        hashed_password = password_helper.hash("anonymous_secure_password_2025")
+        
+        # Create model directly to avoid domain entity validation
+        anonymous_model = TrainerModel(
+            id=uuid.uuid4(),
+            email=anonymous_email,
+            first_name="Anonymous",
+            last_name="User",
+            hashed_password=hashed_password,
+            is_active=True,
+            is_verified=True,
+            is_superuser=False,
+            language="fr"
+        )
+        
+        self.session.add(anonymous_model)
+        await self.session.commit()
+        await self.session.refresh(anonymous_model)
+        
+        # Convert to domain entity
+        created_trainer = self._to_entity(anonymous_model)
+        logger.info(f"✅ TRAINER_REPO [CREATED] Anonymous trainer: {created_trainer.id}")
+        
+        return created_trainer
     
     def _to_entity(self, model: TrainerModel) -> Trainer:
         """Convert SQLAlchemy model to domain entity"""

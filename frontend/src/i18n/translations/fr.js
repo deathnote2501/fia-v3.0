@@ -120,6 +120,13 @@ export const fr = {
     'learner.chart': 'Graphique',
     'learner.image': 'Image',
     
+    // Phase 3: Modal de limitation des slides
+    'learner.slideLimitTitle': 'Limite de formation gratuite atteinte',
+    'learner.slideLimitMessage': 'Vous avez atteint la limite de l\'aperçu gratuit de 10 slides.',
+    'learner.slideLimitContact': 'Pour continuer votre formation personnalisée, veuillez nous contacter :',
+    'learner.slideLimitThanks': 'Merci d\'avoir essayé la formation IA FIA v3.0 !',
+    'learner.backToHome': 'Retour à l\'accueil',
+    
     // Actions contextuelles
     'action.comment': 'Commenter',
     'action.quiz': 'Quiz',

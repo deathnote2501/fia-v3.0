@@ -42,6 +42,7 @@ from app.adapters.inbound.image_generation_controller import router as image_gen
 from app.adapters.inbound.chart_generation_controller import router as chart_generation_router
 from app.adapters.inbound.config_controller import router as config_router
 from app.adapters.inbound.admin_controller import router as admin_router
+from app.adapters.inbound.public_quick_start_controller import router as public_quick_start_router
 
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
@@ -183,6 +184,8 @@ app.include_router(config_router)
 
 # Include admin router
 app.include_router(admin_router)
+# Include public quick start router
+app.include_router(public_quick_start_router)
 
 # Include unified plan generation router if available
 if PLAN_GENERATION_AVAILABLE:

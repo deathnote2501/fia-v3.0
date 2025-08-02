@@ -120,6 +120,13 @@ export const en = {
     'learner.chart': 'Chart',
     'learner.image': 'Image',
     
+    // Phase 3: Slide Limitation Modal
+    'learner.slideLimitTitle': 'Free Training Limit Reached',
+    'learner.slideLimitMessage': 'You have reached the free preview limit of 10 slides.',
+    'learner.slideLimitContact': 'To continue your personalized training, please contact us:',
+    'learner.slideLimitThanks': 'Thank you for trying FIA v3.0 AI-powered training!',
+    'learner.backToHome': 'Back to Home',
+    
     // Contextual actions
     'action.comment': 'Comment',
     'action.quiz': 'Quiz',

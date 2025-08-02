@@ -229,7 +229,7 @@ Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."
             
             # Apply rate limiting before VertexAI call
             logger.info(f"🚦 AI_TRAINING_GEN [RATE_LIMIT] Acquiring rate limit slot...")
-            await gemini_rate_limiter.acquire(wait=True, max_wait_seconds=300)
+            await self.rate_limiter.acquire(wait=True, max_wait_seconds=300)
             logger.info(f"✅ AI_TRAINING_GEN [RATE_LIMIT] Rate limit slot acquired")
             
             # Generate content using specialized Gemini 2.5 Flash client
@@ -358,7 +358,7 @@ Génère maintenant la [BASE DE CONNAISSANCE] complète au format Markdown pur."
     def get_stats(self) -> Dict[str, Any]:
         """Get service statistics"""
         vertex_stats = self.vertex_adapter.get_stats()
-        rate_limit_status = gemini_rate_limiter.get_status()
+        rate_limit_status = self.rate_limiter.get_status()
         
         return {
             "service_name": "AITrainingGenerationService",

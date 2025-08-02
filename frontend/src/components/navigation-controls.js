@@ -3,6 +3,12 @@
  * Handles breadcrumb updates, progress bar, and navigation button states
  */
 
+// Phase 3: Configuration for slide limitation (shared config)
+const SLIDE_LIMIT_CONFIG = {
+    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
+    CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
+};
+
 export class NavigationControls {
     constructor() {
         console.log('🧭 [NAVIGATION-CONTROLS] NavigationControls initialized');
@@ -94,7 +100,15 @@ export class NavigationControls {
         
         // Update Next button
         if (newNextBtn) {
-            if (position.has_next === false) {
+            // Phase 3: Check slide limitation (configurable limit for free users)
+            const currentPosition = position.current_position || 0;
+            
+            if (currentPosition >= SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES) {
+                newNextBtn.disabled = true;
+                newNextBtn.classList.add('opacity-50');
+                newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Limit Reached';
+                console.log(`🚫 [NAVIGATION-CONTROLS] Next button disabled - slide limit reached (${currentPosition}/${SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES})`);
+            } else if (position.has_next === false) {
                 newNextBtn.disabled = true;
                 newNextBtn.classList.add('opacity-50');
                 newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';

@@ -3,6 +3,12 @@
  * Handles slide navigation (next/previous) and simplification functionality
  */
 
+// Phase 3: Configuration for slide limitation
+const SLIDE_LIMIT_CONFIG = {
+    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
+    CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
+};
+
 export class SlideControls {
     constructor() {
         this.getCurrentSlideData = null; // Callback to get current slide data
@@ -66,6 +72,15 @@ export class SlideControls {
         if (!currentSlide) {
             console.error('❌ [SLIDE-CONTROLS] No current slide data available');
             this.showNavigationError('No current slide information available');
+            return;
+        }
+        
+        // Phase 3: Check slide limitation (configurable limit for free users)
+        const currentPosition = currentSlide.position?.current_position || 0;
+        
+        if (currentPosition >= SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES) {
+            console.log(`🚫 [SLIDE-CONTROLS] Slide limit reached: ${currentPosition}/${SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES}`);
+            this.showSlideLimitModal();
             return;
         }
         
@@ -888,5 +903,40 @@ export class SlideControls {
     setUpdateCurrentSlideContentCallback(callback) {
         this.updateCurrentSlideContent = callback;
         console.log('🎯 [SLIDE-CONTROLS] updateCurrentSlideContent callback set');
+    }
+    
+    /**
+     * Phase 3: Show slide limitation modal (10 slides reached)
+     */
+    showSlideLimitModal() {
+        console.log('🚫 [SLIDE-CONTROLS] Showing slide limit modal');
+        
+        // Disable Next button and update its appearance
+        const newNextBtn = document.getElementById('new-next-btn');
+        if (newNextBtn) {
+            newNextBtn.disabled = true;
+            newNextBtn.classList.add('opacity-50');
+            newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Limit Reached';
+            console.log('🔒 [SLIDE-CONTROLS] Next button disabled - slide limit reached');
+        }
+        
+        // Show the Bootstrap modal
+        const slideLimitModal = document.getElementById('slideLimitModal');
+        if (slideLimitModal) {
+            const modal = new bootstrap.Modal(slideLimitModal, {
+                backdrop: 'static',  // Prevent closing by clicking outside
+                keyboard: false      // Prevent closing with ESC key
+            });
+            modal.show();
+            
+            // Update translations if i18n is available
+            if (window.updateLearnerInterface) {
+                window.updateLearnerInterface();
+            }
+            
+            console.log('📢 [SLIDE-CONTROLS] Slide limit modal displayed');
+        } else {
+            console.error('❌ [SLIDE-CONTROLS] Slide limit modal element not found');
+        }
     }
 }
