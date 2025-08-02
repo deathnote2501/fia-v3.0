@@ -52,6 +52,7 @@ class TrainerRepository(TrainerRepositoryPort):
         trainer_model.email = trainer.email
         trainer_model.first_name = trainer.first_name
         trainer_model.last_name = trainer.last_name
+        trainer_model.language = trainer.language
         trainer_model.is_active = trainer.is_active
         trainer_model.is_verified = trainer.is_verified
         trainer_model.is_superuser = trainer.is_superuser
@@ -113,6 +114,7 @@ class TrainerRepository(TrainerRepositoryPort):
             is_active=model.is_active,
             is_verified=model.is_verified,
             is_superuser=model.is_superuser or False,
+            language=model.language or 'fr',
             created_at=model.created_at,
             updated_at=model.updated_at
         )
@@ -124,6 +126,7 @@ class TrainerRepository(TrainerRepositoryPort):
             email=entity.email,
             first_name=entity.first_name,
             last_name=entity.last_name,
+            language=entity.language,
             is_active=entity.is_active,
             is_verified=entity.is_verified,
             is_superuser=entity.is_superuser,

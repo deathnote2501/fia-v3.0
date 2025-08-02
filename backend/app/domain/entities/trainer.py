@@ -20,6 +20,7 @@ class Trainer:
         is_active: bool = True,
         is_verified: bool = False,
         is_superuser: bool = False,
+        language: str = 'fr',
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None
     ):
@@ -30,6 +31,7 @@ class Trainer:
         self.is_active = is_active
         self.is_verified = is_verified
         self.is_superuser = is_superuser
+        self.language = language
         self.created_at = created_at or datetime.utcnow()
         self.updated_at = updated_at or datetime.utcnow()
         
@@ -46,17 +48,29 @@ class Trainer:
             
         if not self.last_name or len(self.last_name.strip()) == 0:
             raise ValueError("Last name is required")
+        
+        # Validate language code
+        if self.language not in ['fr', 'en', 'es', 'de']:
+            raise ValueError("Language must be one of: fr, en, es, de")
     
     def get_full_name(self) -> str:
         """Business logic: Get trainer's full name"""
         return f"{self.first_name} {self.last_name}"
     
-    def update_profile(self, first_name: Optional[str] = None, last_name: Optional[str] = None) -> None:
+    def update_profile(self, first_name: Optional[str] = None, last_name: Optional[str] = None, language: Optional[str] = None) -> None:
         """Business logic: Update trainer profile"""
         if first_name:
             self.first_name = first_name
         if last_name:
             self.last_name = last_name
+        if language:
+            self.language = language
+        self.updated_at = datetime.utcnow()
+        self._validate()
+    
+    def set_language(self, language: str) -> None:
+        """Business logic: Set trainer's preferred language"""
+        self.language = language
         self.updated_at = datetime.utcnow()
         self._validate()
     

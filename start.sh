@@ -25,7 +25,7 @@ fi
 export PYTHONPATH="/app/backend:$PYTHONPATH"
 
 echo "Starting FastAPI application..."
-echo "Command: python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info"
+echo "Command: poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info"
 
 # Start the application
-exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info
+exec poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info
