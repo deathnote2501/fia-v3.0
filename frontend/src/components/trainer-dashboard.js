@@ -381,7 +381,7 @@ class TrainerDashboard {
 
                 // Setup request
                 const token = authManager.getToken();
-                xhr.open('POST', `${apiClient.baseURL}/api/trainings/`);
+                xhr.open('POST', '/api/trainings/');
                 xhr.setRequestHeader('Authorization', `Bearer ${token}`);
                 
                 // Send data
@@ -812,7 +812,7 @@ async function downloadTraining(trainingId, fileName) {
         }
 
         // Create download link
-        const downloadUrl = `${apiClient.baseURL}/api/trainings/${trainingId}/download`;
+        const downloadUrl = `/api/trainings/${trainingId}/download`;
         
         const response = await fetch(downloadUrl, {
             method: 'GET',
@@ -869,7 +869,7 @@ async function deleteTraining(trainingId, trainingName) {
             return;
         }
 
-        const response = await fetch(`${apiClient.baseURL}/api/trainings/${trainingId}`, {
+        const response = await fetch(`/api/trainings/${trainingId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
