@@ -9,13 +9,17 @@ from typing import Dict, Any
 # Configure logger
 logger = logging.getLogger(__name__)
 
+# Model configuration for specialized use cases
+PLAN_GENERATION_MODEL = "gemini-2.5-flash-001"  # Thinking mode for training plan generation
+
 
 class PromptBuilder:
     """Pure domain service for building personalized prompts"""
     
     def __init__(self):
         """Initialize prompt builder"""
-        logger.info("🎯 PROMPT [BUILDER] initialized")
+        self.plan_model = PLAN_GENERATION_MODEL  # Specialized model for plan generation
+        logger.info(f"🎯 PROMPT [BUILDER] initialized with plan model: {self.plan_model}")
     
     def extract_learner_profile(self, learner_data: Dict[str, Any]) -> Dict[str, Any]:
         """Extract and normalize learner profile data"""

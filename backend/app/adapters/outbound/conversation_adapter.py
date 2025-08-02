@@ -12,6 +12,7 @@ from app.domain.ports.outbound_ports import ConversationServicePort
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 from app.infrastructure.rate_limiter import gemini_rate_limiter
 from app.infrastructure.gemini_call_logger import gemini_call_logger
+from app.infrastructure.settings import settings
 from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.services.conversation_prompt_builder import ConversationPromptBuilder
@@ -117,7 +118,7 @@ class ConversationAdapter(ConversationServicePort):
     def _build_response_metadata(self, action_type: str, response_data: Dict[str, Any]) -> Dict[str, Any]:
         """Build response metadata"""
         return {
-            "model_used": "gemini-2.0-flash-exp",
+            "model_used": settings.gemini_model_name,
             "action_type": action_type,
             "generation_time": response_data.get("generation_time_ms", 0),
             "adapter": "vertex_ai"
@@ -389,7 +390,7 @@ class ConversationAdapter(ConversationServicePort):
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
                 "metadata": {
-                    "model_used": "gemini-2.0-flash-exp",
+                    "model_used": settings.gemini_model_name,
                     "action_type": "quiz_generation",
                     "adapter": "vertex_ai"
                 }
@@ -484,7 +485,7 @@ class ConversationAdapter(ConversationServicePort):
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
                 "metadata": {
-                    "model_used": "gemini-2.0-flash-exp",
+                    "model_used": settings.gemini_model_name,
                     "action_type": "examples_generation",
                     "adapter": "vertex_ai"
                 }
@@ -579,7 +580,7 @@ class ConversationAdapter(ConversationServicePort):
                 "suggested_actions": response_data.get("suggested_actions", []),
                 "related_concepts": response_data.get("related_concepts", []),
                 "metadata": {
-                    "model_used": "gemini-2.0-flash-exp",
+                    "model_used": settings.gemini_model_name,
                     "action_type": "key_points_extraction",
                     "adapter": "vertex_ai"
                 }

@@ -728,6 +728,23 @@ body.is-admin .tab-pane.admin-only {
     opacity: 1;
 }
 
+/* Enhanced sort states for Bootstrap arrow icons */
+.sortable-table th.sort-asc .sort-icon,
+.sortable-table th.sort-desc .sort-icon {
+    opacity: 1;
+    color: #0d6efd; /* Bootstrap primary color */
+    font-weight: bold;
+}
+
+/* Hover transitions for smooth UX */
+.sortable-table th.sortable {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.sortable-table .sort-icon {
+    transition: all 0.15s ease-in-out;
+}
+
 /* ==============================================
    ADMIN TABLE RESPONSIVE DESIGN
    ============================================== */
@@ -794,14 +811,60 @@ body.is-admin .tab-pane.admin-only {
     .admin-trainers .card-header::after {
         content: " (mobile view)";
     }
+    
+    /* Enhanced mobile loading states */
+    .admin-table-loading {
+        min-height: 150px;
+    }
+    
+    .admin-table-loading .spinner-border {
+        width: 2rem !important;
+        height: 2rem !important;
+    }
+    
+    /* Improve button spacing on mobile */
+    .btn-toolbar {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 }
 
-/* Table loading states consistent with existing patterns */
+/* Touch-friendly improvements */
+@media (max-width: 768px) {
+    .sortable-table th.sortable {
+        padding: 0.75rem 0.5rem;
+        min-height: 44px; /* Touch target size */
+    }
+    
+    .sortable-table .sort-icon {
+        font-size: 1rem;
+    }
+}
+
+/* Enhanced table loading states with smooth animations */
 .admin-table-loading {
     min-height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enhanced spinner styling */
+.admin-table-loading .spinner-border {
+    animation: spin 1s linear infinite;
+}
+
+/* Smooth button transitions */
+button:disabled {
+    transition: all 0.2s ease-in-out;
+    opacity: 0.7;
 }
 
 .admin-table-empty {

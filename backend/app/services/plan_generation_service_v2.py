@@ -59,6 +59,9 @@ class PlanGenerationService:
         self.prompt_builder = PromptBuilder()
         self.plan_validator = PlanValidator()
         
+        # Use specialized model for plan generation (2.5 Flash for thinking mode)
+        self.plan_model = self.prompt_builder.plan_model
+        
         # Optional ports for architecture flexibility
         self.gemini_service = gemini_service
         self.cache_service = cache_service
@@ -69,6 +72,7 @@ class PlanGenerationService:
         
         logger.info("🚀 PLAN [SERVICE] initialized with extracted services")
         logger.info(f"🚀 PLAN [SERVICES] VertexAI: {self.vertex_ai_adapter.is_available()}")
+        logger.info(f"🚀 PLAN [SERVICES] Plan Model: {self.plan_model}")
         logger.info(f"🚀 PLAN [SERVICES] Cache: {'enabled' if cache_service else 'disabled'}")
     
     async def generate_personalized_plan(

@@ -711,7 +711,7 @@ class TrainerDashboard {
         }
     }
 
-    async loadTrainersOverview() {
+    async loadTrainersOverview(retryCount = 0) {
         const tableBody = document.getElementById('trainers-overview-body');
         if (!tableBody) return;
 
@@ -722,30 +722,87 @@ class TrainerDashboard {
             // Fetch trainers overview data
             const trainersData = await apiClient.get('/api/admin/trainers-overview');
 
+            // Validate response data structure
+            if (!Array.isArray(trainersData)) {
+                throw new Error('Invalid response format: Expected array of trainers');
+            }
+
             if (trainersData.length === 0) {
                 this.showTrainersEmptyState(tableBody);
                 return;
             }
 
-            // Render trainers data
+            // Validate each trainer object has required fields
+            const requiredFields = ['id', 'first_name', 'last_name', 'email'];
+            for (let i = 0; i < trainersData.length; i++) {
+                const trainer = trainersData[i];
+                for (const field of requiredFields) {
+                    if (!trainer.hasOwnProperty(field)) {
+                        console.warn(`Trainer at index ${i} missing required field: ${field}`);
+                        // Set default value to prevent rendering errors
+                        trainer[field] = field === 'id' ? `missing-${i}` : 'N/A';
+                    }
+                }
+                
+                // Ensure numeric fields are numbers
+                const numericFields = [
+                    'trainings_with_support', 'trainings_ai_generated', 
+                    'active_sessions', 'total_sessions', 'unique_learners',
+                    'total_slides_generated', 'average_slides_per_training'
+                ];
+                numericFields.forEach(field => {
+                    if (trainer[field] === null || trainer[field] === undefined) {
+                        trainer[field] = 0;
+                    }
+                });
+            }
+
+            // Render trainers data with enhanced formatting
             const trainersHtml = trainersData.map(trainer => `
-                <tr data-trainer-id="${trainer.id}">
-                    <td><strong>${trainer.first_name}</strong></td>
-                    <td><strong>${trainer.last_name}</strong></td>
+                <tr data-trainer-id="${trainer.id}" class="${!trainer.is_active ? 'table-secondary' : ''}">
                     <td>
-                        <span class="text-muted">${trainer.email}</span>
-                        ${trainer.is_superuser ? '<i class="bi bi-shield-check text-warning ms-1" title="Admin"></i>' : ''}
+                        <strong class="${!trainer.is_active ? 'text-muted' : ''}">${this.escapeHtml(trainer.first_name)}</strong>
                     </td>
-                    <td><small>${this.formatDate(trainer.created_at)}</small></td>
-                    <td><span class="badge bg-primary">${trainer.trainings_with_support}</span></td>
-                    <td><span class="badge bg-success">${trainer.trainings_ai_generated}</span></td>
-                    <td><span class="badge bg-info">${trainer.active_sessions}</span></td>
-                    <td><span class="badge bg-secondary">${trainer.total_sessions}</span></td>
-                    <td><span class="badge bg-warning">${trainer.unique_learners}</span></td>
-                    <td><span class="text-muted">${trainer.total_time_all_learners}</span></td>
-                    <td><span class="text-muted">${trainer.average_time_per_slide}</span></td>
-                    <td><span class="badge bg-dark">${trainer.total_slides_generated}</span></td>
-                    <td><span class="text-muted">${trainer.average_slides_per_training}</span></td>
+                    <td>
+                        <strong class="${!trainer.is_active ? 'text-muted' : ''}">${this.escapeHtml(trainer.last_name)}</strong>
+                    </td>
+                    <td>
+                        <div class="admin-indicator">
+                            <span class="text-muted">${this.escapeHtml(trainer.email)}</span>
+                            ${trainer.is_superuser ? '<i class="bi bi-shield-check text-warning ms-1" title="Administrator"></i>' : ''}
+                            ${!trainer.is_active ? '<i class="bi bi-pause-circle text-secondary ms-1" title="Inactive"></i>' : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <small class="text-muted" title="${this.formatDateFull(trainer.created_at)}">${this.formatDate(trainer.created_at)}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary" title="Non-AI trainings with uploaded files">${this.formatNumber(trainer.trainings_with_support)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success" title="AI-generated trainings">${this.formatNumber(trainer.trainings_ai_generated)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info" title="Currently active sessions">${this.formatNumber(trainer.active_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary" title="All sessions created">${this.formatNumber(trainer.total_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark" title="Unique learners across all sessions">${this.formatNumber(trainer.unique_learners)}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted" title="Total learning time from all learners">${trainer.total_time_all_learners || '0min'}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted" title="Average time spent per slide">${trainer.average_time_per_slide || '0min'}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-dark" title="Total slides generated across all trainings">${this.formatNumber(trainer.total_slides_generated)}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted" title="Average slides per training">${this.formatDecimal(trainer.average_slides_per_training)}</span>
+                    </td>
                 </tr>
             `).join('');
 
@@ -757,16 +814,48 @@ class TrainerDashboard {
         } catch (error) {
             console.error('Failed to load trainers overview:', error);
             
+            // Enhanced error handling with specific messaging
             let errorMessage = 'Failed to load trainers overview. Please try again.';
-            if (error.message.includes('403')) {
-                errorMessage = 'Access denied: Admin privileges required to view this data.';
-            } else if (error.message.includes('500')) {
-                errorMessage = 'Server error occurred while loading trainer data.';
-            } else if (error.message.includes('Network')) {
-                errorMessage = 'Network error: Please check your connection.';
+            let isTemporary = true;
+            
+            if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage = 'Access denied: Administrator privileges required to view trainer statistics.';
+                isTemporary = false;
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Authentication expired. Please log in again.';
+                isTemporary = false;
+                // Redirect to login after short delay
+                setTimeout(() => {
+                    authManager.logout();
+                }, 2000);
+            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+                errorMessage = 'Server error occurred while calculating trainer statistics. The development team has been notified.';
+            } else if (error.message.includes('502') || error.message.includes('503') || error.message.includes('504')) {
+                errorMessage = 'Service temporarily unavailable. Please try again in a few moments.';
+                // Auto-retry for temporary server errors
+                if (retryCount < 2) {
+                    console.log(`Retrying trainers overview request (attempt ${retryCount + 1}/3)`);
+                    setTimeout(() => {
+                        this.loadTrainersOverview(retryCount + 1);
+                    }, 2000 * (retryCount + 1)); // Exponential backoff
+                    return;
+                }
+            } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+                errorMessage = 'Network connection error. Please check your internet connection and try again.';
+            } else if (error.message.includes('timeout')) {
+                errorMessage = 'Request timed out. The server may be busy, please try again.';
             }
             
             this.showTrainersErrorState(tableBody, errorMessage);
+            
+            // Log additional context for debugging
+            console.error('Trainers overview error context:', {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                error: error.toString(),
+                stack: error.stack
+            });
         }
     }
 
@@ -781,6 +870,10 @@ class TrainerDashboard {
             header.addEventListener('click', () => {
                 this.sortTable(header);
             });
+            
+            // Add hover effect for better UX
+            header.style.cursor = 'pointer';
+            header.title = `Click to sort by ${header.textContent.trim()}`;
         });
     }
 
@@ -792,34 +885,86 @@ class TrainerDashboard {
         const currentSort = header.classList.contains('sort-asc') ? 'asc' : 
                            header.classList.contains('sort-desc') ? 'desc' : null;
         
-        // Reset all headers
+        // Reset all headers - remove sort classes and reset icons
         table.querySelectorAll('th.sortable').forEach(h => {
             h.classList.remove('sort-asc', 'sort-desc');
+            const icon = h.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'bi bi-arrow-up-down sort-icon';
+            }
         });
 
         // Determine new sort direction
         let newSort = 'asc';
         if (currentSort === 'asc') newSort = 'desc';
         
+        // Update header classes and icon
         header.classList.add(`sort-${newSort}`);
-
-        // Sort rows
+        const icon = header.querySelector('.sort-icon');
+        if (icon) {
+            icon.className = `bi bi-arrow-${newSort === 'asc' ? 'up' : 'down'} sort-icon text-primary`;
+        }
+        
+        // Sort rows with enhanced multi-type sorting
         rows.sort((a, b) => {
             const aValue = this.getCellValue(a, column);
             const bValue = this.getCellValue(b, column);
             
-            let comparison = 0;
-            if (this.isNumeric(aValue) && this.isNumeric(bValue)) {
-                comparison = parseFloat(aValue) - parseFloat(bValue);
-            } else {
-                comparison = aValue.localeCompare(bValue);
-            }
-            
+            let comparison = this.compareValues(aValue, bValue, column);
             return newSort === 'desc' ? -comparison : comparison;
         });
-
-        // Reorder DOM
+        
+        // Reorder DOM with smooth visual feedback
         rows.forEach(row => tbody.appendChild(row));
+        
+        // Store current sort state for persistence
+        this.currentSortColumn = column;
+        this.currentSortDirection = newSort;
+    }
+    
+    compareValues(aValue, bValue, column) {
+        // Handle empty values
+        if (!aValue && !bValue) return 0;
+        if (!aValue) return 1;
+        if (!bValue) return -1;
+        
+        // Date columns
+        if (column === 'created_at') {
+            const aDate = new Date(aValue);
+            const bDate = new Date(bValue);
+            return aDate - bDate;
+        }
+        
+        // Time duration columns (like "2h 30min" or "45min")
+        if (column === 'total_time_all_learners' || column === 'average_time_per_slide') {
+            return this.compareDurations(aValue, bValue);
+        }
+        
+        // Numeric columns
+        if (this.isNumeric(aValue) && this.isNumeric(bValue)) {
+            return parseFloat(aValue) - parseFloat(bValue);
+        }
+        
+        // String columns (case-insensitive)
+        return aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+    }
+    
+    compareDurations(aDuration, bDuration) {
+        // Convert duration strings like "2h 30min" or "45min" to minutes for comparison
+        const parseMinutes = (duration) => {
+            if (!duration || duration === '0min') return 0;
+            
+            let totalMinutes = 0;
+            const hourMatch = duration.match(/(\d+)h/);
+            const minuteMatch = duration.match(/(\d+)min/);
+            
+            if (hourMatch) totalMinutes += parseInt(hourMatch[1]) * 60;
+            if (minuteMatch) totalMinutes += parseInt(minuteMatch[1]);
+            
+            return totalMinutes;
+        };
+        
+        return parseMinutes(aDuration) - parseMinutes(bDuration);
     }
 
     getCellValue(row, column) {
@@ -847,6 +992,35 @@ class TrainerDashboard {
         });
     }
 
+    formatDateFull(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    formatNumber(value) {
+        if (value === null || value === undefined) return '0';
+        return Number(value).toLocaleString('en-US');
+    }
+
+    formatDecimal(value) {
+        if (value === null || value === undefined || value === 0) return '0';
+        return Number(value).toFixed(1);
+    }
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // ============================================================================
     // TABLE STATE MANAGEMENT - Consistent with existing patterns
     // ============================================================================
@@ -856,9 +1030,16 @@ class TrainerDashboard {
             <tr>
                 <td colspan="13" class="text-center text-muted py-5 admin-table-loading">
                     <div>
-                        <i class="bi bi-hourglass-split display-6 mb-3"></i>
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
                         <p class="mb-1 fw-medium">Loading trainers overview...</p>
-                        <small class="text-muted">Fetching trainer statistics and data</small>
+                        <small class="text-muted">Fetching trainer statistics and performance data</small>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px; width: 200px; margin: 0 auto;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -1015,10 +1196,40 @@ function loadTrainings() {
     }
 }
 
-// Global function to refresh trainers overview (admin)
-function refreshTrainersOverview() {
-    if (window.trainerDashboard && window.trainerDashboard.loadTrainersOverview) {
-        window.trainerDashboard.loadTrainersOverview();
+// Global function to refresh trainers overview (admin) with debouncing
+let refreshDebounceTimeout = null;
+async function refreshTrainersOverview() {
+    const refreshBtn = document.querySelector('button[onclick="refreshTrainersOverview()"]');
+    
+    // Debounce rapid clicks
+    if (refreshDebounceTimeout) {
+        return;
+    }
+    
+    const originalContent = refreshBtn.innerHTML;
+    
+    try {
+        // Show loading state on button
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Refreshing...
+        `;
+        
+        // Set debounce timeout
+        refreshDebounceTimeout = setTimeout(() => {
+            refreshDebounceTimeout = null;
+        }, 1000);
+        
+        if (window.trainerDashboard && window.trainerDashboard.loadTrainersOverview) {
+            await window.trainerDashboard.loadTrainersOverview();
+        }
+    } catch (error) {
+        console.error('Error refreshing trainers overview:', error);
+    } finally {
+        // Restore button state
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalContent;
     }
 }
 
