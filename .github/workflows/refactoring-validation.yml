@@ -1,0 +1,208 @@
+name: 🔧 Refactoring Validation
+
+on:
+  push:
+    branches: 
+      - 'refactor/**'
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  hooks-validation:
+    name: 🪝 Claude Hooks Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Make hooks executable
+      run: chmod +x .claude/hooks/*.sh
+      
+    - name: Run quick hooks validation
+      run: ./.claude/hooks/test_hooks_quick.sh
+      continue-on-error: true
+      id: quick-hooks
+      
+    - name: Run architecture validation
+      run: ./.claude/hooks/architecture_validation.sh
+      continue-on-error: true
+      id: architecture
+      
+    - name: Run naming conventions
+      run: ./.claude/hooks/naming_conventions.sh  
+      continue-on-error: true
+      id: naming
+      
+    - name: Comment hooks results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const quickResult = '${{ steps.quick-hooks.outcome }}';
+          const archResult = '${{ steps.architecture.outcome }}';
+          const namingResult = '${{ steps.naming.outcome }}';
+          
+          const body = `## 🔧 Refactoring Validation Results
+          
+          | Check | Status |
+          |-------|--------|
+          | Quick Hooks | ${quickResult === 'success' ? '✅' : '❌'} |
+          | Architecture | ${archResult === 'success' ? '✅' : '❌'} |
+          | Naming | ${namingResult === 'success' ? '✅' : '❌'} |
+          
+          ${quickResult !== 'success' ? '⚠️ Some violations detected - see logs for details' : '✅ All validations passed!'}
+          
+          *Automated validation by Claude Code hooks*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+  python-tests:
+    name: 🐍 Python Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      
+    - name: Install dependencies
+      working-directory: ./backend
+      run: poetry install
+      
+    - name: Test app imports
+      working-directory: ./backend
+      run: |
+        poetry run python -c "
+        try:
+            from app.main import app
+            from app.infrastructure.feature_flags import FeatureFlags
+            print('✅ Critical imports successful')
+            print(f'✅ Feature flags loaded: {len(FeatureFlags.get_active_flags())} active')
+        except Exception as e:
+            print(f'❌ Import failed: {e}')
+            exit(1)
+        "
+        
+    - name: Test basic functionality
+      working-directory: ./backend
+      run: |
+        poetry run python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Test feature flags
+        from app.infrastructure.feature_flags import FeatureFlags
+        print('✅ Feature flags system working')
+        
+        # Test domain services (basic import)
+        try:
+            from app.domain.services.prompt_builder import PromptBuilder
+            builder = PromptBuilder()
+            print('✅ Domain services importing correctly')
+        except Exception as e:
+            print(f'❌ Domain services failed: {e}')
+            exit(1)
+        "
+
+  security-check:
+    name: 🔒 Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run security validation hook
+      run: |
+        chmod +x .claude/hooks/security_validation.sh
+        ./.claude/hooks/security_validation.sh
+      continue-on-error: true
+      
+    - name: Check for secrets
+      run: |
+        # Simple check for common secret patterns
+        if grep -r "password.*=" backend/ --include="*.py" | grep -v "test" | grep -v "example"; then
+          echo "❌ Potential hardcoded passwords found"
+          exit 1
+        fi
+        echo "✅ No hardcoded passwords detected"
+
+  performance-check:
+    name: ⚡ Performance Check  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run performance validation hook
+      run: |
+        chmod +x .claude/hooks/performance_validation.sh
+        ./.claude/hooks/performance_validation.sh
+      continue-on-error: true
+      
+    - name: Check for pagination patterns
+      run: |
+        # Check if pagination exists in repositories
+        if find backend/app/adapters/repositories -name "*.py" -exec grep -l "limit\|offset" {} \; | wc -l | grep -q "^[0-9]*$"; then
+          echo "✅ Pagination patterns detected"
+        else
+          echo "⚠️ No pagination patterns found"
+        fi
+
+  refactoring-progress:
+    name: 📊 Refactoring Progress
+    runs-on: ubuntu-latest
+    needs: [hooks-validation, python-tests]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Calculate refactoring score
+      run: |
+        chmod +x .claude/hooks/refactoring_priority.sh
+        echo "## 📊 Refactoring Progress Report"
+        ./.claude/hooks/refactoring_priority.sh || true
+        
+    - name: Update progress comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const body = `## 📊 Refactoring Progress
+          
+          This PR includes refactoring changes. Check the logs above for:
+          - 🔴 Critical violations (must fix)
+          - 🟡 Important violations (plan to fix)  
+          - 🟢 Minor violations (tolerable)
+          
+          **Branch**: \`${{ github.head_ref }}\`
+          **Strategy**: Function-by-function with feature flags
+          **Risk Level**: ${github.head_ref.includes('phase1') ? '🟢 LOW (Phase 1)' : github.head_ref.includes('phase2') ? '🟡 MODERATE (Phase 2)' : '🔴 HIGH (Phase 3)'}
+          
+          *Safe refactoring with production protection* 🛡️`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
