@@ -126,7 +126,49 @@ export const en = {
     'tooltip.examples': 'Get practical examples related to this content',
     'tooltip.keyPoints': 'Highlight the key points of this slide',
     'tooltip.vocal': 'Start Live Voice Conversation with Gemini',
-    'tooltip.voice': 'Click to start voice recording'
+    'tooltip.voice': 'Click to start voice recording',
+    
+    // Error messages
+    'error.network': 'Network connection failed. Please check your internet connection.',
+    'error.server': 'Server error occurred. Please try again later.',
+    'error.database': 'Database connection error. Please contact support.',
+    'error.auth.failed': 'Authentication failed. Please check your credentials.',
+    'error.auth.system': 'Authentication system error. Please contact support.',
+    'error.validation': 'Please check your input and try again.',
+    'error.file.upload': 'File upload failed. Please try again.',
+    'error.file.size': 'File size too large. Maximum size is 50MB.',
+    'error.file.format': 'Unsupported file format. Please use PDF, PPT, or PPTX.',
+    'error.api.critical': 'Critical API error occurred. Please contact support.',
+    'error.unexpected': 'An unexpected error occurred. Please contact support.',
+    'error.system': 'System error. Please contact support.',
+    'error.timeout': 'Request timed out. Please try again.',
+    'error.forbidden': 'Access denied. You do not have permission for this action.',
+    'error.notfound': 'Requested resource not found.',
+    'error.session.expired': 'Your session has expired. Please log in again.',
+    'error.session.invalid': 'Invalid session. Please log in again.',
+    
+    // Success messages
+    'success.saved': 'Successfully saved!',
+    'success.created': 'Successfully created!',
+    'success.updated': 'Successfully updated!',
+    'success.deleted': 'Successfully deleted!',
+    'success.uploaded': 'File uploaded successfully!',
+    'success.login': 'Login successful!',
+    'success.logout': 'Logout successful!',
+    'success.registered': 'Account created successfully!',
+    
+    // Warning messages
+    'warning.unsaved': 'You have unsaved changes.',
+    'warning.delete': 'This action cannot be undone.',
+    'warning.session.expiring': 'Your session will expire soon.',
+    
+    // Info messages
+    'info.loading': 'Loading...',
+    'info.processing': 'Processing your request...',
+    'info.uploading': 'Uploading file...',
+    
+    // Contact support
+    'contact.support': 'Contact support: jerome.iavarone@gmail.com'
 };
 
 export default en;

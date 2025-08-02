@@ -65,7 +65,13 @@ except ImportError as e:
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown events"""
     # Startup
-    await init_database()
+    try:
+        await init_database()
+        logger.info("✅ Database initialized successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ Database initialization failed: {e}")
+        logger.info("🚀 Application starting without database (will use fallback)")
+    
     yield
     # Shutdown (if needed)
 
@@ -158,8 +164,13 @@ if PLAN_GENERATION_AVAILABLE:
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
-    return {"message": "FIA v3.0 API is running", "status": "healthy"}
+    """Root endpoint - simple health check"""
+    return {
+        "message": "FIA v3.0 API is running", 
+        "status": "healthy",
+        "version": "0.1.0",
+        "environment": settings.environment
+    }
 
 
 @app.get("/favicon.ico")
