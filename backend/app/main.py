@@ -11,13 +11,15 @@ logging.basicConfig(
     force=True  # Force override de la config existante
 )
 
-# 🔍 RÉDUIRE LES LOGS SQL REDONDANTS
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)  # Réduire les logs SQL
-logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
+# 🔍 DÉSACTIVER LES LOGS SQL POUR ÉVITER LA POLLUTION
+logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
@@ -155,6 +157,12 @@ if PLAN_GENERATION_AVAILABLE:
 async def root():
     """Health check endpoint"""
     return {"message": "FIA v3.0 API is running", "status": "healthy"}
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon.ico"""
+    return FileResponse("../frontend/public/favicon.ico")
 
 
 @app.get("/api/health")

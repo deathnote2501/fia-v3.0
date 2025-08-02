@@ -3,7 +3,7 @@
  * JavaScript ES6 utilities for backend communication
  */
 
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = 'http://localhost:8000';
 
 /**
  * API client with common functionality
