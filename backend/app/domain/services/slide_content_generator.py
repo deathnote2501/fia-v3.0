@@ -7,7 +7,7 @@ import logging
 import time
 from typing import Dict, Any, Optional
 
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 from app.domain.services.slide_prompt_builder import SlidePromptBuilder
 
 logger = logging.getLogger(__name__)

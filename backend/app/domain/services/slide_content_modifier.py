@@ -8,7 +8,7 @@ import json
 import time
 from typing import Dict, Any
 
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter, VertexAIError
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 from app.domain.services.slide_prompt_builder import SlidePromptBuilder
 
 logger = logging.getLogger(__name__)

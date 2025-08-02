@@ -15,7 +15,7 @@ from app.domain.services.prompt_builder import PromptBuilder, PLAN_GENERATION_MO
 from app.domain.services.plan_validator import PlanValidator, PlanValidationError
 
 # Infrastructure adapter
-from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter, VertexAIError
+from app.domain.ports.ai_adapter_port import AIAdapterPort, AIError
 
 # Optional architecture support
 if TYPE_CHECKING:
