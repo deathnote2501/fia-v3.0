@@ -26,7 +26,7 @@ from contextlib import asynccontextmanager
 from app.infrastructure.settings import settings
 from app.infrastructure.database import init_database
 from app.infrastructure.auth import fastapi_users, auth_backend
-from app.domain.schemas.user import UserRead, UserCreate, UserUpdate
+from app.infrastructure.schemas.fastapi_user_schemas import UserRead, UserCreate, UserUpdate
 from app.adapters.inbound.training_controller import router as training_router
 from app.adapters.inbound.session_controller import router as session_router
 from app.adapters.inbound.rate_limit_controller import router as rate_limit_router
@@ -53,7 +53,7 @@ except ImportError as e:
 
 # Import unified plan generation controller
 try:
-    from app.controllers.plan_generation_controller import router as plan_generation_router
+    from app.adapters.inbound.plan_generation_controller import router as plan_generation_router
     PLAN_GENERATION_AVAILABLE = True
     logger.info("✅ Unified plan generation controller loaded successfully")
 except ImportError as e:

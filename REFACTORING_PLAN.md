@@ -33,9 +33,31 @@
 ---
 
 ### 🚧 **PHASE 3: RISKY CHANGES** - **À PLANIFIER**
-- [ ] **3.1 Services Duplication Resolution** - Consolidate app/services/ vs app/domain/services/
-- [ ] **3.2 Controllers Unification** - Move app/controllers/ → app/adapters/inbound/
-- [ ] **3.3 Parallel Development** - Branch strategy for high-risk changes
+  [x] 3.1 Services Duplication Analysis (1 jour - Risque 5%)
+  # Identifier TOUS les imports et dépendances
+  grep -r "from app.services" backend/app/
+  grep -r "from app.controllers" backend/app/
+  # Créer mapping complet avant action
+
+  [ ] 3.2 Services Migration - File by File (2-3 jours - Risque 15%)
+  # Migrer 1 service à la fois avec test immédiat
+  # Exemple: plan_generation_service.py
+  # Test: curl /api/plan-generation/test
+  # Si ✅ → next file, Si ❌ → rollback immédiat
+
+  [ ] 3.3 Controllers Analysis (1 jour - Risque 5%)
+  # Analyser controllers vs adapters/inbound
+  # Identifier routes conflicts
+  # Mapper dependencies
+
+  [ ] 3.4 Controllers Migration (2 jours - Risque 20%)
+  # Migrer 1 controller à la fois
+  # Test routes après chaque migration
+  # Validation authentification
+
+  [ ] 3.5 Legacy Cleanup (1 jour - Risque 5%)
+  # Supprimer dossiers legacy
+  # Final validation
 
 **📊 Objectifs Phase 3:**
 - Risque: 40% 🔴
