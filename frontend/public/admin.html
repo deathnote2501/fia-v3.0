@@ -60,6 +60,18 @@
                                 Trainees
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#trainings" data-bs-toggle="tab">
+                                <i class="bi bi-book me-2"></i>
+                                Trainings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#sessions" data-bs-toggle="tab">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Sessions
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -249,6 +261,171 @@
                                                         <td colspan="10" class="text-center text-muted py-4">
                                                             <i class="bi bi-hourglass-split display-6"></i>
                                                             <p class="mt-2">Loading trainees overview...</p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trainings Tab -->
+                    <div class="tab-pane fade" id="trainings">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Trainings</h1>
+                            <div class="btn-toolbar mb-2 mb-md-0">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="refreshTrainingsOverview()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Trainings Table -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-book me-2"></i>
+                                            All Trainings
+                                            <small class="text-muted d-block d-md-none mt-1">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Swipe to see more columns
+                                            </small>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover sortable-table" id="trainings-overview-table">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="sortable" data-column="training_name">
+                                                            Nom de la formation
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="training_type">
+                                                            Type
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_learners">
+                                                            Nombre d'apprenants
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_sessions">
+                                                            Nombre de sessions
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_time">
+                                                            Temps total
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="avg_time_per_session">
+                                                            Temps moyen/session
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_slides">
+                                                            Slides total
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="avg_slides_per_session">
+                                                            Slides moy/session
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="trainings-overview-body">
+                                                    <tr>
+                                                        <td colspan="8" class="text-center text-muted py-4">
+                                                            <i class="bi bi-hourglass-split display-6"></i>
+                                                            <p class="mt-2">Loading trainings overview...</p>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sessions Tab -->
+                    <div class="tab-pane fade" id="sessions">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                            <h1 class="h2">Sessions</h1>
+                            <div class="btn-toolbar mb-2 mb-md-0">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="refreshSessionsOverview()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sessions Table -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-calendar-event me-2"></i>
+                                            All Sessions
+                                            <small class="text-muted d-block d-md-none mt-1">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                Swipe to see more columns
+                                            </small>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover sortable-table" id="sessions-overview-table">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="sortable" data-column="session_name">
+                                                            Nom de la session
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="training_name">
+                                                            Nom de la formation
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="training_type">
+                                                            Type de formation
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="session_date">
+                                                            Date de la session
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="status">
+                                                            Status
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="total_slides">
+                                                            Nombre de slides
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="progress_percentage">
+                                                            % d'avancement
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th class="sortable" data-column="token_cost">
+                                                            Coût tokens
+                                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                                        </th>
+                                                        <th>
+                                                            Actions
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="sessions-overview-body">
+                                                    <tr>
+                                                        <td colspan="9" class="text-center text-muted py-4">
+                                                            <i class="bi bi-hourglass-split display-6"></i>
+                                                            <p class="mt-2">Loading sessions overview...</p>
                                                         </td>
                                                     </tr>
                                                 </tbody>

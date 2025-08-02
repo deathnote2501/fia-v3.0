@@ -78,6 +78,52 @@ async def get_trainees_overview(
         raise HTTPException(status_code=500, detail="Failed to retrieve trainees overview")
 
 
+@router.get("/trainings-overview")
+async def get_trainings_overview(
+    admin_trainer: Trainer = Depends(get_current_admin_trainer),
+    session: AsyncSession = Depends(get_database_session)
+) -> List[Dict[str, Any]]:
+    """
+    Get overview of all trainings with their statistics
+    """
+    logger.info(f"Admin {admin_trainer.email} requested trainings overview")
+    
+    try:
+        # Use the admin dashboard service to get trainings statistics
+        admin_service = AdminDashboardService(session)
+        trainings_overview = await admin_service.get_trainings_overview()
+        
+        logger.info(f"Successfully retrieved overview for {len(trainings_overview)} trainings")
+        return trainings_overview
+        
+    except Exception as e:
+        logger.error(f"Failed to get trainings overview: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve trainings overview")
+
+
+@router.get("/sessions-overview")
+async def get_sessions_overview(
+    admin_trainer: Trainer = Depends(get_current_admin_trainer),
+    session: AsyncSession = Depends(get_database_session)
+) -> List[Dict[str, Any]]:
+    """
+    Get overview of all training sessions with their statistics and token costs
+    """
+    logger.info(f"Admin {admin_trainer.email} requested sessions overview")
+    
+    try:
+        # Use the admin dashboard service to get sessions statistics
+        admin_service = AdminDashboardService(session)
+        sessions_overview = await admin_service.get_sessions_overview()
+        
+        logger.info(f"Successfully retrieved overview for {len(sessions_overview)} sessions")
+        return sessions_overview
+        
+    except Exception as e:
+        logger.error(f"Failed to get sessions overview: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve sessions overview")
+
+
 @router.get("/stats")
 async def get_admin_stats(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),

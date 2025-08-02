@@ -60,6 +60,46 @@ class AdminDashboardService:
             logger.error(f"Failed to get trainees overview: {str(e)}")
             raise
     
+    async def get_trainings_overview(self) -> List[Dict[str, Any]]:
+        """
+        Get comprehensive overview of all trainings with their statistics
+        
+        Returns:
+            List of training dictionaries with complete statistics
+        """
+        try:
+            logger.info("Fetching trainings overview statistics")
+            
+            trainings_stats = await self.admin_repository.get_trainings_overview_statistics()
+            
+            logger.info(f"Successfully retrieved statistics for {len(trainings_stats)} trainings")
+            
+            return trainings_stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get trainings overview: {str(e)}")
+            raise
+    
+    async def get_sessions_overview(self) -> List[Dict[str, Any]]:
+        """
+        Get comprehensive overview of all training sessions with their statistics
+        
+        Returns:
+            List of session dictionaries with complete statistics
+        """
+        try:
+            logger.info("Fetching sessions overview statistics")
+            
+            sessions_stats = await self.admin_repository.get_sessions_overview_statistics()
+            
+            logger.info(f"Successfully retrieved statistics for {len(sessions_stats)} sessions")
+            
+            return sessions_stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get sessions overview: {str(e)}")
+            raise
+    
     async def get_global_statistics(self) -> Dict[str, Any]:
         """
         Get global platform statistics for admin dashboard

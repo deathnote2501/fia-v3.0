@@ -154,6 +154,8 @@ class AdminDashboard {
     setupTabSwitching() {
         const trainersTab = document.querySelector('a[href="#trainers"]');
         const traineesTab = document.querySelector('a[href="#trainees"]');
+        const trainingsTab = document.querySelector('a[href="#trainings"]');
+        const sessionsTab = document.querySelector('a[href="#sessions"]');
         
         if (trainersTab) {
             trainersTab.addEventListener('shown.bs.tab', () => {
@@ -166,6 +168,20 @@ class AdminDashboard {
             traineesTab.addEventListener('shown.bs.tab', () => {
                 console.log('🔥 ADMIN - Trainees tab activated');
                 this.loadTraineesOverview();
+            });
+        }
+        
+        if (trainingsTab) {
+            trainingsTab.addEventListener('shown.bs.tab', () => {
+                console.log('🔥 ADMIN - Trainings tab activated');
+                this.loadTrainingsOverview();
+            });
+        }
+        
+        if (sessionsTab) {
+            sessionsTab.addEventListener('shown.bs.tab', () => {
+                console.log('🔥 ADMIN - Sessions tab activated');
+                this.loadSessionsOverview();
             });
         }
     }
@@ -500,6 +516,449 @@ class AdminDashboard {
         `;
     }
 
+    // ============================================================================
+    // TRAININGS OVERVIEW FUNCTIONALITY 
+    // ============================================================================
+
+    async loadTrainingsOverview(retryCount = 0) {
+        console.log('🔥 ADMIN - Loading trainings overview...');
+        const tableBody = document.getElementById('trainings-overview-body');
+        if (!tableBody) {
+            console.error('🚨 ADMIN - Element trainings-overview-body not found!');
+            return;
+        }
+        console.log('✅ ADMIN - Found trainings table body element:', tableBody);
+
+        try {
+            // Show loading state
+            this.showTrainingsLoadingState(tableBody);
+
+            // Fetch trainings overview data
+            console.log('📡 ADMIN - Fetching trainings overview data...');
+            const trainingsData = await apiClient.get('/api/admin/trainings-overview');
+            console.log('📊 ADMIN - Received trainings data:', trainingsData.length, 'trainings');
+
+            // Validate response data structure
+            if (!Array.isArray(trainingsData)) {
+                throw new Error('Invalid response format: Expected array of trainings');
+            }
+
+            if (trainingsData.length === 0) {
+                this.showTrainingsEmptyState(tableBody);
+                return;
+            }
+
+            // Validate each training object has required fields
+            const requiredFields = ['training_name'];
+            for (let i = 0; i < trainingsData.length; i++) {
+                const training = trainingsData[i];
+                for (const field of requiredFields) {
+                    if (!training.hasOwnProperty(field)) {
+                        console.warn(`Training at index ${i} missing required field: ${field}`);
+                        training[field] = 'N/A';
+                    }
+                }
+                
+                // Ensure numeric fields are numbers
+                const numericFields = [
+                    'total_sessions', 'total_learners', 'total_slides', 'avg_slides_per_session'
+                ];
+                numericFields.forEach(field => {
+                    if (training[field] === null || training[field] === undefined) {
+                        training[field] = 0;
+                    }
+                });
+            }
+
+            // Render trainings data
+            const trainingsHtml = trainingsData.map(training => `
+                <tr data-training-id="${training.training_id || 'unknown'}">
+                    <td>
+                        <strong>${this.escapeHtml(training.training_name)}</strong>
+                    </td>
+                    <td>
+                        <span class="badge ${training.training_type === 'IA' ? 'bg-success' : 'bg-primary'}">
+                            <i class="bi bi-${training.training_type === 'IA' ? 'robot' : 'person'} me-1"></i>
+                            ${training.training_type || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">${this.formatNumber(training.total_learners)}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">${this.formatNumber(training.total_sessions)}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${training.total_time || '0min'}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${training.avg_time_per_session || '0min'}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">${this.formatNumber(training.total_slides)}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">${this.formatDecimal(training.avg_slides_per_session)}</span>
+                    </td>
+                </tr>
+            `).join('');
+
+            console.log('🎨 ADMIN - Setting trainings HTML:', trainingsHtml.length, 'characters');
+            tableBody.innerHTML = trainingsHtml;
+            console.log('✅ ADMIN - Trainings table updated with', trainingsData.length, 'trainings');
+
+        } catch (error) {
+            console.error('🚨 ADMIN - Failed to load trainings overview:', error);
+            
+            // Enhanced error handling with specific messaging
+            let errorMessage = 'Failed to load trainings overview. Please try again.';
+            
+            if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage = 'Access denied: Administrator privileges required to view training statistics.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Authentication expired. Please log in again.';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+                errorMessage = 'Server error occurred while calculating training statistics.';
+            } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+                errorMessage = 'Network connection error. Please check your internet connection and try again.';
+            }
+            
+            this.showTrainingsErrorState(tableBody, errorMessage);
+            
+            // Log additional context for debugging
+            console.error('🚨 ADMIN - Trainings overview error context:', {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                error: error.toString(),
+                stack: error.stack
+            });
+        }
+    }
+
+    showTrainingsLoadingState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted py-5">
+                    <div>
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-1 fw-medium">Loading trainings overview...</p>
+                        <small class="text-muted">Fetching training statistics and session data</small>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px; width: 200px; margin: 0 auto;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTrainingsEmptyState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted py-5">
+                    <div>
+                        <i class="bi bi-book display-4 mb-3 text-secondary"></i>
+                        <h6 class="text-muted mb-2">No Trainings Found</h6>
+                        <p class="small mb-3">There are currently no trainings created in the system.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainingsOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showTrainingsErrorState(tableBody, errorMessage = 'Failed to load trainings overview') {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-5">
+                    <div>
+                        <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
+                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <p class="text-muted small mb-3">${errorMessage}</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshTrainingsOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // ============================================================================
+    // SESSIONS OVERVIEW FUNCTIONALITY 
+    // ============================================================================
+
+    async loadSessionsOverview(retryCount = 0) {
+        console.log('🔥 ADMIN - Loading sessions overview...');
+        const tableBody = document.getElementById('sessions-overview-body');
+        if (!tableBody) {
+            console.error('🚨 ADMIN - Element sessions-overview-body not found!');
+            return;
+        }
+        console.log('✅ ADMIN - Found sessions table body element:', tableBody);
+
+        try {
+            // Show loading state
+            this.showSessionsLoadingState(tableBody);
+
+            // Fetch sessions overview data
+            console.log('📡 ADMIN - Fetching sessions overview data...');
+            const sessionsData = await apiClient.get('/api/admin/sessions-overview');
+            console.log('📊 ADMIN - Received sessions data:', sessionsData.length, 'sessions');
+
+            // Validate response data structure
+            if (!Array.isArray(sessionsData)) {
+                throw new Error('Invalid response format: Expected array of sessions');
+            }
+
+            if (sessionsData.length === 0) {
+                this.showSessionsEmptyState(tableBody);
+                return;
+            }
+
+            // Validate each session object has required fields
+            const requiredFields = ['session_name'];
+            for (let i = 0; i < sessionsData.length; i++) {
+                const session = sessionsData[i];
+                for (const field of requiredFields) {
+                    if (!session.hasOwnProperty(field)) {
+                        console.warn(`Session at index ${i} missing required field: ${field}`);
+                        session[field] = 'N/A';
+                    }
+                }
+                
+                // Ensure numeric fields are numbers
+                const numericFields = [
+                    'total_slides', 'progress_percentage', 'input_tokens', 'output_tokens'
+                ];
+                numericFields.forEach(field => {
+                    if (session[field] === null || session[field] === undefined) {
+                        session[field] = 0;
+                    }
+                });
+            }
+
+            // Render sessions data
+            const sessionsHtml = sessionsData.map(session => `
+                <tr data-session-id="${session.session_id || 'unknown'}">
+                    <td>
+                        <strong>${this.escapeHtml(session.session_name)}</strong>
+                    </td>
+                    <td>
+                        <span class="text-muted">${this.escapeHtml(session.training_name || 'N/A')}</span>
+                    </td>
+                    <td>
+                        <span class="badge ${session.training_type === 'IA' ? 'bg-success' : 'bg-primary'}">
+                            <i class="bi bi-${session.training_type === 'IA' ? 'robot' : 'person'} me-1"></i>
+                            ${session.training_type || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <small class="text-muted">${this.formatDate(session.session_date)}</small>
+                    </td>
+                    <td>
+                        <span class="badge ${this.getStatusBadgeClass(session.status)}">
+                            <i class="bi bi-${this.getStatusIcon(session.status)} me-1"></i>
+                            ${session.status || 'N/A'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-info">${this.formatNumber(session.total_slides)}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-2" style="height: 20px;">
+                                <div class="progress-bar ${this.getProgressBarClass(session.progress_percentage)}" 
+                                     role="progressbar" 
+                                     style="width: ${session.progress_percentage || 0}%"
+                                     aria-valuenow="${session.progress_percentage || 0}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-muted">${Math.round(session.progress_percentage || 0)}%</small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="text-center">
+                            <small class="text-success d-block">
+                                <i class="bi bi-arrow-down-circle me-1"></i>
+                                ${this.formatNumber(session.input_tokens || 0)} in
+                            </small>
+                            <small class="text-warning d-block">
+                                <i class="bi bi-arrow-up-circle me-1"></i>
+                                ${this.formatNumber(session.output_tokens || 0)} out
+                            </small>
+                            <small class="text-muted">
+                                ${session.token_cost || '$0.00'}
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-primary" 
+                                    onclick="viewSessionDetails('${session.session_id}')" 
+                                    title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" 
+                                    onclick="downloadSessionReport('${session.session_id}')" 
+                                    title="Download Report">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" 
+                                    onclick="deleteSession('${session.session_id}', '${session.session_name}')" 
+                                    title="Delete Session">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            console.log('🎨 ADMIN - Setting sessions HTML:', sessionsHtml.length, 'characters');
+            tableBody.innerHTML = sessionsHtml;
+            console.log('✅ ADMIN - Sessions table updated with', sessionsData.length, 'sessions');
+
+        } catch (error) {
+            console.error('🚨 ADMIN - Failed to load sessions overview:', error);
+            
+            // Enhanced error handling with specific messaging
+            let errorMessage = 'Failed to load sessions overview. Please try again.';
+            
+            if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage = 'Access denied: Administrator privileges required to view session statistics.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage = 'Authentication expired. Please log in again.';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+                errorMessage = 'Server error occurred while calculating session statistics.';
+            } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+                errorMessage = 'Network connection error. Please check your internet connection and try again.';
+            }
+            
+            this.showSessionsErrorState(tableBody, errorMessage);
+            
+            // Log additional context for debugging
+            console.error('🚨 ADMIN - Sessions overview error context:', {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                error: error.toString(),
+                stack: error.stack
+            });
+        }
+    }
+
+    getStatusBadgeClass(status) {
+        switch (status?.toLowerCase()) {
+            case 'active': return 'bg-success';
+            case 'completed': return 'bg-primary';
+            case 'paused': return 'bg-warning';
+            case 'cancelled': return 'bg-danger';
+            case 'draft': return 'bg-secondary';
+            default: return 'bg-secondary';
+        }
+    }
+
+    getStatusIcon(status) {
+        switch (status?.toLowerCase()) {
+            case 'active': return 'play-circle';
+            case 'completed': return 'check-circle';
+            case 'paused': return 'pause-circle';
+            case 'cancelled': return 'x-circle';
+            case 'draft': return 'circle';
+            default: return 'circle';
+        }
+    }
+
+    getProgressBarClass(percentage) {
+        if (percentage >= 100) return 'bg-success';
+        if (percentage >= 75) return 'bg-info';
+        if (percentage >= 50) return 'bg-warning';
+        if (percentage >= 25) return 'bg-primary';
+        return 'bg-secondary';
+    }
+
+    showSessionsLoadingState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                    <div>
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-1 fw-medium">Loading sessions overview...</p>
+                        <small class="text-muted">Fetching session data and progress information</small>
+                        <div class="mt-2">
+                            <div class="progress" style="height: 4px; width: 200px; margin: 0 auto;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showSessionsEmptyState(tableBody) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                    <div>
+                        <i class="bi bi-calendar-event display-4 mb-3 text-secondary"></i>
+                        <h6 class="text-muted mb-2">No Sessions Found</h6>
+                        <p class="small mb-3">There are currently no training sessions created in the system.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshSessionsOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    showSessionsErrorState(tableBody, errorMessage = 'Failed to load sessions overview') {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <div>
+                        <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
+                        <h6 class="text-danger mb-2">Error Loading Data</h6>
+                        <p class="text-muted small mb-3">${errorMessage}</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshSessionsOverview()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
     setupTableSorting() {
         const table = document.getElementById('trainers-overview-table');
         if (!table || table.hasAttribute('data-sorting-enabled')) return;
@@ -776,6 +1235,165 @@ async function refreshTraineesOverview() {
         // Restore button state
         refreshBtn.disabled = false;
         refreshBtn.innerHTML = originalContent;
+    }
+}
+
+// Global function to refresh trainings overview
+async function refreshTrainingsOverview() {
+    const refreshBtn = document.querySelector('button[onclick="refreshTrainingsOverview()"]');
+    
+    const originalContent = refreshBtn.innerHTML;
+    
+    try {
+        // Show loading state on button
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Refreshing...
+        `;
+        
+        if (window.adminDashboard && window.adminDashboard.loadTrainingsOverview) {
+            await window.adminDashboard.loadTrainingsOverview();
+        }
+    } catch (error) {
+        console.error('🚨 ADMIN - Error refreshing trainings overview:', error);
+    } finally {
+        // Restore button state
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalContent;
+    }
+}
+
+// Global function to refresh sessions overview
+async function refreshSessionsOverview() {
+    const refreshBtn = document.querySelector('button[onclick="refreshSessionsOverview()"]');
+    
+    const originalContent = refreshBtn.innerHTML;
+    
+    try {
+        // Show loading state on button
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Refreshing...
+        `;
+        
+        if (window.adminDashboard && window.adminDashboard.loadSessionsOverview) {
+            await window.adminDashboard.loadSessionsOverview();
+        }
+    } catch (error) {
+        console.error('🚨 ADMIN - Error refreshing sessions overview:', error);
+    } finally {
+        // Restore button state
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalContent;
+    }
+}
+
+// Global functions for session actions
+async function viewSessionDetails(sessionId) {
+    console.log('📋 ADMIN - Viewing session details for:', sessionId);
+    try {
+        const sessionDetails = await apiClient.get(`/api/admin/sessions/${sessionId}/details`);
+        
+        // For now, just show an alert with basic info
+        // In the future, this could open a modal with detailed session information
+        alert(`Session Details:\n\nID: ${sessionDetails.id}\nName: ${sessionDetails.name}\nStatus: ${sessionDetails.status}\nProgress: ${sessionDetails.progress_percentage}%`);
+        
+    } catch (error) {
+        console.error('Error loading session details:', error);
+        alert('Failed to load session details. Please try again.');
+    }
+}
+
+async function downloadSessionReport(sessionId) {
+    console.log('📊 ADMIN - Downloading session report for:', sessionId);
+    try {
+        const token = authManager.getToken();
+        if (!token) {
+            alert('Please login to download session reports.');
+            return;
+        }
+
+        // Create download link
+        const downloadUrl = `${apiClient.baseURL}/api/admin/sessions/${sessionId}/report`;
+        
+        const response = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Download failed: ${response.status}`);
+        }
+
+        // Get the blob and create download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `session-report-${sessionId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showAlert('Session report download started!', 'success');
+
+    } catch (error) {
+        console.error('Download error:', error);
+        showAlert('Failed to download session report. Please try again.', 'error');
+    }
+}
+
+async function deleteSession(sessionId, sessionName) {
+    // Confirm deletion
+    const confirmed = confirm(`Are you sure you want to delete session "${sessionName}"?\n\nThis action cannot be undone and will also delete all associated learner data.`);
+    
+    if (!confirmed) return;
+
+    try {
+        const token = authManager.getToken();
+        if (!token) {
+            showAlert('Please login to delete sessions.', 'error');
+            return;
+        }
+
+        const response = await fetch(`${apiClient.baseURL}/api/admin/sessions/${sessionId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                showAlert('Session expired. Please login again.', 'error');
+                authManager.logout();
+                return;
+            } else if (response.status === 403) {
+                showAlert('Access denied. You can only delete sessions as an administrator.', 'error');
+                return;
+            } else if (response.status === 404) {
+                showAlert('Session not found.', 'error');
+                return;
+            }
+            throw new Error(`Delete failed: ${response.status}`);
+        }
+
+        showAlert('Session deleted successfully!', 'success');
+        
+        // Refresh the sessions list
+        if (window.adminDashboard) {
+            window.adminDashboard.loadSessionsOverview();
+        }
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        showAlert('Failed to delete session. Please try again.', 'error');
     }
 }
 
