@@ -55,16 +55,10 @@ class SlideContentGenerator:
             )
             
             # Générer avec VertexAI
-            generation_config = {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "top_k": 40,
-                "max_output_tokens": 1024
-            }
-            
             content = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=generation_config
+                model_name="gemini-2.0-flash-001",
+                temperature=0.7
             )
             
             duration = time.time() - start_time
@@ -124,16 +118,10 @@ class SlideContentGenerator:
                 previous_content=previous_content
             )
             
-            generation_config = {
-                "temperature": 0.4,  # Lower temperature for more structured quiz
-                "top_p": 0.9,
-                "top_k": 40,
-                "max_output_tokens": 800
-            }
-            
             content = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=generation_config
+                model_name="gemini-2.0-flash-001",
+                temperature=0.4  # Lower temperature for more structured quiz
             )
             
             duration = time.time() - start_time
@@ -174,16 +162,10 @@ class SlideContentGenerator:
                 module_context=module_context
             )
             
-            generation_config = {
-                "temperature": 0.6,
-                "top_p": 0.9,
-                "top_k": 40,
-                "max_output_tokens": 300
-            }
-            
             introduction = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=generation_config
+                model_name="gemini-2.0-flash-001",
+                temperature=0.6
             )
             
             duration = time.time() - start_time

@@ -15,10 +15,12 @@ class AIAdapterPort(ABC):
     async def generate_content(
         self, 
         prompt: str, 
-        model_name: str,
+        model_name: Optional[str] = None,
         context_cache_id: Optional[str] = None,
-        temperature: float = 0.7
-    ) -> Dict[str, Any]:
+        temperature: float = 0.7,
+        session_id: Optional[str] = None,
+        learner_session_id: Optional[str] = None
+    ) -> str:
         """Generate content using AI model"""
         pass
     

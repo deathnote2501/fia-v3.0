@@ -75,7 +75,8 @@ class SlideContentModifier:
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for simplification")
             response = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=vertex_config
+                model_name="gemini-2.0-flash-001",
+                temperature=vertex_config.get("temperature", 0.7)
             )
             
             # Extraire le contenu du JSON
@@ -158,7 +159,8 @@ class SlideContentModifier:
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for deepening")
             response = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=vertex_config
+                model_name="gemini-2.0-flash-001",
+                temperature=vertex_config.get("temperature", 0.7)
             )
             
             # Extraire le contenu du JSON
@@ -480,7 +482,8 @@ class SlideContentModifier:
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for enhancement")
             ai_response = await self.ai_adapter.generate_content(
                 prompt=prompt,
-                generation_config=vertex_config
+                model_name="gemini-2.0-flash-001",
+                temperature=vertex_config.get("temperature", 0.7)
             )
             
             # Extraire et valider le contenu généré
@@ -515,9 +518,6 @@ class SlideContentModifier:
                 "learner_session_id": learner_session_id
             }
             
-        except VertexAIError as e:
-            logger.error(f"❌ SLIDE CONTENT MODIFIER [MORE_DETAILS] VertexAI error: {e}")
-            raise RuntimeError(f"AI enhancement failed: {e}")
         except Exception as e:
             logger.error(f"❌ SLIDE CONTENT MODIFIER [MORE_DETAILS] Error: {e}")
-            raise
+            raise RuntimeError(f"AI enhancement failed: {e}")

@@ -9,6 +9,7 @@ from typing import Dict, Any
 from uuid import UUID
 
 from app.domain.services.chart_generation_service import ChartGenerationService
+from app.adapters.outbound.ai_adapter import AIAdapter
 from app.domain.schemas.chart_generation import ChartGenerationRequest, ChartGenerationResponse
 from app.infrastructure.rate_limiter import SlidingWindowRateLimiter
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
@@ -85,7 +86,8 @@ async def generate_chart_for_slide(
             )
         
         # Initialize chart generation service
-        chart_service = ChartGenerationService()
+        ai_adapter = AIAdapter()
+        chart_service = ChartGenerationService(ai_adapter)
         
         # Check if service is available
         if not chart_service.is_available():
@@ -193,7 +195,8 @@ async def generate_chart_from_current_slide(
 async def chart_generation_health() -> Dict[str, Any]:
     """Health check for chart generation service"""
     try:
-        chart_service = ChartGenerationService()
+        ai_adapter = AIAdapter()
+        chart_service = ChartGenerationService(ai_adapter)
         stats = chart_service.get_stats()
         
         return {

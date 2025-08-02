@@ -18,17 +18,26 @@ class AIAdapter(AIAdapterPort):
     async def generate_content(
         self, 
         prompt: str, 
-        model_name: str,
+        model_name: Optional[str] = None,
         context_cache_id: Optional[str] = None,
-        temperature: float = 0.7
-    ) -> Dict[str, Any]:
+        temperature: float = 0.7,
+        session_id: Optional[str] = None,
+        learner_session_id: Optional[str] = None
+    ) -> str:
         """Generate content using AI model"""
         try:
+            # Build generation config with temperature
+            generation_config = {
+                "temperature": temperature
+            }
+            if context_cache_id:
+                generation_config["context_cache_id"] = context_cache_id
+            
             return await self.vertex_ai.generate_content(
                 prompt=prompt,
-                model_name=model_name,
-                context_cache_id=context_cache_id,
-                temperature=temperature
+                generation_config=generation_config,
+                session_id=session_id,
+                learner_session_id=learner_session_id
             )
         except VertexAIError as e:
             raise AIError(str(e)) from e
