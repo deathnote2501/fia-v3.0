@@ -10,7 +10,7 @@ from typing import Dict, Any
 logger = logging.getLogger(__name__)
 
 # Model configuration for specialized use cases
-PLAN_GENERATION_MODEL = "gemini-2.5-flash-001"  # Thinking mode for training plan generation
+PLAN_GENERATION_MODEL = "gemini-2.5-flash"  # Thinking mode for training plan generation
 
 
 class PromptBuilder:

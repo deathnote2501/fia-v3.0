@@ -31,7 +31,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Model configuration for AI training generation
-AI_TRAINING_MODEL = "gemini-2.5-flash-001"  # Thinking mode for complex training content generation
+AI_TRAINING_MODEL = "gemini-2.5-flash"  # Thinking mode for complex training content generation
 
 
 class AITrainingGenerationError(Exception):
@@ -178,7 +178,7 @@ Créer une [BASE DE CONNAISSANCE] qui sera utilisée pour créer une formation c
 POINTS ESSENTIELS À RESPECTER :
 - Formation complète sur : {name} - {description}
 - Structure Markdown hiérarchique obligatoire
-- Contenu entre 2500 et 4500 mots
+- Contenu entre 4500 et 7500 mots
 - Format Markdown pur sans balises de code
 </RECAP>
 

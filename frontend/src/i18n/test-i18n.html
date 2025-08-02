@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test i18n Service</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .language-switch { margin: 10px 0; }
+        button { margin: 5px; padding: 8px 16px; }
+        .result { font-weight: bold; color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test du Service i18n FIA v3.0</h1>
+    
+    <div class="language-switch">
+        <button onclick="testLanguageChange('fr')">Français</button>
+        <button onclick="testLanguageChange('en')">English</button>
+        <button onclick="testLanguageChange('es')">Español (non implémenté)</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test de détection automatique</h2>
+        <p>Langue détectée: <span id="detected-language" class="result">-</span></p>
+        <p>localStorage: <span id="local-storage">-</span></p>
+        <p>navigator.language: <span id="browser-language">-</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test de traduction</h2>
+        <p data-i18n="nav.dashboard">nav.dashboard</p>
+        <p data-i18n="training.create">training.create</p>
+        <p data-i18n="session.generateLink">session.generateLink</p>
+        <p data-i18n="profile.firstName">profile.firstName</p>
+        <p data-i18n="button.save">button.save</p>
+        <p data-i18n="nonexistent.key">nonexistent.key (doit rester inchangé)</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test programmatique</h2>
+        <button onclick="runProgrammaticTests()">Lancer les tests</button>
+        <div id="test-results"></div>
+    </div>
+
+    <script type="module">
+        import I18n from './i18n.js';
+        
+        // Variable globale pour les tests
+        window.i18n = new I18n();
+        
+        // Afficher les infos de détection
+        document.getElementById('detected-language').textContent = window.i18n.getCurrentLanguage();
+        document.getElementById('local-storage').textContent = localStorage.getItem('fia-language') || 'null';
+        document.getElementById('browser-language').textContent = navigator.language;
+        
+        // Fonction pour changer de langue
+        window.testLanguageChange = async function(lang) {
+            console.log(`🔄 Test changement vers: ${lang}`);
+            await window.i18n.setLanguage(lang);
+        };
+        
+        // Tests programmatiques
+        window.runProgrammaticTests = function() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<h3>Résultats des tests:</h3>';
+            
+            const tests = [
+                {
+                    name: 'Traduction existante (fr)',
+                    test: () => window.i18n.t('nav.dashboard') === 'Tableau de bord'
+                },
+                {
+                    name: 'Traduction inexistante (fallback)',
+                    test: () => window.i18n.t('inexistant.test') === 'inexistant.test'
+                },
+                {
+                    name: 'Langue courante',
+                    test: () => ['fr', 'en', 'es', 'de'].includes(window.i18n.getCurrentLanguage())
+                },
+                {
+                    name: 'Validation langue',
+                    test: () => window.i18n.isValidLanguage('fr') && !window.i18n.isValidLanguage('xx')
+                }
+            ];
+            
+            tests.forEach(test => {
+                const result = test.test();
+                const status = result ? '✅' : '❌';
+                const className = result ? 'result' : 'error';
+                results.innerHTML += `<p class="${className}">${status} ${test.name}</p>`;
+            });
+        };
+        
+        // Écouter les changements de langue
+        window.addEventListener('languageChanged', (event) => {
+            console.log('🌐 Événement languageChanged reçu:', event.detail);
+            document.getElementById('detected-language').textContent = event.detail.language;
+        });
+        
+        console.log('🧪 Test i18n chargé. Service disponible dans window.i18n');
+    </script>
+</body>
+</html>
