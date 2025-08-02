@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 class SlideContentModifier:
     """Service pour modifier le contenu des slides existantes avec IA"""
     
-    def __init__(self):
-        """Initialize slide content modifier"""
-        self.vertex_adapter = VertexAIAdapter()
+    def __init__(self, ai_adapter: AIAdapterPort):
+        """Initialize slide content modifier with dependency injection"""
+        self.ai_adapter = ai_adapter
         self.prompt_builder = SlidePromptBuilder()
         logger.info("🔧 SLIDE CONTENT MODIFIER [SERVICE] Initialized")
     
@@ -73,7 +73,7 @@ class SlideContentModifier:
             
             # Générer le contenu simplifié avec VertexAI
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for simplification")
-            response = await self.vertex_adapter.generate_content(
+            response = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=vertex_config
             )
@@ -156,7 +156,7 @@ class SlideContentModifier:
             
             # Générer le contenu approfondi avec VertexAI
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for deepening")
-            response = await self.vertex_adapter.generate_content(
+            response = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=vertex_config
             )
@@ -478,7 +478,7 @@ class SlideContentModifier:
             
             # Générer le contenu enrichi avec VertexAI
             logger.info(f"🔧 SLIDE CONTENT MODIFIER [AI] Calling VertexAI for enhancement")
-            ai_response = await self.vertex_adapter.generate_content(
+            ai_response = await self.ai_adapter.generate_content(
                 prompt=prompt,
                 generation_config=vertex_config
             )
