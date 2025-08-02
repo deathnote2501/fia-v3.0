@@ -127,18 +127,143 @@ poetry run pytest
 - Gemini Context Caching for training materials
 - Rate limiting on AI API calls
 
+## 🤖 Architecture & Coding Rules for Claude 4 Instances
+
+### **MANDATORY: Before Writing Any Code**
+
+1. 🔍 **ANALYZE FIRST** - Always read existing patterns before creating new code
+2. 🏗️ **RESPECT HEXAGONAL ARCHITECTURE** - Never violate layer boundaries
+3. 🔌 **USE DEPENDENCY INJECTION** - Services must accept ports in constructor
+4. 📋 **FOLLOW INTERFACE CONTRACTS** - Check existing method signatures
+
+### **🚨 Critical Patterns to Follow**
+
+#### **1. Service Creation Pattern**
+```python
+# ✅ CORRECT - Always inject dependencies
+class MyService:
+    def __init__(self, ai_adapter: AIAdapterPort, repo: MyRepoPort):
+        self.ai_adapter = ai_adapter
+        self.repo = repo
+
+# ❌ NEVER - Don't create dependencies inside
+class MyService:
+    def __init__(self):
+        self.ai_adapter = AIAdapter()  # VIOLATION!
+```
+
+#### **2. AI Adapter Usage**
+```python
+# ✅ CORRECT - Current interface (returns STRING)
+response = await self.ai_adapter.generate_content(
+    prompt=prompt,
+    temperature=0.7,
+    session_id=session_id,
+    learner_session_id=learner_session_id
+)
+# response is a STRING, not Dict!
+
+# ❌ WRONG - Old interface
+response = await self.ai_adapter.generate_content(prompt, model_name="...")
+text = response.get('text')  # Will fail!
+```
+
+#### **3. Controller Pattern**
+```python
+# ✅ CORRECT - Dependency injection
+@router.post("/endpoint")
+async def endpoint(
+    request: RequestSchema,
+    service: MyService = Depends(get_my_service)
+):
+    try:
+        result = await service.method(request)
+        return ResponseSchema(**result)
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Dependency function
+async def get_my_service(session: AsyncSession = Depends(get_async_session)):
+    ai_adapter = AIAdapter()
+    repo = MyRepository(session)
+    return MyService(ai_adapter, repo)
+```
+
+### **🏗️ Layer Rules - STRICT ENFORCEMENT**
+
+#### **Domain Layer (`domain/`)**
+```python
+# ✅ ALLOWED imports
+from app.domain.ports.* import *
+from app.domain.entities.* import *
+from typing import *
+import logging, time, json  # Standard library OK
+
+# ❌ FORBIDDEN imports
+from app.adapters.*        # NO!
+from app.infrastructure.*  # NO!
+from sqlalchemy.*          # NO!
+from fastapi.*            # NO!
+```
+
+#### **Adapters Layer (`adapters/`)**
+```python
+# ✅ Implement domain ports
+class MyAdapter(MyAdapterPort):  # Must implement domain interface
+    async def method(self, param: str) -> str:
+        try:
+            result = await self.infrastructure.call()
+            return self._map_to_domain(result)
+        except InfrastructureError as e:
+            raise DomainError(str(e)) from e  # Convert exceptions
+```
+
+#### **Exception Handling**
+```python
+# ✅ DOMAIN services - Use domain exceptions
+except Exception as e:
+    raise DomainError(f"Business error: {e}")
+
+# ✅ ADAPTERS - Convert infrastructure → domain
+except VertexAIError as e:
+    raise AIError(str(e)) from e
+
+# ✅ CONTROLLERS - Convert domain → HTTP
+except DomainError as e:
+    raise HTTPException(status_code=400, detail=str(e))
+```
+
+### **🔧 Quick Verification Commands**
+```bash
+# Check existing patterns before coding
+Grep pattern="class.*Service" path="app/domain/services"
+Grep pattern="def __init__" path="app/domain/services" -A 3
+
+# Verify architecture compliance
+./.claude/hooks/test_hooks_quick.sh
+```
+
+### **📋 Pre-Commit Checklist**
+- [ ] No infrastructure imports in `domain/`
+- [ ] Services use dependency injection
+- [ ] AI adapter returns string, not dict
+- [ ] Exceptions converted at layer boundaries
+- [ ] Followed existing naming patterns
+
 ## Current Implementation Status
 
-### ✅ Complete: Full SPEC.md Compliance + Trainer Dashboard + Learner Profile Enrichment (January 2025)
+### ✅ Complete: Full SPEC.md Compliance + Architecture Refactoring (August 2025)
 
 **Phase 4 Complete: Security & Quality + Functional Trainer Dashboard + Progressive Learner Profiling**
 
 **Architecture Refactoring Completed:**
 1. **Hexagonal Architecture**: Pure domain entities separated from infrastructure models
-2. **AI Services Separation**: Dedicated services for conversation vs engagement analysis
-3. **Security Hardening**: Generic error messages, proper logging, no information disclosure
-4. **Performance Optimization**: Database indexes, code cleanup, logging standards
-5. **Language Standardization**: Full English consistency across codebase and frontend
+2. **Dependency Injection**: All services use proper constructor injection with ports
+3. **Interface Standardization**: AI adapter returns strings, consistent method signatures
+4. **Exception Handling**: Proper layer-based exception conversion (Infrastructure → Domain → HTTP)
+5. **Security Hardening**: Generic error messages, proper logging, no information disclosure
+6. **Performance Optimization**: Database indexes, code cleanup, logging standards
+7. **Language Standardization**: Full English consistency across codebase and frontend
 
 **Core Services Implemented:**
 1. **Plan Generation Service (Vertex)**: Gemini 2.0 Flash with personalized training plans
@@ -167,7 +292,15 @@ poetry run pytest
 - **Profile Evolution**: Learner profile becomes more accurate with each interaction
 - **Structured Storage**: Enriched data stored in `enriched_profile` JSONB column
 
-**Fixed Critical Issues:**
+**Recently Fixed Critical Issues (August 2025):**
+1. **AI Adapter Interface**: Fixed model_name parameter issue - adapter now returns string, not dict
+2. **Dependency Injection**: Fixed ChartGenerationService and other services to use proper constructor injection
+3. **Exception Handling**: Removed infrastructure exceptions from domain layer (VertexAIError → generic Exception)
+4. **Interface Consistency**: Standardized AI adapter method signatures across all services
+5. **Architecture Compliance**: All services now follow hexagonal architecture principles
+6. **Chart Generation**: Fixed string vs dict interface mismatch that was causing chart generation failures
+
+**Previous Fixed Issues:**
 1. **FastAPI-Users Authentication**: Fixed domain entity vs SQLAlchemy model conflict
 2. **Dashboard Endpoints**: Created missing `/api/dashboard/stats` and `/api/dashboard/recent-activity`
 3. **Database Schema**: Fixed column mismatches (expires_at vs updated_at)
@@ -224,9 +357,12 @@ poetry run pytest
 - ✅ Session creation (basic functionality)
 - ✅ Profile management
 - ✅ Error handling and validation
-- ✅ **Progressive profile enrichment logic** (NEW)
-- ✅ **Conversation service integration** (NEW)
-- ✅ **Slide personalization with enriched profile** (NEW)
+- ✅ Progressive profile enrichment logic
+- ✅ Conversation service integration
+- ✅ Slide personalization with enriched profile
+- ✅ **Architecture refactoring and dependency injection** (NEW)
+- ✅ **AI adapter interface standardization** (NEW)
+- ✅ **Chart generation functionality** (NEW)
 
 ## Progressive Learner Profile Enrichment System
 
@@ -326,6 +462,42 @@ Testing is primarily manual through web interfaces:
 - Security testing via interface attempts
 - Mobile responsiveness validation
 
+## 🔧 Validation Hooks & Code Quality
+
+### **Architecture Validation System**
+
+The project includes comprehensive validation hooks to ensure code quality and architecture compliance:
+
+```bash
+# Quick validation (recommended before commits)
+./.claude/hooks/test_hooks_quick.sh
+
+# Complete validation (before releases)
+./.claude/hooks/validate_best_practices.sh
+```
+
+### **Available Hooks**
+
+1. **`architecture_validation.sh`** - Validates hexagonal architecture structure
+2. **`naming_conventions.sh`** - Ensures English-first naming across codebase  
+3. **`security_validation.sh`** - Checks security practices and data validation
+4. **`performance_validation.sh`** - Validates performance optimizations
+5. **`i18n_validation.sh`** - Ensures English-first development with i18n readiness
+
+### **Common Issues Detected**
+
+- Infrastructure imports in domain layer
+- Missing dependency injection in services
+- French terms in code (should be English-first)
+- Missing rate limiting or context caching
+- Hardcoded secrets or configuration
+
+### **Hook Results Interpretation**
+
+- ✅ **Green** - All validations passed, code ready for development
+- ❌ **Red** - Critical issues found, must fix before proceeding
+- ⚠️ **Yellow** - Warnings, review and improve if possible
+
 ## Important Notes
 
 - Use only Bootstrap components, colors, effects, and animations
@@ -335,3 +507,4 @@ Testing is primarily manual through web interfaces:
 - FastAPI automatic API documentation
 - Structured logging for all Gemini interactions
 - Railway deployment exclusively
+- **Run validation hooks before each commit to maintain code quality**

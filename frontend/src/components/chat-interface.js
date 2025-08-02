@@ -1079,6 +1079,8 @@ export class ChatInterface {
             if (messageElement) {
                 // If no audio data exists, generate it first
                 if (!messageElement.ttsAudio) {
+                    // Show loading state while generating audio
+                    this.updateAudioControlButtons(messageId, 'loading');
                     const content = messageElement.querySelector('.message-content p').textContent;
                     await this.ttsManager.generateAndPlaySpeech(content, messageElement, false);
                 }
@@ -1100,25 +1102,26 @@ export class ChatInterface {
         const button = document.querySelector(`button[data-message-id="${messageId}"]`);
         if (!button) return;
         
-        const icon = button.querySelector('i');
-        if (!icon) return;
-        
         // Remove all state classes
-        button.classList.remove('playing', 'stopped', 'paused');
+        button.classList.remove('playing', 'stopped', 'paused', 'loading');
         
         switch (state) {
+            case 'loading':
+                button.classList.add('loading');
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+                break;
             case 'playing':
                 button.classList.add('playing');
-                icon.className = 'bi bi-pause-circle';
+                button.innerHTML = '<i class="bi bi-pause-circle"></i>';
                 break;
             case 'paused':
                 button.classList.add('stopped'); // Paused state shows play button (to resume)
-                icon.className = 'bi bi-play-circle';
+                button.innerHTML = '<i class="bi bi-play-circle"></i>';
                 break;
             case 'stopped':
             default:
                 button.classList.add('stopped');
-                icon.className = 'bi bi-play-circle';
+                button.innerHTML = '<i class="bi bi-play-circle"></i>';
                 break;
         }
     }

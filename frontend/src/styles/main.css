@@ -452,6 +452,16 @@ input:checked + .tts-slider:before {
     color: #198754 !important; /* Vert pour play */
 }
 
+.audio-toggle-btn.loading {
+    color: #198754 !important; /* Vert success Bootstrap pour loading */
+    pointer-events: none; /* Désactiver les clics pendant loading */
+}
+
+.audio-toggle-btn.loading .spinner-border-sm {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 .audio-pause-btn {
     background-color: transparent;
     border-color: #0d6efd;
