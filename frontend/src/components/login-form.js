@@ -70,11 +70,27 @@ class LoginForm {
             const result = await authManager.login(credentials.email, credentials.password);
 
             if (result.success) {
-                showAlert('Login successful! Redirecting to dashboard...', 'success');
+                // Get user info to determine redirect destination
+                const user = authManager.getUser();
+                console.log('🔥 LOGIN - User data after login:', user);
                 
-                // Redirect to trainer dashboard after short delay
+                // Determine redirect URL based on user role
+                let redirectUrl = '/frontend/public/trainer.html'; // Default for trainers
+                let dashboardType = 'trainer dashboard';
+                
+                if (user && user.is_superuser) {
+                    redirectUrl = '/frontend/public/admin.html';
+                    dashboardType = 'admin dashboard';
+                    console.log('🔥 LOGIN - Admin user detected, redirecting to admin.html');
+                } else {
+                    console.log('🔥 LOGIN - Regular trainer, redirecting to trainer.html');
+                }
+                
+                showAlert(`Login successful! Redirecting to ${dashboardType}...`, 'success');
+                
+                // Redirect after short delay
                 setTimeout(() => {
-                    window.location.href = '/frontend/public/trainer.html';
+                    window.location.href = redirectUrl;
                 }, 1500);
             } else {
                 showAlert(result.message || 'Invalid email or password.', 'error');

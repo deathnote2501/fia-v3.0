@@ -196,8 +196,20 @@ class AuthManager {
      * Redirect if already authenticated
      * @param {string} redirectUrl 
      */
-    redirectIfAuthenticated(redirectUrl = '/frontend/public/trainer.html') {
+    redirectIfAuthenticated(redirectUrl = null) {
         if (this.isAuthenticated()) {
+            // Determine redirect URL based on user role if not provided
+            if (!redirectUrl) {
+                const user = this.getUser();
+                if (user && user.is_superuser) {
+                    redirectUrl = '/frontend/public/admin.html';
+                    console.log('🔥 AUTH - Admin already authenticated, redirecting to admin.html');
+                } else {
+                    redirectUrl = '/frontend/public/trainer.html';
+                    console.log('🔥 AUTH - Trainer already authenticated, redirecting to trainer.html');
+                }
+            }
+            
             window.location.href = redirectUrl;
             return true;
         }
