@@ -3,7 +3,7 @@ set -e
 
 echo "=== FIA v3.0 Startup Script ==="
 echo "Working directory: $(pwd)"
-echo "PORT: ${PORT:-8000}"
+echo "PORT: ${PORT:-8080}"
 echo "Environment: ${ENVIRONMENT:-development}"
 
 # Check if backend directory exists
@@ -25,7 +25,7 @@ fi
 export PYTHONPATH="/app/backend:$PYTHONPATH"
 
 echo "Starting FastAPI application..."
-echo "Command: python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"
+echo "Command: python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info"
 
 # Start the application
-exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info

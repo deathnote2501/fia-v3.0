@@ -2,7 +2,11 @@
 nixPkgs = ["python311", "poetry"]
 
 [phases.install]
-cmds = ["poetry config virtualenvs.create false", "poetry install --no-dev --no-root"]
+cmds = [
+    "cd backend",
+    "poetry config virtualenvs.create false", 
+    "poetry install --only=main --no-root"
+]
 
 [start]
 cmd = "./start.sh"
