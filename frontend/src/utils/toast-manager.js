@@ -31,18 +31,35 @@ class ToastManager {
             existing.remove();
         }
 
+        // Load CSS if not already loaded
+        this.loadToastCSS();
+
         // Create new toast container
         this.toastContainer = document.createElement('div');
         this.toastContainer.id = 'toast-container';
-        this.toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-        this.toastContainer.style.cssText = `
-            z-index: 9999;
-            max-width: 400px;
-            pointer-events: none;
-        `;
+        this.toastContainer.className = 'toast-container';
 
         // Append to body
         document.body.appendChild(this.toastContainer);
+    }
+
+    /**
+     * Load toast CSS if not already present
+     */
+    loadToastCSS() {
+        // Check if CSS is already loaded
+        if (document.getElementById('toast-notifications-css')) {
+            return;
+        }
+
+        // Create link element for CSS
+        const link = document.createElement('link');
+        link.id = 'toast-notifications-css';
+        link.rel = 'stylesheet';
+        link.href = '../src/styles/toast-notifications.css';
+        
+        // Insert in head
+        document.head.appendChild(link);
     }
 
     /**

@@ -51,16 +51,49 @@ if find backend/app/adapters -name "*.py" -exec grep -l "class.*Service\|def.*bu
     ERRORS=$((ERRORS + 1))
 fi
 
+# Check for infrastructure imports in domain (CRITICAL VIOLATION)
+echo "Checking domain layer purity..."
+DOMAIN_VIOLATIONS=0
+
 # Check for database imports in domain
 if find backend/app/domain -name "*.py" -exec grep -l "from sqlalchemy\|import sqlalchemy\|from database" {} \; 2>/dev/null | grep -q .; then
-    echo "❌ Database imports found in domain layer"
-    ERRORS=$((ERRORS + 1))
+    echo "❌ Database imports found in domain layer:"
+    find backend/app/domain -name "*.py" -exec grep -H "from sqlalchemy\|import sqlalchemy\|from database" {} \; 2>/dev/null | head -3
+    DOMAIN_VIOLATIONS=$((DOMAIN_VIOLATIONS + 1))
 fi
 
 # Check for FastAPI dependencies in domain
-if find backend/app/domain -name "*.py" -exec grep -l "from fastapi\|import fastapi" {} \; 2>/dev/null | grep -q .; then
-    echo "❌ FastAPI imports found in domain layer"
-    ERRORS=$((ERRORS + 1))
+if find backend/app/domain -name "*.py" -exec grep -l "from fastapi\|import fastapi\|fastapi_users" {} \; 2>/dev/null | grep -q .; then
+    echo "❌ FastAPI imports found in domain layer:"
+    find backend/app/domain -name "*.py" -exec grep -H "from fastapi\|import fastapi\|fastapi_users" {} \; 2>/dev/null | head -3
+    DOMAIN_VIOLATIONS=$((DOMAIN_VIOLATIONS + 1))
+fi
+
+# Check for infrastructure imports in domain (NEW - CRITICAL)
+if find backend/app/domain -name "*.py" -exec grep -l "from app\.infrastructure\|import.*infrastructure" {} \; 2>/dev/null | grep -q .; then
+    echo "❌ Infrastructure imports found in domain layer:"
+    find backend/app/domain -name "*.py" -exec grep -H "from app\.infrastructure\|import.*infrastructure" {} \; 2>/dev/null | head -5
+    DOMAIN_VIOLATIONS=$((DOMAIN_VIOLATIONS + 1))
+fi
+
+# Check for adapter imports in domain (NEW)
+if find backend/app/domain -name "*.py" -exec grep -l "from app\.adapters\|import.*adapters" {} \; 2>/dev/null | grep -q .; then
+    echo "❌ Adapter imports found in domain layer:"
+    find backend/app/domain -name "*.py" -exec grep -H "from app\.adapters\|import.*adapters" {} \; 2>/dev/null | head -3
+    DOMAIN_VIOLATIONS=$((DOMAIN_VIOLATIONS + 1))
+fi
+
+# Check for dependency injection violations (NEW)
+if find backend/app/domain/services -name "*.py" -exec grep -l "AsyncSession\|SessionLocal\|get_db" {} \; 2>/dev/null | grep -q .; then
+    echo "❌ Direct database session usage in domain services:"
+    find backend/app/domain/services -name "*.py" -exec grep -H "AsyncSession\|SessionLocal\|get_db" {} \; 2>/dev/null | head -3
+    DOMAIN_VIOLATIONS=$((DOMAIN_VIOLATIONS + 1))
+fi
+
+if [ $DOMAIN_VIOLATIONS -gt 0 ]; then
+    echo "💡 DOMAIN PURITY VIOLATION - Current: $((100 - DOMAIN_VIOLATIONS * 20))%"
+    echo "   Target: 90%+ domain purity for hexagonal architecture"
+    ERRORS=$((ERRORS + DOMAIN_VIOLATIONS))
 fi
 
 # Check pyproject.toml location
@@ -68,6 +101,24 @@ if [ -f "backend/pyproject.toml" ]; then
     echo "✅ pyproject.toml in correct location (backend/)"
 elif [ -f "pyproject.toml" ]; then
     echo "❌ pyproject.toml should be in backend/ directory"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check for duplicate services structure (CRITICAL)
+echo "Checking for architectural duplication..."
+if [ -d "backend/app/domain/services" ] && [ -d "backend/app/services" ]; then
+    echo "❌ CRITICAL: Duplicate services directories found"
+    echo "   - backend/app/domain/services/ (hexagonal)"
+    echo "   - backend/app/services/ (legacy)"
+    echo "   This creates confusion and import conflicts"
+    ERRORS=$((ERRORS + 1))
+fi
+
+if [ -d "backend/app/adapters/inbound" ] && [ -d "backend/app/controllers" ]; then
+    echo "❌ WARNING: Mixed controller/adapter structure"
+    echo "   - backend/app/adapters/inbound/ (hexagonal)"
+    echo "   - backend/app/controllers/ (legacy)"
+    echo "   Consider consolidating into adapters/inbound/"
     ERRORS=$((ERRORS + 1))
 fi
 

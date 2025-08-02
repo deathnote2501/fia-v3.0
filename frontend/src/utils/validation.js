@@ -189,12 +189,26 @@ class FormValidator {
 }
 
 /**
- * Show alert message
- * @param {string} message 
+ * Show alert message - Enhanced with ErrorManager integration
+ * @param {string} message - Message or i18n key
  * @param {string} type - success, error, warning, info
- * @param {string} containerId 
+ * @param {string|object} options - containerId (legacy) or options object
  */
-function showAlert(message, type = 'info', containerId = 'alert-container') {
+function showAlert(message, type = 'info', options = {}) {
+    // Legacy compatibility: if third param is string, treat as containerId
+    if (typeof options === 'string') {
+        const containerId = options;
+        options = { containerId };
+    }
+
+    const { containerId = 'alert-container', duration = 5000 } = options;
+
+    // Try to use global ErrorManager if available
+    if (window.errorManager) {
+        return window.errorManager.showMessage(message, type, { duration });
+    }
+
+    // Fallback to legacy implementation for backwards compatibility
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -217,14 +231,14 @@ function showAlert(message, type = 'info', containerId = 'alert-container') {
 
     container.innerHTML = alertHtml;
     
-    // Auto-hide after 5 seconds
+    // Auto-hide after specified duration
     setTimeout(() => {
         const alert = container.querySelector('.alert');
         if (alert) {
             const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
             bsAlert.close();
         }
-    }, 5000);
+    }, duration);
 }
 
 /**

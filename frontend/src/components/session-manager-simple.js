@@ -32,9 +32,15 @@ function getAuthHeaders() {
 }
 
 /**
- * Show alert message
+ * Show alert message - Enhanced with ErrorManager integration
  */
 function showAlert(message, type = 'info', duration = 5000) {
+    // Try to use global ErrorManager if available
+    if (window.errorManager) {
+        return window.errorManager.showMessage(message, type, { duration });
+    }
+
+    // Fallback to legacy implementation
     const alertContainer = document.getElementById('alert-container');
     if (!alertContainer) return;
     

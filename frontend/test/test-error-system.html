@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIA v3.0 - Error System Test</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Toast Notifications CSS -->
+    <link rel="stylesheet" href="../src/styles/toast-notifications.css">
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">🚨 Error System Test Suite</h1>
+                
+                <!-- Alert Container for legacy alerts -->
+                <div id="alert-container" class="mb-4"></div>
+                
+                <div class="row">
+                    <!-- Error Types Testing -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Error Types Testing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-danger" onclick="testCriticalError()">
+                                        Critical Error (with contact)
+                                    </button>
+                                    <button class="btn btn-warning" onclick="testValidationError()">
+                                        Validation Error
+                                    </button>
+                                    <button class="btn btn-info" onclick="testNetworkError()">
+                                        Network Error
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="testServerError()">
+                                        Server Error
+                                    </button>
+                                    <button class="btn btn-dark" onclick="testUnexpectedError()">
+                                        Unexpected Error
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Success/Info Messages -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Success/Info Messages</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" onclick="testSuccess()">
+                                        Success Message
+                                    </button>
+                                    <button class="btn btn-warning" onclick="testWarning()">
+                                        Warning Message
+                                    </button>
+                                    <button class="btn btn-info" onclick="testInfo()">
+                                        Info Message
+                                    </button>
+                                    <button class="btn btn-primary" onclick="testI18nMessages()">
+                                        Test i18n (EN/FR)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <!-- API Error Simulation -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">API Error Simulation</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-danger" onclick="testApiError(400)">
+                                        400 - Bad Request
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testApiError(401)">
+                                        401 - Unauthorized
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testApiError(403)">
+                                        403 - Forbidden
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testApiError(404)">
+                                        404 - Not Found
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="testApiError(500)">
+                                        500 - Server Error
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Legacy Compatibility -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Legacy Compatibility</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" onclick="testLegacyShowAlert()">
+                                        Legacy showAlert()
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="testBackwardsCompatibility()">
+                                        Backwards Compatibility
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="testSystemStatus()">
+                                        Check System Status
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="clearAllMessages()">
+                                        Clear All Messages
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Language Selector -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Language Testing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <label for="languageSelect" class="form-label mb-0">Select Language:</label>
+                                    <select id="languageSelect" class="form-select" style="width: auto;" onchange="changeLanguage()">
+                                        <option value="en">English</option>
+                                        <option value="fr">Français</option>
+                                    </select>
+                                    <button class="btn btn-secondary" onclick="testCurrentLanguage()">
+                                        Test Current Language
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Info -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">System Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="systemInfo">
+                                    <p class="text-muted">Loading system information...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Error System -->
+    <script type="module" src="../src/utils/error-init.js"></script>
+    
+    <script>
+        // Test Functions
+        async function testCriticalError() {
+            if (window.errorManager) {
+                window.errorManager.showError('error.system');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testValidationError() {
+            if (window.errorManager) {
+                window.errorManager.showError('error.validation');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testNetworkError() {
+            if (window.errorManager) {
+                window.errorManager.showError('error.network');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testServerError() {
+            if (window.errorManager) {
+                window.errorManager.showError('error.server');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testUnexpectedError() {
+            if (window.errorManager) {
+                window.errorManager.showError('error.unexpected');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testSuccess() {
+            if (window.errorManager) {
+                window.errorManager.showSuccess('success.saved');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testWarning() {
+            if (window.errorManager) {
+                window.errorManager.showWarning('warning.unsaved');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testInfo() {
+            if (window.errorManager) {
+                window.errorManager.showInfo('info.loading');
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testI18nMessages() {
+            if (window.errorManager && window.i18n) {
+                const currentLang = window.i18n.getCurrentLanguage();
+                window.errorManager.showInfo(`Current language: ${currentLang}`);
+                
+                setTimeout(() => {
+                    window.errorManager.showSuccess('success.login');
+                }, 1000);
+                
+                setTimeout(() => {
+                    window.errorManager.showError('error.auth.failed');
+                }, 2000);
+            } else {
+                alert('i18n or ErrorManager not loaded');
+            }
+        }
+        
+        async function testApiError(statusCode) {
+            if (window.errorManager) {
+                // Simulate API Response
+                const mockResponse = { status: statusCode };
+                window.errorManager.handleApiError(mockResponse);
+            } else {
+                alert('ErrorManager not loaded');
+            }
+        }
+        
+        async function testLegacyShowAlert() {
+            if (window.showAlert) {
+                window.showAlert('This is a legacy showAlert test', 'info');
+            } else {
+                alert('showAlert function not available');
+            }
+        }
+        
+        async function testBackwardsCompatibility() {
+            // Test different ways of calling showAlert
+            if (window.showAlert) {
+                window.showAlert('Test with string duration', 'warning', 'alert-container');
+                
+                setTimeout(() => {
+                    window.showAlert('Test with options object', 'success', { duration: 3000 });
+                }, 1000);
+            } else {
+                alert('showAlert function not available');
+            }
+        }
+        
+        async function testSystemStatus() {
+            const info = document.getElementById('systemInfo');
+            let status = '<h6>System Components Status:</h6>';
+            
+            status += `<p><strong>i18n:</strong> ${window.i18n ? '✅ Loaded' : '❌ Not loaded'}</p>`;
+            status += `<p><strong>ToastManager:</strong> ${window.toastManager ? '✅ Loaded' : '❌ Not loaded'}</p>`;
+            status += `<p><strong>ErrorManager:</strong> ${window.errorManager ? '✅ Loaded' : '❌ Not loaded'}</p>`;
+            status += `<p><strong>showAlert function:</strong> ${window.showAlert ? '✅ Available' : '❌ Not available'}</p>`;
+            status += `<p><strong>showError function:</strong> ${window.showError ? '✅ Available' : '❌ Not available'}</p>`;
+            
+            if (window.i18n) {
+                status += `<p><strong>Current Language:</strong> ${window.i18n.getCurrentLanguage()}</p>`;
+            }
+            
+            info.innerHTML = status;
+            
+            if (window.errorManager) {
+                window.errorManager.showInfo('System status updated');
+            }
+        }
+        
+        async function clearAllMessages() {
+            if (window.toastManager) {
+                window.toastManager.clearAll();
+            }
+            
+            const alertContainer = document.getElementById('alert-container');
+            if (alertContainer) {
+                alertContainer.innerHTML = '';
+            }
+        }
+        
+        async function changeLanguage() {
+            const select = document.getElementById('languageSelect');
+            const newLang = select.value;
+            
+            if (window.i18n) {
+                await window.i18n.setLanguage(newLang);
+                if (window.errorManager) {
+                    window.errorManager.showSuccess(`Language changed to ${newLang}`);
+                }
+            } else {
+                alert('i18n not available');
+            }
+        }
+        
+        async function testCurrentLanguage() {
+            if (window.i18n && window.errorManager) {
+                const lang = window.i18n.getCurrentLanguage();
+                window.errorManager.showInfo(`Current language: ${lang}`);
+                
+                // Test some translated messages
+                setTimeout(() => {
+                    window.errorManager.showError('error.network');
+                }, 1000);
+                
+                setTimeout(() => {
+                    window.errorManager.showSuccess('success.saved');
+                }, 2000);
+            }
+        }
+        
+        // Initialize system status on load
+        setTimeout(() => {
+            testSystemStatus();
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -69,31 +69,17 @@ L'IA repond aux questions ou message de l'apprenant en se basant sur le contenu 
 - **UI** : Bootstrap + Bootstrap Icons uniquement
 - **Infrastructure** : Railway (déploiement) + GitHub (versioning)
 
-## 🌐 Internationalisation (i18n) - Approche Pragmatique
-### Langue par Défaut : Anglais First (avec Tolérance)
-- **OBJECTIF** : Toute l'application développée en anglais par défaut
-- **TOLÉRANCE** : Loupés occasionnels acceptables si fonctionnalité préservée
-- **PRIORITÉ** : Fonctionnalité > Purisme linguistique
-
-### Règles de Nommage Assouplies
-#### 🟢 Termes Anglais Acceptés (Pas de flaggage)
-- session, training, profile, module, user, learner, trainer
-- Routes : /api/sessions, /api/training, /api/learners 
-- Tables : training_sessions, learner_sessions, user_profiles
-- Variables : session_id, training_plan, learner_profile
-
-#### 🔴 Termes Français à Éviter (Hooks détectent)
-- formateur, apprenant, formation, cours, utilisateur
-- Routes : /api/formateurs, /api/formations
-- Tables : formateurs, formations, apprenants
-- Variables : formateur_id, plan_formation
-
-### Exceptions Acceptées
-- **Prompts IA** : Langues cibles (français pour tests, anglais prod)
-- **Comments** : Français acceptable temporairement
-- **Tests** : Variables françaises tolérées
-- **Logs** : Messages français acceptables
-- **Documentation** : SPEC.md peut rester en français
+## 🌐 Internationalisation (i18n)
+### Langue par Défaut : Anglais First
+- OBLIGATION : Toute l'application développée en anglais par défaut
+- Libellés UI : Tous les textes d'interface en anglais
+- Variables : Noms de variables en anglais uniquement
+- URLs : Toutes les routes en anglais (ex: /api/trainers, /api/sessions)
+- Tables : Noms de tables en anglais (ex: trainers, training_sessions, learner_sessions)
+- Champs BDD : Noms de colonnes en anglais (ex: first_name, created_at, session_type)
+- Endpoints : Noms d'endpoints en anglais (ex: /create-session, /capture-email)
+- Constantes : Toutes les constantes en anglais (ex: SESSION_TYPE_B2B, ENGAGEMENT_LEVEL_HIGH)
+- Prompt : Les prompts font exception à la règle : ils sont dans les langues cibles de l'app (français, anglais, etc.)
 
 ### Architecture i18n
 - OBLIGATION : Prévoir l'architecture i18n dès le début pour traduction future
@@ -220,63 +206,4 @@ frontend/
 - **OBLIGATION** : Schémas précis pour toutes les requêtes et réponses
 - **OBLIGATION** : Gestion centralisée des erreurs
 
-## 🔧 Claude Code Hooks - Validation Automatique
-### Configuration et Activation
-- **OBLIGATION** : Hooks Claude Code actifs pour validation temps réel
-- **AUTORISATION** : Mode non-bloquant pour développement itératif
-- **EXCEPTION** : Hooks peuvent être contournés temporairement si nécessaire
-
-### Scripts de Validation Disponibles
-```bash
-# Validation complète (2 minutes) - avant commits importants
-./.claude/hooks/validate_best_practices.sh
-
-# Test rapide (5 secondes) - pendant développement itératif  
-./.claude/hooks/test_hooks_quick.sh
-
-# Tests modulaires par domaine
-./.claude/hooks/architecture_validation.sh
-./.claude/hooks/naming_conventions.sh
-./.claude/hooks/performance_validation.sh
-./.claude/hooks/security_validation.sh
-./.claude/hooks/i18n_validation.sh
-```
-
-### Niveaux de Sévérité des Violations
-#### 🔴 Violations Critiques (À corriger prioritairement)
-- Imports infrastructure dans domain layer
-- Services/controllers dupliqués (confusion imports)
-- Secrets hardcodés dans le code
-- Authentification cassée
-
-#### 🟡 Violations Importantes (À planifier)
-- Absence pagination (limit/offset)
-- Absence index database
-- Imports FastAPI dans domain
-- Architecture hexagonale non respectée
-
-#### 🟢 Violations Mineures (Tolérables temporairement)
-- Termes français dans commentaires/prompts
-- Variables non-anglaises dans tests
-- Logs en français (acceptable selon SPEC)
-
-### Workflow Développement avec Hooks
-#### Phase Développement Itératif
-1. **Codage** : Hooks non-bloquants actifs automatiquement
-2. **Test rapide** : `test_hooks_quick.sh` à chaque étape
-3. **Validation** : Corriger violations critiques immédiatement
-4. **Tolérance** : Violations mineures acceptables temporairement
-
-#### Phase Pré-Production
-1. **Validation complète** : `validate_best_practices.sh`
-2. **Correction prioritaire** : Violations critiques et importantes
-3. **Documentation** : Justification violations mineures acceptées
-4. **Tests** : Vérification fonctionnelle après corrections
-
-### Philosophie : Pragmatisme vs Perfectionnisme
-- **PRIORITÉ 1** : Fonctionnalité et stabilité
-- **PRIORITÉ 2** : Architecture et bonnes pratiques
-- **PRIORITÉ 3** : Purisme linguistique et cosmétique
-- **PRINCIPE** : "Mieux vaut du code qui marche en français que du code qui plante en anglais"
-
-**Objectif** : Code maintenable, évolutif et performant avec validation continue
+**Objectif** : Code maintenable, évolutif et performant
