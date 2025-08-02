@@ -1316,7 +1316,7 @@ async function downloadSessionReport(sessionId) {
         }
 
         // Create download link
-        const downloadUrl = `${apiClient.baseURL}/api/admin/sessions/${sessionId}/report`;
+        const downloadUrl = `/api/admin/sessions/${sessionId}/report`;
         
         const response = await fetch(downloadUrl, {
             method: 'GET',
@@ -1362,7 +1362,7 @@ async function deleteSession(sessionId, sessionName) {
             return;
         }
 
-        const response = await fetch(`${apiClient.baseURL}/api/admin/sessions/${sessionId}`, {
+        const response = await fetch(`/api/admin/sessions/${sessionId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

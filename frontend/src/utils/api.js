@@ -21,7 +21,8 @@ class APIClient {
      * @returns {Promise}
      */
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
+        // Always use relative URLs to avoid HTTPS/HTTP issues
+        const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const startTime = performance.now();
         
         const defaultOptions = {
