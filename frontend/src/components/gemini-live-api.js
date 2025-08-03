@@ -16,26 +16,35 @@ export class GeminiLiveAPI {
         this.API_KEY = null; // Will be loaded from environment
         this.MODEL = "gemini-2.5-flash-preview-native-audio-dialog"; // modèle audio natif requis
         
+        // =============================================================================
+        // PHASE 1: DÉTECTION PLATEFORME MOBILE
+        // =============================================================================
+        this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        this.isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        // =============================================================================
+        // PHASE 1: PARAMÈTRES AUDIO ADAPTATIFS MOBILE
+        // =============================================================================
         this.AUDIO_CONFIG = {
-            bufferSize: 4096,
-            initialBufferTime: 0.4,      // ✓ Plus de buffer initial
-            scheduleAheadTime: 0.6,      // ✓ Plus de planification
-            scheduleMargin: 120,         // ✓ Plus de marge
-            sentenceTimeout: 800,        // ✓ Réduction timeout
-            fadeTime: 0.015,             // ✓ Transitions plus douces
-            minCoalesceSec: 0.2,         // ✓ Moins de fragmentation
+            bufferSize: this.isMobile ? 8192 : 4096,                    // ✅ Plus gros buffer mobile
+            initialBufferTime: this.isMobile ? 0.8 : 0.4,               // ✅ Plus de buffer initial mobile
+            scheduleAheadTime: this.isMobile ? 1.2 : 0.6,               // ✅ Plus de planning mobile/iOS
+            scheduleMargin: this.isMobile ? 200 : 120,                   // ✅ Plus de marge mobile
+            sentenceTimeout: this.isMobile ? 1200 : 800,                 // ✅ Timeout plus long mobile
+            fadeTime: this.isMobile ? 0.025 : 0.015,                     // ✅ Fade plus doux mobile
+            minCoalesceSec: this.isMobile ? 0.3 : 0.2,                   // ✅ Moins de fragmentation mobile
             inputSampleRate: 16000,
             outputSampleRate: 24000
         };
 
         this.PCM_CONFIG = {
-            captureRate: 48000,
-            sendInterval: 300,           // ✓ Envoi plus fréquent
-            bufferSize: 4096
+            captureRate: this.isMobile ? 44100 : 48000,                  // ✅ Réduit légèrement mobile
+            sendInterval: this.isMobile ? 500 : 300,                     // ✅ Moins fréquent mobile
+            bufferSize: this.isMobile ? 8192 : 4096                      // ✅ Plus gros buffer mobile
         };
         
         // =============================================================================
-        // VARIABLES - Copiées exactement du fichier HTML
+        // VARIABLES - Copiées exactement du fichier HTML  
         // =============================================================================
         this.isRecording = false;
         this.audioContext = null;        // capture
@@ -69,6 +78,11 @@ export class GeminiLiveAPI {
         this.defaultSystemInstruction = "Tu es un assistant vocal empathique et utile. Parle naturellement en français, adapte ton ton à l'humeur de l'utilisateur, reste concis et clair.";
         
         console.log('🎙️ [GEMINI-LIVE] GeminiLiveAPI component initialized');
+        
+        // Log optimisations mobiles si applicable
+        if (this.isMobile) {
+            this.logMobileOptimizations();
+        }
     }
     
     /**
@@ -158,11 +172,15 @@ export class GeminiLiveAPI {
     // =============================================================================
     // LOG - Copié exactement du fichier HTML
     // =============================================================================
+    // =============================================================================
+    // PHASE 3: LOGGING SPÉCIFIQUE MOBILE
+    // =============================================================================
     log(category, message, data = null) {
-        // 🎙️ Live API Logging pour debug facile
-        console.log(`🎙️ [LIVE_API] [${category}] ${message}`);
+        // 🎙️ Live API Logging avec détection plateforme
+        const platform = this.isMobile ? (this.isIOS ? 'iOS' : 'Android') : 'Desktop';
+        console.log(`🎙️ [LIVE_API_${platform}] [${category}] ${message}`);
         if (data) {
-            console.log(`📋 [LIVE_API] [${category}_DATA]`, data);
+            console.log(`📋 [LIVE_API_${platform}] [${category}_DATA]`, data);
         }
     }
     
@@ -172,6 +190,28 @@ export class GeminiLiveAPI {
     async initAudio() {
         this.log('AUDIO_INIT', '🎙️ Init capture PCM');
         try {
+            // =============================================================================
+            // PHASE 2: GESTION CONTEXTE AUDIO iOS
+            // =============================================================================
+            if (this.isIOS) {
+                this.log('AUDIO_INIT', '📱 iOS détecté - unlock audio context');
+                // Force unlock audio context sur iOS
+                const unlockAudio = () => {
+                    const context = new AudioContext();
+                    const oscillator = context.createOscillator();
+                    const gainNode = context.createGain();
+                    gainNode.gain.value = 0.001; // Volume très bas
+                    oscillator.connect(gainNode);
+                    gainNode.connect(context.destination);
+                    oscillator.start(0);
+                    oscillator.stop(0.001);
+                    context.close();
+                    document.removeEventListener('touchstart', unlockAudio);
+                    this.log('AUDIO_INIT', '✅ iOS audio context unlocked');
+                };
+                document.addEventListener('touchstart', unlockAudio, { once: true });
+            }
+            
             const constraints = {
                 audio: {
                     sampleRate: { ideal: this.PCM_CONFIG.captureRate },
@@ -195,12 +235,20 @@ export class GeminiLiveAPI {
             this.analyser.fftSize = 256;
             source.connect(this.analyser);
             
-            // ScriptProcessor (compat large) — sortie muette pour éviter l'écho
+            // =============================================================================
+            // PHASE 2: OPTIMISATION SCRIPTPROCESSOR MOBILE
+            // =============================================================================
+            // ScriptProcessor avec paramètres optimisés mobile (deprecated mais stable)
             this.scriptProcessor = this.audioContext.createScriptProcessor(this.PCM_CONFIG.bufferSize, 1, 1);
-            const muteGain = this.audioContext.createGain(); muteGain.gain.value = 0;
+            const muteGain = this.audioContext.createGain(); 
+            muteGain.gain.value = 0; // Sortie muette pour éviter l'écho
             source.connect(this.scriptProcessor);
             this.scriptProcessor.connect(muteGain);
             muteGain.connect(this.audioContext.destination);
+            
+            if (this.isMobile) {
+                this.log('AUDIO_INIT', `📱 Mobile ScriptProcessor: ${this.PCM_CONFIG.bufferSize} samples`);
+            }
             
             this.scriptProcessor.onaudioprocess = (e) => {
                 if (!this.isRecording) return;
@@ -520,6 +568,66 @@ export class GeminiLiveAPI {
      */
     isSupported() {
         return !!(navigator.mediaDevices?.getUserMedia);
+    }
+    
+    // =============================================================================
+    // PHASE 3: MÉTHODE TEST PARAMÈTRES AUDIO
+    // =============================================================================
+    /**
+     * Méthode de test/debug pour ajuster paramètres audio en temps réel (mobile uniquement)
+     * @param {Object} customConfig - Paramètres audio à tester
+     */
+    testMobileAudioParams(customConfig = {}) {
+        if (!this.isMobile) {
+            this.log('MOBILE_TEST', '⚠️ Test disponible uniquement sur mobile');
+            return;
+        }
+        
+        const testConfig = { ...this.AUDIO_CONFIG, ...customConfig };
+        this.log('MOBILE_TEST', '🧪 Test paramètres audio mobile', testConfig);
+        
+        // Apply test config
+        Object.assign(this.AUDIO_CONFIG, testConfig);
+        
+        // Log current audio state
+        this.log('MOBILE_TEST', '📊 Stats audio actuelles', {
+            platform: this.isIOS ? 'iOS' : 'Android',
+            bufferSize: this.AUDIO_CONFIG.bufferSize,
+            initialBufferTime: this.AUDIO_CONFIG.initialBufferTime,
+            scheduleAheadTime: this.AUDIO_CONFIG.scheduleAheadTime,
+            sendInterval: this.PCM_CONFIG.sendInterval,
+            sampleRate: this.audioContext?.sampleRate,
+            isRecording: this.isRecording,
+            successfulSends: this.successfulAudioSends,
+            totalSamples: this.totalSamplesCaptured
+        });
+        
+        return testConfig;
+    }
+    
+    /**
+     * Affiche les paramètres actuels optimisés pour mobile
+     */
+    logMobileOptimizations() {
+        if (!this.isMobile) return;
+        
+        this.log('MOBILE_CONFIG', '📱 Optimisations mobiles actives', {
+            platform: this.isIOS ? 'iOS Safari' : 'Android Chrome',
+            bufferSizeDesktop: 4096,
+            bufferSizeMobile: this.AUDIO_CONFIG.bufferSize,
+            initialBufferDesktop: 0.4,
+            initialBufferMobile: this.AUDIO_CONFIG.initialBufferTime,
+            sendIntervalDesktop: 300,
+            sendIntervalMobile: this.PCM_CONFIG.sendInterval,
+            optimizationsEnabled: [
+                'Plus gros buffers audio',
+                'Buffer initial plus long',
+                'Planning audio étendu',
+                'Envoi PCM moins fréquent',
+                'Timeout phrases augmenté',
+                'Fade transitions douces'
+            ]
+        });
     }
 }
 
