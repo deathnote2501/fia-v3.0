@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Popovers - FIA v3.0</title>
+    
+    <!-- Bootstrap 5.3.2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom styles -->
+    <link href="src/styles/main.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h4 mb-0">
+                            <i class="bi bi-bug-fill me-2"></i>
+                            Debug Interface Introduction Popovers - FIA v3.0
+                        </h1>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Instructions de test -->
+                        <div class="alert alert-info">
+                            <h5><i class="bi bi-info-circle me-2"></i>Instructions de Test</h5>
+                            <ol>
+                                <li>Utilisez les boutons ci-dessous pour tester le système de popovers</li>
+                                <li>Vérifiez que Bootstrap est chargé correctement</li>
+                                <li>Testez l'import dynamique du composant</li>
+                                <li>Forcez l'affichage des popovers</li>
+                                <li>Vérifiez la détection slide_type="plan"</li>
+                            </ol>
+                        </div>
+                        
+                        <!-- Console de debug -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>Tests Système</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" id="test-bootstrap">
+                                        <i class="bi bi-check-circle me-2"></i>Tester Bootstrap
+                                    </button>
+                                    <button class="btn btn-outline-secondary" id="test-import">
+                                        <i class="bi bi-download me-2"></i>Tester Import Composant
+                                    </button>
+                                    <button class="btn btn-outline-success" id="test-elements">
+                                        <i class="bi bi-search me-2"></i>Vérifier Éléments Interface
+                                    </button>
+                                    <button class="btn btn-outline-warning" id="test-storage">
+                                        <i class="bi bi-database me-2"></i>Vérifier LocalStorage
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Actions de Debug</h5>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" id="force-popovers">
+                                        <i class="bi bi-play-fill me-2"></i>Forcer Affichage Popovers
+                                    </button>
+                                    <button class="btn btn-warning" id="reset-storage">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>Reset État Introduction
+                                    </button>
+                                    <button class="btn btn-danger" id="hide-all-popovers">
+                                        <i class="bi bi-x-circle me-2"></i>Masquer Tous Popovers
+                                    </button>
+                                    <button class="btn btn-info" id="simulate-plan-slide">
+                                        <i class="bi bi-gear me-2"></i>Simuler Slide "Plan"
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interface de test avec éléments du training.html -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>Interface de Test (Éléments training.html)</h5>
+                                <div class="alert alert-secondary">
+                                    <p class="mb-3">Cette interface simule les éléments de training.html pour tester les popovers :</p>
+                                    
+                                    <!-- Elements similaires à training.html -->
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Chat Input</label>
+                                            <textarea class="form-control" id="chat-input" placeholder="Ask your AI trainer..." rows="2"></textarea>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Voice Chat</label><br>
+                                            <button class="btn btn-primary" id="voice-chat-btn">
+                                                <i class="bi bi-mic"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Audio Toggle</label><br>
+                                            <input type="checkbox" id="tts-toggle" class="form-check-input">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Live API</label><br>
+                                            <button class="btn btn-success" id="live-api-btn">
+                                                <i class="bi bi-soundwave"></i>
+                                            </button>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Navigation</label><br>
+                                            <div class="btn-group">
+                                                <button class="btn btn-primary" id="new-previous-btn">
+                                                    <i class="bi bi-chevron-left"></i>
+                                                </button>
+                                                <button class="btn btn-primary" id="new-next-btn">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-primary" id="new-simplify-btn">
+                                                <i class="bi bi-arrows-collapse me-1"></i>Simplify
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-primary" id="new-more-details-btn">
+                                                <i class="bi bi-arrows-expand me-1"></i>Details
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-primary" id="generate-chart-btn">
+                                                <i class="bi bi-graph-up me-1"></i>Chart
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-outline-secondary" id="test-popover-btn">
+                                                <i class="bi bi-question-circle me-1"></i>Test Popover
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Console de log -->
+                        <div class="mt-4">
+                            <h5>Console de Debug</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <pre id="debug-console" class="mb-0" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 1rem; font-size: 0.875rem;"></pre>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-secondary" id="clear-console">
+                                        <i class="bi bi-trash me-1"></i>Clear Console
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Debug Script -->
+    <script type="module">
+        // Console de debug personnalisée
+        const debugConsole = document.getElementById('debug-console');
+        
+        function log(message, level = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const levelIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'warning': '⚠️',
+                'error': '❌',
+                'debug': '🔍'
+            }[level] || 'ℹ️';
+            
+            const logEntry = `[${timestamp}] ${levelIcon} ${message}\n`;
+            debugConsole.textContent += logEntry;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+            
+            // Log also to browser console
+            console.log(`[DEBUG-POPOVERS] ${message}`);
+        }
+        
+        // Test Bootstrap
+        document.getElementById('test-bootstrap').addEventListener('click', () => {
+            log('=== TEST BOOTSTRAP ===', 'debug');
+            
+            if (typeof bootstrap !== 'undefined') {
+                log('✅ Bootstrap est chargé correctement', 'success');
+                log(`📦 Version Bootstrap: ${bootstrap.Tooltip.VERSION || 'N/A'}`, 'info');
+                
+                if (bootstrap.Popover) {
+                    log('✅ Bootstrap.Popover est disponible', 'success');
+                } else {
+                    log('❌ Bootstrap.Popover non disponible', 'error');
+                }
+            } else {
+                log('❌ Bootstrap n\'est pas chargé', 'error');
+            }
+        });
+        
+        // Test Import Composant
+        document.getElementById('test-import').addEventListener('click', async () => {
+            log('=== TEST IMPORT COMPOSANT ===', 'debug');
+            
+            try {
+                log('🔄 Import du composant InterfaceIntroductionPopovers...', 'info');
+                const { InterfaceIntroductionPopovers } = await import('./src/components/interface-introduction-popovers.js');
+                
+                log('✅ Import réussi !', 'success');
+                log('🎯 Création d\'une instance de test...', 'info');
+                
+                const testInstance = new InterfaceIntroductionPopovers();
+                log('✅ Instance créée avec succès', 'success');
+                log(`📊 Éléments configurés: ${testInstance.interfaceElements.size}`, 'info');
+                
+                // Test storage
+                const shouldShow = testInstance.shouldShowIntroduction();
+                log(`🔍 shouldShowIntroduction(): ${shouldShow}`, 'info');
+                
+                window.testPopoverInstance = testInstance;
+                log('💾 Instance sauvée dans window.testPopoverInstance', 'info');
+                
+            } catch (error) {
+                log(`❌ Erreur import: ${error.message}`, 'error');
+                log(`🔍 Stack: ${error.stack}`, 'error');
+            }
+        });
+        
+        // Test Elements Interface
+        document.getElementById('test-elements').addEventListener('click', () => {
+            log('=== TEST ÉLÉMENTS INTERFACE ===', 'debug');
+            
+            const elementsToCheck = [
+                'chat-input',
+                'voice-chat-btn', 
+                'tts-toggle',
+                'live-api-btn',
+                'new-next-btn',
+                'new-previous-btn',
+                'new-simplify-btn',
+                'new-more-details-btn',
+                'generate-chart-btn'
+            ];
+            
+            let found = 0;
+            elementsToCheck.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    log(`✅ Élément trouvé: ${id}`, 'success');
+                    found++;
+                } else {
+                    log(`❌ Élément manquant: ${id}`, 'error');
+                }
+            });
+            
+            log(`📊 Résultat: ${found}/${elementsToCheck.length} éléments trouvés`, found === elementsToCheck.length ? 'success' : 'warning');
+        });
+        
+        // Test Storage
+        document.getElementById('test-storage').addEventListener('click', () => {
+            log('=== TEST LOCALSTORAGE ===', 'debug');
+            
+            const storageKey = 'fia_interface_intro_completed';
+            const currentValue = localStorage.getItem(storageKey);
+            
+            log(`🔍 Clé localStorage: ${storageKey}`, 'info');
+            log(`📊 Valeur actuelle: ${currentValue || 'null'}`, 'info');
+            
+            if (currentValue) {
+                log('⚠️ Introduction marquée comme terminée', 'warning');
+            } else {
+                log('✅ Introduction pas encore terminée', 'success');
+            }
+        });
+        
+        // Force Popovers
+        document.getElementById('force-popovers').addEventListener('click', async () => {
+            log('=== FORCER AFFICHAGE POPOVERS ===', 'debug');
+            
+            try {
+                if (!window.testPopoverInstance) {
+                    log('🔄 Création instance composant...', 'info');
+                    const { InterfaceIntroductionPopovers } = await import('./src/components/interface-introduction-popovers.js');
+                    window.testPopoverInstance = new InterfaceIntroductionPopovers();
+                }
+                
+                log('🚀 Forçage affichage popovers...', 'info');
+                
+                // Reset storage pour forcer l'affichage
+                localStorage.removeItem('fia_interface_intro_completed');
+                log('🔄 LocalStorage reset', 'info');
+                
+                // Show popovers
+                window.testPopoverInstance.showIntroductionPopovers();
+                log('✅ Popovers lancés !', 'success');
+                
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        });
+        
+        // Reset Storage
+        document.getElementById('reset-storage').addEventListener('click', () => {
+            log('=== RESET STORAGE ===', 'debug');
+            localStorage.removeItem('fia_interface_intro_completed');
+            log('✅ État introduction reset', 'success');
+        });
+        
+        // Hide All Popovers
+        document.getElementById('hide-all-popovers').addEventListener('click', () => {
+            log('=== MASQUER POPOVERS ===', 'debug');
+            
+            if (window.testPopoverInstance) {
+                window.testPopoverInstance.hideAllPopovers();
+                log('✅ Tous les popovers masqués', 'success');
+            } else {
+                log('⚠️ Aucune instance de popover active', 'warning');
+            }
+        });
+        
+        // Simulate Plan Slide
+        document.getElementById('simulate-plan-slide').addEventListener('click', async () => {
+            log('=== SIMULATION SLIDE "PLAN" ===', 'debug');
+            
+            try {
+                // Import du slide content manager
+                log('🔄 Import SlideContentManager...', 'info');
+                const { SlideContentManager } = await import('./src/components/slide-content-manager.js');
+                
+                const manager = new SlideContentManager();
+                log('✅ SlideContentManager créé', 'success');
+                
+                // Simuler slideData avec slide_type = "plan"
+                const mockSlideData = {
+                    slide_type: 'plan',
+                    title: 'Plan de Formation Test',
+                    slide_content: '# Plan de Formation\\n\\nCeci est un test pour déclencher les popovers d\'introduction.'
+                };
+                
+                log('🎯 Simulation checkAndTriggerInterfaceIntroduction...', 'info');
+                log(`📊 Mock slideData: ${JSON.stringify(mockSlideData)}`, 'debug');
+                
+                // Déclencher la vérification
+                manager.checkAndTriggerInterfaceIntroduction(mockSlideData);
+                
+                log('✅ Simulation déclenchée !', 'success');
+                log('⏰ Attendre 1 seconde pour l\'import et l\'affichage...', 'info');
+                
+            } catch (error) {
+                log(`❌ Erreur simulation: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test popover simple
+        document.getElementById('test-popover-btn').addEventListener('click', () => {
+            log('=== TEST POPOVER SIMPLE ===', 'debug');
+            
+            if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
+                const testBtn = document.getElementById('test-popover-btn');
+                
+                // Créer un popover simple de test
+                const testPopover = new bootstrap.Popover(testBtn, {
+                    title: 'Test Popover',
+                    content: 'Ce popover fonctionne !',
+                    placement: 'top',
+                    trigger: 'manual'
+                });
+                
+                testPopover.show();
+                log('✅ Popover de test affiché', 'success');
+                
+                // Masquer après 3 secondes
+                setTimeout(() => {
+                    testPopover.hide();
+                    log('🔄 Popover de test masqué', 'info');
+                }, 3000);
+                
+            } else {
+                log('❌ Bootstrap.Popover non disponible', 'error');
+            }
+        });
+        
+        // Clear Console
+        document.getElementById('clear-console').addEventListener('click', () => {
+            debugConsole.textContent = '';
+        });
+        
+        // Init log
+        log('🚀 Debug Interface Popovers - Prêt !', 'success');
+        log('💡 Utilisez les boutons ci-dessus pour tester le système', 'info');
+        
+    </script>
+</body>
+</html>

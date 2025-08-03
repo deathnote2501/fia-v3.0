@@ -114,6 +114,8 @@ async def create_training_session(
 
 @router.get("/api/training-sessions", response_model=List[TrainingSessionResponse])
 async def list_training_sessions(
+    date_from: str = None,
+    date_to: str = None,
     current_trainer: Trainer = Depends(get_current_trainer),
     db: AsyncSession = Depends(get_database_session)
 ):
@@ -128,6 +130,9 @@ async def list_training_sessions(
         training_repo = TrainingRepository(db)
         trainings = await training_repo.get_by_trainer_id(current_trainer.id)
         
+        # Create a mapping of training_id to is_ai_generated
+        training_ai_map = {training.id: training.is_ai_generated for training in trainings}
+        
         # Get all sessions for these trainings
         session_repo = TrainingSessionRepository(db)
         all_sessions = []
@@ -136,7 +141,53 @@ async def list_training_sessions(
             sessions = await session_repo.get_by_training_id(training.id)
             all_sessions.extend(sessions)
         
-        return all_sessions
+        # Filter sessions by date if provided
+        if date_from or date_to:
+            filtered_sessions = []
+            for session in all_sessions:
+                session_date = session.created_at.date()
+                
+                # Check date_from filter
+                if date_from:
+                    try:
+                        from_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+                        if session_date < from_date:
+                            continue
+                    except ValueError:
+                        # Invalid date format, skip filtering
+                        pass
+                
+                # Check date_to filter
+                if date_to:
+                    try:
+                        to_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+                        if session_date > to_date:
+                            continue
+                    except ValueError:
+                        # Invalid date format, skip filtering
+                        pass
+                
+                filtered_sessions.append(session)
+            
+            all_sessions = filtered_sessions
+        
+        # Convert to response format with training AI info
+        session_responses = []
+        for session in all_sessions:
+            # Convert session entity to dict
+            session_dict = {
+                "id": session.id,
+                "training_id": session.training_id,
+                "name": session.name,
+                "description": session.description,
+                "session_token": session.session_token,
+                "created_at": session.created_at,
+                "is_active": session.is_active,
+                "training_is_ai_generated": training_ai_map.get(session.training_id)
+            }
+            session_responses.append(session_dict)
+        
+        return session_responses
         
     except Exception as e:
         logger.error(f"Failed to retrieve training sessions: {str(e)}")

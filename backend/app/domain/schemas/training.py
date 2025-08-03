@@ -36,7 +36,7 @@ class TrainingUpload(BaseModel):
     @validator('name')
     def validate_name(cls, v):
         if not v or not v.strip():
-            raise ValueError('Training name cannot be empty')
+            raise ValueError('validation.trainingNameRequired')
         return v.strip()
     
     @model_validator(mode='after')
@@ -45,7 +45,7 @@ class TrainingUpload(BaseModel):
         if self.is_ai_generated:
             # AI-generated trainings require description
             if not self.description or not self.description.strip():
-                raise ValueError('Description is required for AI-generated trainings')
+                raise ValueError('validation.aiTrainingDescriptionRequired')
         
         return self
 

@@ -251,7 +251,7 @@ class TrainerDashboard {
             // File upload mode
             toggleIcon.className = 'bi bi-toggle-off me-2';
             toggleText.textContent = window.safeT ? window.safeT('training.aiGenerated') : 'AI Generated';
-            toggleHelpText.innerHTML = '<i class="bi bi-info-circle me-1"></i>Generate training content automatically using AI instead of uploading a file';
+            toggleHelpText.innerHTML = `<i class="bi bi-info-circle me-1"></i>${window.safeT ? window.safeT('training.aiToggleHelp') : 'Generate training content automatically using AI instead of uploading a file'}`;
             
             // Enable file upload
             fileSection.style.opacity = '1';
@@ -319,7 +319,7 @@ class TrainerDashboard {
             submitBtn.disabled = true;
             
             if (isAIGenerated) {
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating with AI...';
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${window.safeT ? window.safeT('status.aiGenerating') : 'Generating with AI...'}`;
                 // Show progress bar for AI generation
                 progressContainer.classList.remove('d-none');
                 progressBar.style.width = '30%';
@@ -327,12 +327,12 @@ class TrainerDashboard {
                 statusDiv.textContent = window.safeT ? window.safeT('status.aiGenerating') : 'AI Generating...';
                 progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
             } else {
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${window.safeT ? window.safeT('status.uploading') : 'Uploading...'}`;
                 // Show progress bar for file upload
                 progressContainer.classList.remove('d-none');
                 progressBar.style.width = '0%';
                 progressBar.setAttribute('aria-valuenow', '0');
-                statusDiv.textContent = 'Preparing upload...';
+                statusDiv.textContent = window.safeT ? window.safeT('status.preparingUpload') : 'Preparing upload...';
                 progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
             }
 
@@ -346,7 +346,7 @@ class TrainerDashboard {
                         const percentComplete = Math.round((e.loaded / e.total) * 100);
                         progressBar.style.width = percentComplete + '%';
                         progressBar.setAttribute('aria-valuenow', percentComplete);
-                        statusDiv.textContent = `Uploading... ${percentComplete}%`;
+                        statusDiv.textContent = `${window.safeT ? window.safeT('status.uploading') : 'Uploading'} ${percentComplete}%`;
                     }
                 });
 
@@ -357,9 +357,9 @@ class TrainerDashboard {
                         progressBar.setAttribute('aria-valuenow', '100');
                         
                         if (isAIGenerated) {
-                            statusDiv.textContent = 'AI training generated successfully!';
+                            statusDiv.textContent = window.safeT ? window.safeT('status.aiGenerated') : 'AI training generated successfully!';
                         } else {
-                            statusDiv.textContent = 'Upload complete!';
+                            statusDiv.textContent = window.safeT ? window.safeT('status.uploadComplete') : 'Upload complete!';
                         }
                         
                         resolve(JSON.parse(xhr.responseText));
@@ -391,9 +391,9 @@ class TrainerDashboard {
             const response = await uploadPromise;
 
             if (isAIGenerated) {
-                showAlert('AI training generated successfully! The AI has created comprehensive training content for you.', 'success');
+                showAlert(window.safeT ? window.safeT('status.aiGenerated') : 'AI training generated successfully! The AI has created comprehensive training content for you.', 'success');
             } else {
-                showAlert('Training created successfully!', 'success');
+                showAlert(window.safeT ? window.safeT('success.created') : 'Training created successfully!', 'success');
             }
             
             // Reset form and file info
@@ -426,7 +426,7 @@ class TrainerDashboard {
                 } else {
                     errorMessage = 'Failed to generate AI training. Please check your description and try again.';
                 }
-                statusDiv.textContent = 'AI generation failed';
+                statusDiv.textContent = window.safeT ? window.safeT('status.aiGenerationFailed') : 'AI generation failed';
             } else {
                 // File upload error messages
                 if (error.message.includes('413')) {
@@ -438,7 +438,7 @@ class TrainerDashboard {
                     authManager.logout();
                     return;
                 }
-                statusDiv.textContent = 'Upload failed';
+                statusDiv.textContent = window.safeT ? window.safeT('status.uploadFailed') : 'Upload failed';
             }
             
             showAlert(errorMessage, 'error');
@@ -731,7 +731,7 @@ class TrainerDashboard {
             container.innerHTML = `
                 <div class="text-center text-muted py-3">
                     <i class="bi bi-hourglass-split display-6"></i>
-                    <p class="mt-2">Loading trainings...</p>
+                    <p class="mt-2">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</p>
                 </div>
             `;
 
@@ -741,8 +741,8 @@ class TrainerDashboard {
                 container.innerHTML = `
                     <div class="text-center text-muted py-4">
                         <i class="bi bi-book display-6"></i>
-                        <p class="mt-2">No trainings yet</p>
-                        <p class="small">Create your first training to get started!</p>
+                        <p class="mt-2">${window.safeT ? window.safeT('training.noTrainings') : 'No trainings yet'}</p>
+                        <p class="small">${window.safeT ? window.safeT('training.createFirst') : 'Create your first training to get started!'}</p>
                     </div>
                 `;
                 return;
@@ -755,10 +755,10 @@ class TrainerDashboard {
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h6 class="card-title mb-1">${training.name}</h6>
-                                <p class="card-text text-muted small mb-2">${training.description || 'No description'}</p>
+                                <p class="card-text text-muted small mb-2">${training.description || (window.safeT ? window.safeT('training.noDescription') : 'No description')}</p>
                                 <div class="d-flex align-items-center text-muted small">
                                     <i class="bi bi-file-earmark me-1"></i>
-                                    <span class="me-3">${training.file_name || 'No file'}</span>
+                                    <span class="me-3">${training.file_name || (window.safeT ? window.safeT('training.noFile') : 'No file')}</span>
                                     ${training.file_size ? `<span class="badge bg-secondary me-3">${this.formatFileSize(training.file_size)}</span>` : ''}
                                     <i class="bi bi-calendar me-1"></i>
                                     <span>${new Date(training.created_at).toLocaleDateString()}</span>
@@ -768,14 +768,12 @@ class TrainerDashboard {
                                 ${training.file_path ? `
                                     <button class="btn btn-outline-primary btn-sm me-2" 
                                             onclick="downloadTraining('${training.id}', '${training.file_name}')">
-                                        <i class="bi bi-download me-1"></i>
-                                        Download
+                                        <i class="bi bi-download me-1"></i>${window.safeT ? window.safeT('button.download') : 'Download'}
                                     </button>
                                 ` : ''}
                                 <button class="btn btn-outline-danger btn-sm" 
                                         onclick="deleteTraining('${training.id}', '${training.name}')">
-                                    <i class="bi bi-trash me-1"></i>
-                                    Delete
+                                    <i class="bi bi-trash me-1"></i>${window.safeT ? window.safeT('button.delete') : 'Delete'}
                                 </button>
                             </div>
                         </div>

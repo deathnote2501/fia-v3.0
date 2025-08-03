@@ -29,20 +29,20 @@ class RegistrationForm {
             .addRule('email', {
                 required: true,
                 email: true,
-                requiredMessage: 'Email address is required'
+                requiredMessage: window.safeT ? window.safeT('validation.emailRequired') : 'Email address is required'
             })
             .addRule('first_name', {
                 required: true,
-                requiredMessage: 'First name is required'
+                requiredMessage: window.safeT ? window.safeT('validation.firstNameRequired') : 'First name is required'
             })
             .addRule('last_name', {
                 required: true,
-                requiredMessage: 'Last name is required'
+                requiredMessage: window.safeT ? window.safeT('validation.lastNameRequired') : 'Last name is required'
             })
             .addRule('password', {
                 required: true,
                 password: true,
-                requiredMessage: 'Password is required'
+                requiredMessage: window.safeT ? window.safeT('validation.passwordRequired') : 'Password is required'
             })
             .addRule('confirm_password', {
                 required: true,
@@ -51,12 +51,12 @@ class RegistrationForm {
                     if (value !== password) {
                         return {
                             isValid: false,
-                            message: 'Passwords do not match'
+                            message: window.safeT ? window.safeT('validation.passwordsDoNotMatch') : 'Passwords do not match'
                         };
                     }
                     return { isValid: true };
                 },
-                requiredMessage: 'Please confirm your password'
+                requiredMessage: window.safeT ? window.safeT('validation.confirmPassword') : 'Please confirm your password'
             });
 
         // Setup real-time validation
@@ -89,7 +89,7 @@ class RegistrationForm {
     async handleSubmission() {
         // Validate form
         if (!this.validator.validateForm()) {
-            showAlert('Please correct the errors above', 'error');
+            showAlert(window.safeT ? window.safeT('validation.correctErrors') : 'Please correct the errors above', 'error');
             return;
         }
 
@@ -107,18 +107,18 @@ class RegistrationForm {
             const result = await authManager.register(userData);
 
             if (result.success) {
-                showAlert('Account created successfully! Redirecting to dashboard...', 'success');
+                showAlert(window.safeT ? window.safeT('success.registered') : 'Account created successfully! Redirecting to dashboard...', 'success');
                 
                 // Redirect to trainer dashboard after short delay
                 setTimeout(() => {
                     window.location.href = '/frontend/public/trainer.html';
                 }, 2000);
             } else {
-                showAlert(result.message || 'Registration failed. Please try again.', 'error');
+                showAlert(result.message || (window.safeT ? window.safeT('error.registrationFailed') : 'Registration failed. Please try again.'), 'error');
             }
         } catch (error) {
             console.error('Registration error:', error);
-            showAlert('An unexpected error occurred. Please try again.', 'error');
+            showAlert(window.safeT ? window.safeT('error.unexpected') : 'An unexpected error occurred. Please try again.', 'error');
         } finally {
             this.setLoading(false);
         }

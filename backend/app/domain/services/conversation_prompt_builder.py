@@ -495,7 +495,8 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
         self,
         slide_title: str = None,
         slide_content: str = None,
-        learner_profile: Any = None
+        learner_profile: Any = None,
+        training_context: Any = None
     ) -> str:
         """
         Construire l'instruction système pour Gemini Live API avec contexte
@@ -504,6 +505,7 @@ Extrait maintanant de manière très synthétique le plus important à retenir s
             slide_title: Titre du slide courant
             slide_content: Contenu du slide courant
             learner_profile: Profil de l'apprenant
+            training_context: Contexte de la formation (metadata)
             
         Returns:
             System instruction formatée pour Gemini Live API

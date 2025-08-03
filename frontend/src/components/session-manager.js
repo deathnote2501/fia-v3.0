@@ -19,7 +19,7 @@ async function createSession() {
     try {
         // Disable submit button
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
+        submitBtn.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${window.safeT ? window.safeT('status.creating') : 'Creating...'}`;
         
         // Hide previous link if any
         linkContainer.classList.add('d-none');
@@ -34,7 +34,7 @@ async function createSession() {
         
         // Validate required fields
         if (!sessionData.training_id || !sessionData.name) {
-            throw new Error('Please fill in all required fields');
+            throw new Error(window.safeT ? window.safeT('validation.requiredFields') : 'Please fill in all required fields');
         }
         
         // Log the data being sent
@@ -58,7 +58,7 @@ async function createSession() {
         await loadSessions();
         
         // Show success message
-        showAlert('Session created successfully!', 'success');
+        showAlert(window.safeT ? window.safeT('success.created') : 'Session created successfully!', 'success');
         
     } catch (error) {
         console.error('Error creating session:', error);
@@ -66,7 +66,7 @@ async function createSession() {
     } finally {
         // Re-enable submit button
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-calendar-plus me-2"></i>Generate Session Link';
+        submitBtn.innerHTML = `<i class="bi bi-calendar-plus me-2"></i>${window.safeT ? window.safeT('session.generateLink') : 'Generate Session Link'}`;
     }
 }
 
@@ -86,10 +86,10 @@ async function loadTrainings() {
         const trainings = await apiClient.get('/api/trainings');
         
         // Clear and populate dropdown
-        select.innerHTML = '<option value="">Choose a training...</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('session.chooseTraining') : 'Choose a training...'}</option>`;
         
         if (trainings.length === 0) {
-            select.innerHTML += '<option value="" disabled>No trainings available - create one first</option>';
+            select.innerHTML += `<option value="" disabled>${window.safeT ? window.safeT('session.noTrainings') : 'No trainings available - create one first'}</option>`;
         } else {
             trainings.forEach(training => {
                 const option = document.createElement('option');
@@ -102,7 +102,7 @@ async function loadTrainings() {
     } catch (error) {
         console.error('Error loading trainings:', error);
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('error.loadingTrainings') : 'Error loading trainings'}</option>`;
-        showAlert('Failed to load trainings. Please refresh the page.', 'warning');
+        showAlert(window.safeT ? window.safeT('error.loadingTrainings') : 'Failed to load trainings. Please refresh the page.', 'warning');
     } finally {
         select.disabled = false;
     }
@@ -122,21 +122,30 @@ async function loadSessions() {
         sessionsList.innerHTML = `
             <div class="text-center text-muted py-4">
                 <i class="bi bi-hourglass-split"></i>
-                Loading sessions...
+                ${window.safeT ? window.safeT('status.loadingSessions') : 'Loading sessions...'}
             </div>
         `;
         
         tableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     <i class="bi bi-hourglass-split"></i>
-                    Loading sessions...
+                    ${window.safeT ? window.safeT('status.loadingSessions') : 'Loading sessions...'}
                 </td>
             </tr>
         `;
         
-        // Make API call
-        const sessions = await apiClient.get('/api/training-sessions');
+        // Make API calls in parallel
+        const [sessions, trainings] = await Promise.all([
+            apiClient.get('/api/training-sessions'),
+            apiClient.get('/api/trainings')
+        ]);
+        
+        // Create training lookup map
+        const trainingMap = trainings.reduce((map, training) => {
+            map[training.id] = training;
+            return map;
+        }, {});
         
         // Update count
         totalCount.textContent = sessions.length;
@@ -146,15 +155,15 @@ async function loadSessions() {
             sessionsList.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-calendar-x display-6"></i>
-                    <p class="mt-2 mb-0">No sessions created yet</p>
-                    <small>Create your first session using the form</small>
+                    <p class="mt-2 mb-0">${window.safeT ? window.safeT('session.noSessions') : 'No sessions created yet'}</p>
+                    <small>${window.safeT ? window.safeT('session.createFirst') : 'Create your first session using the form'}</small>
                 </div>
             `;
             
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        No sessions found
+                    <td colspan="5" class="text-center text-muted py-4">
+                        ${window.safeT ? window.safeT('session.noSessions') : 'No sessions found'}
                     </td>
                 </tr>
             `;
@@ -169,7 +178,7 @@ async function loadSessions() {
                     <p class="mb-1 text-muted small">${session.description || 'No description'}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">
-                            ${session.is_active ? 'Active' : 'Inactive'}
+                            ${session.is_active ? (window.safeT ? window.safeT('status.active') : 'Active') : (window.safeT ? window.safeT('status.inactive') : 'Inactive')}
                         </span>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.id}')">
                             <i class="bi bi-trash"></i>
@@ -179,24 +188,26 @@ async function loadSessions() {
             `).join('');
             
             // Populate sessions table
-            tableBody.innerHTML = sessions.map(session => `
+            tableBody.innerHTML = sessions.map(session => {
+                const training = trainingMap[session.training_id];
+                const trainingType = training ? (training.is_ai_generated ? 'AI' : 'Human') : 'Unknown';
+                const trainingBadgeClass = training ? (training.is_ai_generated ? 'bg-info' : 'bg-secondary') : 'bg-warning';
+                
+                return `
                 <tr>
                     <td>
                         <strong>${escapeHtml(session.name)}</strong>
                         ${session.description ? `<br><small class="text-muted">${escapeHtml(session.description)}</small>` : ''}
                     </td>
                     <td>
-                        <span class="badge bg-info">Training Info</span>
+                        <span class="badge ${trainingBadgeClass}">${trainingType}</span>
                     </td>
                     <td>
                         <small>${formatDate(session.created_at)}</small>
                     </td>
                     <td>
-                        <span class="badge bg-secondary">0</span>
-                    </td>
-                    <td>
                         <span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">
-                            ${session.is_active ? 'Active' : 'Inactive'}
+                            ${session.is_active ? (window.safeT ? window.safeT('status.active') : 'Active') : (window.safeT ? window.safeT('status.inactive') : 'Inactive')}
                         </span>
                     </td>
                     <td>
@@ -212,7 +223,8 @@ async function loadSessions() {
                         </div>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
         
     } catch (error) {
@@ -223,7 +235,7 @@ async function loadSessions() {
                 <p class="mt-2">${window.safeT ? window.safeT('error.loadingSessions') : 'Error loading sessions'}</p>
             </div>
         `;
-        showAlert('Failed to load sessions. Please try again.', 'danger');
+        showAlert(window.safeT ? window.safeT('error.loadingSessions') : 'Failed to load sessions. Please try again.', 'danger');
     }
 }
 
@@ -240,7 +252,7 @@ async function copySessionLink(token) {
         await navigator.clipboard.writeText(link);
         
         // Show success feedback
-        showAlert('Session link copied to clipboard!', 'success', 3000);
+        showAlert(window.safeT ? window.safeT('success.linkCopied') : 'Session link copied to clipboard!', 'success', 3000);
         
     } catch (error) {
         console.error('Error copying link:', error);
@@ -254,9 +266,9 @@ async function copySessionLink(token) {
             document.execCommand('copy');
             document.body.removeChild(textArea);
             
-            showAlert('Session link copied to clipboard!', 'success', 3000);
+            showAlert(window.safeT ? window.safeT('success.linkCopied') : 'Session link copied to clipboard!', 'success', 3000);
         } catch (fallbackError) {
-            showAlert('Failed to copy link. Please copy manually.', 'warning');
+            showAlert(window.safeT ? window.safeT('error.copyFailed') : 'Failed to copy link. Please copy manually.', 'warning');
         }
     }
 }
@@ -267,7 +279,7 @@ async function copySessionLink(token) {
  * @param {string} sessionId - Session ID to delete
  */
 async function deleteSession(sessionId) {
-    if (!confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+    if (!confirm(window.safeT ? window.safeT('warning.deleteSession') : 'Are you sure you want to delete this session? This action cannot be undone.')) {
         return;
     }
     
@@ -281,7 +293,7 @@ async function deleteSession(sessionId) {
         await loadSessions();
         
         // Show success message
-        showAlert('Session deleted successfully', 'success');
+        showAlert(window.safeT ? window.safeT('success.deleted') : 'Session deleted successfully', 'success');
         
     } catch (error) {
         console.error('Error deleting session:', error);

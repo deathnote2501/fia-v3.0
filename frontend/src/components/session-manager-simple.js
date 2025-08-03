@@ -78,7 +78,7 @@ async function createSession() {
     try {
         // Disable submit button
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
+        submitBtn.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${window.safeT ? window.safeT('status.creating') : 'Creating...'}`;
         
         // Get form data
         const formData = new FormData(form);
@@ -90,7 +90,7 @@ async function createSession() {
         
         // Validate
         if (!sessionData.training_id || !sessionData.name) {
-            throw new Error('Please fill in all required fields');
+            throw new Error(window.safeT ? window.safeT('validation.requiredFields') : 'Please fill in all required fields');
         }
         
         // Direct fetch call
@@ -111,7 +111,7 @@ async function createSession() {
         displaySessionLink(result.session_link, result.name);
         form.reset();
         await loadSessions();
-        showAlert('Session created successfully!', 'success');
+        showAlert(window.safeT ? window.safeT('success.created') : 'Session created successfully!', 'success');
         
     } catch (error) {
         console.error('Error creating session:', error);
@@ -119,7 +119,7 @@ async function createSession() {
     } finally {
         // Re-enable submit button
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-calendar-plus me-2"></i>Generate Session Link';
+        submitBtn.innerHTML = `<i class="bi bi-calendar-plus me-2"></i>${window.safeT ? window.safeT('session.generateLink') : 'Generate Session Link'}`;
     }
 }
 
@@ -144,10 +144,10 @@ async function loadTrainings() {
         const trainings = await response.json();
         
         // Populate dropdown
-        select.innerHTML = '<option value="">Choose a training...</option>';
+        select.innerHTML = `<option value="">${window.safeT ? window.safeT('session.chooseTraining') : 'Choose a training...'}</option>`;
         
         if (trainings.length === 0) {
-            select.innerHTML += '<option value="" disabled>No trainings available</option>';
+            select.innerHTML += `<option value="" disabled>${window.safeT ? window.safeT('session.noTrainings') : 'No trainings available'}</option>`;
         } else {
             trainings.forEach(training => {
                 const option = document.createElement('option');
@@ -160,7 +160,7 @@ async function loadTrainings() {
     } catch (error) {
         console.error('Error loading trainings:', error);
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('error.loadingTrainings') : 'Error loading trainings'}</option>`;
-        showAlert('Failed to load trainings', 'warning');
+        showAlert(window.safeT ? window.safeT('error.loadingTrainings') : 'Failed to load trainings', 'warning');
     } finally {
         select.disabled = false;
     }
@@ -174,7 +174,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
     
     try {
         // Show loading
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4">${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}</td></tr>`;
         
         // Build query parameters for date filtering
         let url = '/api/training-sessions';
@@ -197,16 +197,15 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         
         if (sessions.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No sessions found</td></tr>';
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">${window.safeT ? window.safeT('session.noSessions') : 'No sessions found'}</td></tr>`;
         } else {            
             // Populate table view
             tableBody.innerHTML = sessions.map(session => `
                 <tr>
                     <td><strong>${escapeHtml(session.name)}</strong></td>
-                    <td><span class="badge bg-info">Training</span></td>
+                    <td><span class="badge ${session.training_is_ai_generated ? 'bg-primary' : 'bg-info'}">${session.training_is_ai_generated ? 'AI' : 'Human'}</span></td>
                     <td><small>${formatDate(session.created_at)}</small></td>
-                    <td><span class="badge bg-secondary">0</span></td>
-                    <td><span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">${session.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td><span class="badge ${session.is_active ? 'bg-success' : 'bg-secondary'}">${session.is_active ? (window.safeT ? window.safeT('status.active') : 'Active') : (window.safeT ? window.safeT('status.inactive') : 'Inactive')}</span></td>
                     <td>
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-primary" onclick="copySessionLink('${session.session_token}')" title="Copy session link">
@@ -233,13 +232,14 @@ async function loadSessions(dateFrom = '', dateTo = '') {
  */
 async function copySessionLink(token) {
     try {
-        // Use relative path to avoid HTTP/HTTPS issues
-        const link = `/frontend/public/training.html?token=${token}`;
+        // Build complete URL with current domain (works for localhost and Railway)
+        const baseUrl = `${window.location.protocol}//${window.location.host}`;
+        const link = `${baseUrl}/frontend/public/training.html?token=${token}`;
         await navigator.clipboard.writeText(link);
-        showAlert('Session link copied to clipboard!', 'success', 3000);
+        showAlert(window.safeT ? window.safeT('success.linkCopied') : 'Session link copied to clipboard!', 'success', 3000);
     } catch (error) {
         console.error('Error copying link:', error);
-        showAlert('Failed to copy link', 'warning');
+        showAlert(window.safeT ? window.safeT('error.copyFailed') : 'Failed to copy link', 'warning');
     }
 }
 
@@ -247,7 +247,7 @@ async function copySessionLink(token) {
  * Delete training session
  */
 async function deleteSession(sessionId) {
-    if (!confirm('Are you sure you want to delete this session?')) {
+    if (!confirm(window.safeT ? window.safeT('warning.deleteSession') : 'Are you sure you want to delete this session?')) {
         return;
     }
     
@@ -263,7 +263,7 @@ async function deleteSession(sessionId) {
         }
         
         await loadSessions();
-        showAlert('Session deleted successfully', 'success');
+        showAlert(window.safeT ? window.safeT('success.deleted') : 'Session deleted successfully', 'success');
         
     } catch (error) {
         console.error('Error deleting session:', error);
@@ -337,6 +337,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Set up clear filter
+    const clearFilterBtn = document.getElementById('clear-filter');
+    if (clearFilterBtn) {
+        clearFilterBtn.addEventListener('click', function() {
+            clearDateFilter();
+        });
+    }
+    
     // Load data when Create Session tab is shown
     const createSessionTab = document.querySelector('a[href="#create-session"]');
     if (createSessionTab) {
@@ -367,11 +375,23 @@ function applyDateFilter() {
     const dateTo = document.getElementById('date-to').value;
     
     if (!dateFrom && !dateTo) {
-        showAlert('Please select at least one date to filter', 'warning');
+        showAlert(window.safeT ? window.safeT('validation.selectDate') : 'Please select at least one date to filter', 'warning');
         return;
     }
     
     loadSessions(dateFrom, dateTo);
+}
+
+/**
+ * Clear date filter and reload all sessions
+ */
+function clearDateFilter() {
+    // Clear date inputs
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+    
+    // Reload all sessions without filter
+    loadSessions();
 }
 
 /**
@@ -389,7 +409,7 @@ async function showChatHistory(sessionId, sessionName) {
     content.innerHTML = `
         <div class="text-center text-muted py-4">
             <i class="bi bi-hourglass-split display-6"></i>
-            <p class="mt-2">Loading conversation history...</p>
+            <p class="mt-2">${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading conversation history...'}</p>
         </div>
     `;
     
@@ -410,8 +430,8 @@ async function showChatHistory(sessionId, sessionName) {
             content.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-chat-x display-6"></i>
-                    <p class="mt-2">No conversations found for this session</p>
-                    <small>Learners haven't started chatting yet</small>
+                    <p class="mt-2">${window.safeT ? window.safeT('session.noConversations') : 'No conversations found for this session'}</p>
+                    <small>${window.safeT ? window.safeT('session.noChats') : "Learners haven't started chatting yet"}</small>
                 </div>
             `;
             return;
@@ -474,7 +494,7 @@ async function showChatHistory(sessionId, sessionName) {
         content.innerHTML = `
             <div class="text-center text-danger py-4">
                 <i class="bi bi-exclamation-triangle display-6"></i>
-                <p class="mt-2">Failed to load conversation history</p>
+                <p class="mt-2">${window.safeT ? window.safeT('error.loadingData') : 'Failed to load conversation history'}</p>
                 <small>Please try again later</small>
             </div>
         `;

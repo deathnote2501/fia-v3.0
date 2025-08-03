@@ -34,6 +34,7 @@ class TrainingSessionResponse(TrainingSessionBase):
     session_token: str
     created_at: datetime
     is_active: bool
+    training_is_ai_generated: Optional[bool] = None
 
     class Config:
         from_attributes = True

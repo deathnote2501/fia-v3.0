@@ -28,7 +28,7 @@ async def get_current_admin_trainer(
     logger.info(f"Admin check for trainer: {current_trainer.email}, superuser: {current_trainer.is_superuser}, active: {current_trainer.is_active}")
     if not current_trainer.has_admin_privileges():
         logger.warning(f"Non-admin trainer {current_trainer.email} attempted to access admin endpoint")
-        raise HTTPException(status_code=403, detail="Admin privileges required")
+        raise HTTPException(status_code=403, detail="error.auth.adminRequired")
     return current_trainer
 
 
@@ -52,7 +52,7 @@ async def get_trainers_overview(
         
     except Exception as e:
         logger.error(f"Failed to get trainers overview: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve trainers overview")
+        raise HTTPException(status_code=500, detail="error.api.trainersOverview")
 
 
 @router.get("/trainees-overview")
@@ -75,7 +75,7 @@ async def get_trainees_overview(
         
     except Exception as e:
         logger.error(f"Failed to get trainees overview: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve trainees overview")
+        raise HTTPException(status_code=500, detail="error.api.traineesOverview")
 
 
 @router.get("/trainings-overview")
@@ -98,7 +98,7 @@ async def get_trainings_overview(
         
     except Exception as e:
         logger.error(f"Failed to get trainings overview: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve trainings overview")
+        raise HTTPException(status_code=500, detail="error.api.trainingsOverview")
 
 
 @router.get("/sessions-overview")
@@ -121,7 +121,7 @@ async def get_sessions_overview(
         
     except Exception as e:
         logger.error(f"Failed to get sessions overview: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve sessions overview")
+        raise HTTPException(status_code=500, detail="error.api.sessionsOverview")
 
 
 @router.get("/stats")
@@ -144,7 +144,7 @@ async def get_admin_stats(
         
     except Exception as e:
         logger.error(f"Failed to get admin stats: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve admin statistics")
+        raise HTTPException(status_code=500, detail="error.api.adminStatistics")
 
 
 @router.get("/health")
@@ -166,7 +166,7 @@ async def get_platform_health(
         
     except Exception as e:
         logger.error(f"Failed to get platform health metrics: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve platform health metrics")
+        raise HTTPException(status_code=500, detail="error.api.platformHealth")
 
 
 @router.get("/trainers/{trainer_id}/details")
@@ -192,4 +192,4 @@ async def get_trainer_details(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to get trainer details: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve trainer details")
+        raise HTTPException(status_code=500, detail="error.api.trainerDetails")

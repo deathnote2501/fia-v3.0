@@ -54,6 +54,7 @@ export const fr = {
     'session.copyLink': 'Copier le lien dans le presse-papiers',
     'session.linkHelp': 'Les apprenants utiliseront ce lien pour accéder à la session de formation',
     'session.details': 'Détails des sessions',
+    'session.filter': 'Filtrer',
     'session.sessionName': 'Nom de la session',
     'session.training': 'Formation',
     'session.created': 'Créée',
@@ -213,7 +214,78 @@ export const fr = {
     'info.uploading': 'Téléchargement du fichier...',
     
     // Contact support
-    'contact.support': 'Contacter le support : jerome.iavarone@gmail.com'
+    'contact.support': 'Contacter le support : jerome.iavarone@gmail.com',
+    
+    // Nouvelles clés i18n ajoutées pour la Phase 1
+    'status.simplifying': 'Simplification...',
+    'status.addingDetails': 'Ajout de détails...',
+    'status.creating': 'Création...',
+    'status.connecting': 'Connexion...',
+    'status.connected': 'Connecté',
+    'status.redirecting': 'Redirection...',
+    'status.active': 'Actif',
+    'status.inactive': 'Inactif',
+    'status.loadingSessions': 'Chargement des sessions...',
+    
+    'learner.complete': 'Terminé',
+    'learner.beginning': 'Début',
+    'learner.limitReached': 'Limite atteinte',
+    
+    'session.noTrainings': 'Aucune formation disponible - créez-en une d\'abord',
+    'session.noSessions': 'Aucune session créée pour le moment',
+    'session.createFirst': 'Créez votre première session avec le formulaire',
+    
+    'validation.correctErrors': 'Veuillez corriger les erreurs ci-dessus',
+    'validation.requiredFields': 'Veuillez remplir tous les champs obligatoires',
+    'validation.firstNameRequired': 'Le prénom est requis',
+    'validation.lastNameRequired': 'Le nom de famille est requis',
+    'validation.passwordsDoNotMatch': 'Les mots de passe ne correspondent pas',
+    'validation.confirmPassword': 'Veuillez confirmer votre mot de passe',
+    
+    'success.linkCopied': 'Lien de session copié dans le presse-papiers !',
+    'success.redirecting': 'Redirection...',
+    
+    'error.copyFailed': 'Échec de la copie du lien. Veuillez copier manuellement.',
+    'error.registrationFailed': 'Échec de l\'inscription. Veuillez réessayer.',
+    'error.navigation': 'Erreur de navigation',
+    
+    'warning.deleteSession': 'Êtes-vous sûr de vouloir supprimer cette session ? Cette action ne peut pas être annulée.',
+    
+    'button.stop': 'Arrêter',
+    
+    // Clés d'erreur API backend (Phase 3)
+    'error.auth.adminRequired': 'Privilèges administrateur requis',
+    'error.api.trainersOverview': 'Échec de récupération de l\'aperçu des formateurs',
+    'error.api.traineesOverview': 'Échec de récupération de l\'aperçu des apprenants',
+    'error.api.trainingsOverview': 'Échec de récupération de l\'aperçu des formations',
+    'error.api.sessionsOverview': 'Échec de récupération de l\'aperçu des sessions',
+    'error.api.adminStatistics': 'Échec de récupération des statistiques admin',
+    'error.api.platformHealth': 'Échec de récupération des métriques de santé de la plateforme',
+    'error.api.trainerDetails': 'Échec de récupération des détails du formateur',
+    
+    // Erreurs de validation de fichier
+    'error.file.noFile': 'Aucun fichier fourni',
+    'error.file.invalidType': 'Type de fichier non autorisé. Formats supportés : PDF, PPT, PPTX',
+    'error.file.empty': 'Le fichier est vide',
+    'error.file.tooLarge': 'Fichier trop volumineux. Taille maximale : 50MB',
+    'error.file.invalidMimeType': 'Type de fichier invalide. Attendu : PDF, PPT ou PPTX',
+    
+    // Validation de formation
+    'validation.trainingNameRequired': 'Le nom de la formation ne peut pas être vide',
+    'validation.aiTrainingDescriptionRequired': 'La description est requise pour les formations générées par IA',
+    
+    // Clés de formation supplémentaires
+    'training.noTrainings': 'Aucune formation pour le moment',
+    'training.createFirst': 'Créez votre première formation pour commencer !',
+    'training.noFile': 'Aucun fichier',
+    'training.noDescription': 'Aucune description',
+    
+    // Clés de session supplémentaires
+    'session.noConversations': 'Aucune conversation trouvée pour cette session',
+    'session.noChats': 'Les apprenants n\'ont pas encore commencé à discuter',
+    
+    // Clés de validation supplémentaires
+    'validation.selectDate': 'Veuillez sélectionner au moins une date pour filtrer'
 };
 
 export default fr;

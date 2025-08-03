@@ -29,11 +29,11 @@ class LoginForm {
             .addRule('email', {
                 required: true,
                 email: true,
-                requiredMessage: 'Email address is required'
+                requiredMessage: window.safeT ? window.safeT('validation.emailRequired') : 'Email address is required'
             })
             .addRule('password', {
                 required: true,
-                requiredMessage: 'Password is required'
+                requiredMessage: window.safeT ? window.safeT('validation.passwordRequired') : 'Password is required'
             });
 
         // Setup real-time validation
@@ -54,7 +54,7 @@ class LoginForm {
     async handleSubmission() {
         // Validate form
         if (!this.validator.validateForm()) {
-            showAlert('Please correct the errors above', 'error');
+            showAlert(window.safeT ? window.safeT('validation.correctErrors') : 'Please correct the errors above', 'error');
             return;
         }
 
@@ -86,18 +86,18 @@ class LoginForm {
                     console.log('🔥 LOGIN - Regular trainer, redirecting to trainer.html');
                 }
                 
-                showAlert(`Login successful! Redirecting to ${dashboardType}...`, 'success');
+                showAlert(`${window.safeT ? window.safeT('success.login') : 'Login successful!'} ${window.safeT ? window.safeT('status.redirecting') : 'Redirecting...'}`, 'success');
                 
                 // Redirect after short delay
                 setTimeout(() => {
                     window.location.href = redirectUrl;
                 }, 1500);
             } else {
-                showAlert(result.message || 'Invalid email or password.', 'error');
+                showAlert(result.message || (window.safeT ? window.safeT('error.auth.failed') : 'Invalid email or password.'), 'error');
             }
         } catch (error) {
             console.error('Login error:', error);
-            showAlert('An unexpected error occurred. Please try again.', 'error');
+            showAlert(window.safeT ? window.safeT('error.unexpected') : 'An unexpected error occurred. Please try again.', 'error');
         } finally {
             this.setLoading(false);
         }

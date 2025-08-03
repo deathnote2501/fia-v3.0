@@ -40,16 +40,14 @@ async def validate_training_file(file: UploadFile) -> Tuple[str, str]:
     
     # Check if file is provided
     if not file or not file.filename:
-        raise FileValidationError("No file provided")
+        raise FileValidationError("error.file.noFile")
     
     # Get file extension
     file_extension = Path(file.filename).suffix.lower()
     
     # Validate file extension
     if file_extension not in ALLOWED_EXTENSIONS:
-        raise FileValidationError(
-            f"File type not allowed. Supported formats: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
+        raise FileValidationError("error.file.invalidType")
     
     # Read file content to check size
     content = await file.read()
@@ -60,11 +58,11 @@ async def validate_training_file(file: UploadFile) -> Tuple[str, str]:
     
     # Validate file size
     if file_size == 0:
-        raise FileValidationError("File is empty")
+        raise FileValidationError("error.file.empty")
     
     if file_size > MAX_FILE_SIZE:
         max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
-        raise FileValidationError(f"File too large. Maximum size: {max_size_mb}MB")
+        raise FileValidationError("error.file.tooLarge")
     
     # Guess MIME type from filename
     guessed_mime_type, _ = mimetypes.guess_type(file.filename)
@@ -74,9 +72,7 @@ async def validate_training_file(file: UploadFile) -> Tuple[str, str]:
     
     # Validate MIME type
     if mime_type not in ALLOWED_MIME_TYPES:
-        raise FileValidationError(
-            f"Invalid file type. Expected: PDF, PPT, or PPTX"
-        )
+        raise FileValidationError("error.file.invalidMimeType")
     
     return file_extension, mime_type
 

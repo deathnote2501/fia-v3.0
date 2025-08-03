@@ -148,7 +148,7 @@ export class SlideControls {
             // Réactiver le bouton
             if (newNextBtn) {
                 newNextBtn.disabled = false;
-                newNextBtn.innerHTML = 'Next<i class="bi bi-chevron-right ms-1"></i>';
+                newNextBtn.innerHTML = `${window.safeT ? window.safeT('learner.next') : 'Next'}<i class="bi bi-chevron-right ms-1"></i>`;
             }
         }
     }
@@ -231,7 +231,7 @@ export class SlideControls {
             // Réactiver le bouton
             if (newPreviousBtn) {
                 newPreviousBtn.disabled = false;
-                newPreviousBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i>Previous';
+                newPreviousBtn.innerHTML = `<i class="bi bi-chevron-left me-1"></i>${window.safeT ? window.safeT('learner.previous') : 'Previous'}`;
             }
         }
     }
@@ -256,7 +256,7 @@ export class SlideControls {
             // Désactiver le bouton pendant le traitement
             if (newSimplifyBtn) {
                 newSimplifyBtn.disabled = true;
-                newSimplifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Simplifying...';
+                newSimplifyBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.simplifying') : 'Simplifying...'}`;
             }
             
             // Obtenir le contenu markdown actuel
@@ -319,7 +319,7 @@ export class SlideControls {
             // Réactiver le bouton
             if (newSimplifyBtn) {
                 newSimplifyBtn.disabled = false;
-                newSimplifyBtn.innerHTML = '<i class="bi bi-magic me-1"></i>Simplify';
+                newSimplifyBtn.innerHTML = `<i class="bi bi-magic me-1"></i>${window.safeT ? window.safeT('learner.simplify') : 'Simplify'}`;
             }
         }
     }
@@ -352,7 +352,7 @@ export class SlideControls {
             // Disable button during generation
             if (chartBtn) {
                 chartBtn.disabled = true;
-                chartBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                chartBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.generating') : 'Generating...'}`;
             }
             
             console.log('📝 [CHART_GEN] Content length:', currentMarkdown.length);
@@ -391,7 +391,7 @@ export class SlideControls {
             // Re-enable button
             if (chartBtn) {
                 chartBtn.disabled = false;
-                chartBtn.innerHTML = '<i class="bi bi-bar-chart me-1"></i>Chart';
+                chartBtn.innerHTML = `<i class="bi bi-bar-chart me-1"></i>${window.safeT ? window.safeT('learner.chart') : 'Chart'}`;
             }
         }
     }
@@ -424,7 +424,7 @@ export class SlideControls {
             // Disable button during generation
             if (imageBtn) {
                 imageBtn.disabled = true;
-                imageBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Generating...';
+                imageBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.generating') : 'Generating...'}`;
             }
             
             console.log('📝 [IMAGE_GEN] Content length:', currentMarkdown.length);
@@ -462,7 +462,7 @@ export class SlideControls {
             // Re-enable button
             if (imageBtn) {
                 imageBtn.disabled = false;
-                imageBtn.innerHTML = '<i class="bi bi-image me-1"></i>Image';
+                imageBtn.innerHTML = `<i class="bi bi-image me-1"></i>${window.safeT ? window.safeT('learner.image') : 'Image'}`;
             }
         }
     }
@@ -487,7 +487,7 @@ export class SlideControls {
             // Disable button during processing
             if (moreDetailsBtn) {
                 moreDetailsBtn.disabled = true;
-                moreDetailsBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adding details...';
+                moreDetailsBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>${window.safeT ? window.safeT('status.addingDetails') : 'Adding details...'}`;
             }
             
             // Get current slide markdown content
@@ -549,7 +549,7 @@ export class SlideControls {
             // Re-enable button
             if (moreDetailsBtn) {
                 moreDetailsBtn.disabled = false;
-                moreDetailsBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>More Details';
+                moreDetailsBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i>${window.safeT ? window.safeT('learner.deepen') : 'More Details'}`;
             }
         }
     }
@@ -580,7 +580,7 @@ export class SlideControls {
         const newNextBtn = document.getElementById('new-next-btn');
         if (newNextBtn) {
             newNextBtn.disabled = true;
-            newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
+            newNextBtn.innerHTML = `<i class="bi bi-check-circle me-1"></i>${window.safeT ? window.safeT('learner.complete') : 'Complete'}`;
         }
     }
     
@@ -594,7 +594,7 @@ export class SlideControls {
         const newPreviousBtn = document.getElementById('new-previous-btn');
         if (newPreviousBtn) {
             newPreviousBtn.disabled = true;
-            newPreviousBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Beginning';
+            newPreviousBtn.innerHTML = `<i class="bi bi-stop-circle me-1"></i>${window.safeT ? window.safeT('learner.beginning') : 'Beginning'}`;
         }
         
         // Réactiver le bouton après 5 secondes
@@ -602,7 +602,7 @@ export class SlideControls {
             const { currentSlide } = this.getCurrentSlideData();
             if (newPreviousBtn && currentSlide && (currentSlide.position?.has_previous !== false)) {
                 newPreviousBtn.disabled = false;
-                newPreviousBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i>Previous';
+                newPreviousBtn.innerHTML = `<i class="bi bi-chevron-left me-1"></i>${window.safeT ? window.safeT('learner.previous') : 'Previous'}`;
             }
         }, 5000);
     }
@@ -916,7 +916,7 @@ export class SlideControls {
         if (newNextBtn) {
             newNextBtn.disabled = true;
             newNextBtn.classList.add('opacity-50');
-            newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Limit Reached';
+            newNextBtn.innerHTML = `<i class="bi bi-lock me-1"></i>${window.safeT ? window.safeT('learner.limitReached') : 'Limit Reached'}`;
             console.log('🔒 [SLIDE-CONTROLS] Next button disabled - slide limit reached');
         }
         

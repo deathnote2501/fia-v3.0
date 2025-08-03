@@ -1345,29 +1345,29 @@ export class ChatInterface {
                         case 'connecting':
                             liveApiBtn.classList.add('connecting');
                             liveApiIcon.className = 'bi bi-hourglass-split me-1';
-                            liveApiText.textContent = 'Connecting...';
+                            liveApiText.textContent = window.safeT ? window.safeT('status.connecting') : 'Connecting...';
                             break;
                         case 'connected':
                             liveApiBtn.classList.add('connected');
                             liveApiIcon.className = 'bi bi-soundwave me-1';
-                            liveApiText.textContent = 'Connected';
+                            liveApiText.textContent = window.safeT ? window.safeT('status.connected') : 'Connected';
                             break;
                         case 'recording':
                             liveApiBtn.classList.add('recording');
                             liveApiIcon.className = 'bi bi-mic-fill me-1';
-                            liveApiText.textContent = 'Stop';
+                            liveApiText.textContent = window.safeT ? window.safeT('button.stop') : 'Stop';
                             break;
                         case 'error':
                             liveApiBtn.classList.remove('connecting', 'connected', 'recording');
                             liveApiBtn.className = 'btn btn-danger';
                             liveApiIcon.className = 'bi bi-exclamation-triangle me-1';
-                            liveApiText.textContent = 'Error';
+                            liveApiText.textContent = window.safeT ? window.safeT('status.error') : 'Error';
                             break;
                         case 'disconnected':
                         default:
                             liveApiBtn.classList.remove('connecting', 'connected', 'recording');
                             liveApiIcon.className = 'bi bi-soundwave me-1';
-                            liveApiText.textContent = 'Vocal';
+                            liveApiText.textContent = window.safeT ? window.safeT('learner.vocal') : 'Vocal';
                             break;
                     }
                 }

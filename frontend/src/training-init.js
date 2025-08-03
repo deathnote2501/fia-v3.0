@@ -289,12 +289,10 @@ class UnifiedTrainingApp {
                         
                         <!-- Profile Form -->
                         <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-person-plus me-2"></i>
-                                    Complete Your Learner Profile
-                                </h5>
-                            </div>
+                            <h1 class="mb-0">
+                                <i class="bi bi-person-plus me-2"></i>
+                                Complete Your Learner Profile
+                            </h1>
                             <div class="card-body p-4">
                                 <form id="profile-form">
                                     <div class="row">
@@ -318,45 +316,48 @@ class UnifiedTrainingApp {
                                         </div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label for="job_and_sector" class="form-label">Job Position & Sector *</label>
-                                        <input type="text" class="form-control" id="job_and_sector" name="job_and_sector" required 
-                                               placeholder="e.g., Software Developer in Information Technology">
-                                        <div class="form-text">Your current job position and the sector you work in</div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="job_and_sector" class="form-label">Job Position & Sector *</label>
+                                                <input type="text" class="form-control" id="job_and_sector" name="job_and_sector" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="objectives" class="form-label">Training Objectives *</label>
+                                                <input type="text" class="form-control" id="objectives" name="objectives" required>                                            
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label for="objectives" class="form-label">Training Objectives *</label>
-                                        <textarea class="form-control" id="objectives" name="objectives" rows="3" required 
-                                                  minlength="5" maxlength="1000"
-                                                  placeholder="What do you hope to achieve with this training? What specific skills or knowledge are you looking to gain?"></textarea>
-                                        <div class="form-text">Help us personalize your learning experience (minimum 5 characters)</div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="training_duration" class="form-label">Preferred Training Duration *</label>
-                                        <select class="form-select" id="training_duration" name="training_duration" required>
-                                            <option value="">Choose your preferred duration...</option>
-                                            <option value="2h">2 hours</option>
-                                            <option value="4h">4 hours</option>
-                                            <option value="6h">6 hours</option>
-                                            <option value="1 jour">1 day</option>
-                                            <option value="1.5 jour">1.5 days</option>
-                                            <option value="2 jours">2 days</option>
-                                            <option value="3 jours">3 days</option>
-                                        </select>
-                                        <div class="form-text">This will help us structure the appropriate number of modules and slides</div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label for="language" class="form-label">Preferred Language</label>
-                                        <select class="form-select" id="language" name="language">
-                                            <option value="fr">French</option>
-                                            <option value="en">English</option>
-                                            <option value="es">Español</option>
-                                            <option value="de">Deutsch</option>
-                                        </select>
-                                        <div class="form-text">Language for the training content and AI interactions</div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="training_duration" class="form-label">Preferred Training Duration *</label>
+                                                <select class="form-select" id="training_duration" name="training_duration" required>
+                                                    <option value="">Choose your preferred duration...</option>
+                                                    <option value="2h">2 hours</option>
+                                                    <option value="4h">4 hours</option>
+                                                    <option value="6h">6 hours</option>
+                                                    <option value="1 jour">1 day</option>
+                                                    <option value="1.5 jour">1.5 days</option>
+                                                    <option value="2 jours">2 days</option>
+                                                    <option value="3 jours">3 days</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="language" class="form-label">Preferred Language</label>
+                                                <select class="form-select" id="language" name="language">
+                                                    <option value="fr">French</option>
+                                                    <option value="en">English</option>
+                                                    <option value="es">Español</option>
+                                                    <option value="de">Deutsch</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="d-grid">

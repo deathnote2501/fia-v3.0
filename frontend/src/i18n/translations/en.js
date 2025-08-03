@@ -54,6 +54,7 @@ export const en = {
     'session.copyLink': 'Copy link to clipboard',
     'session.linkHelp': 'Learners will use this link to access the training session',
     'session.details': 'Sessions Details',
+    'session.filter': 'Filter',
     'session.sessionName': 'Session Name',
     'session.training': 'Training',
     'session.created': 'Created',
@@ -213,7 +214,78 @@ export const en = {
     'info.uploading': 'Uploading file...',
     
     // Contact support
-    'contact.support': 'Contact support: jerome.iavarone@gmail.com'
+    'contact.support': 'Contact support: jerome.iavarone@gmail.com',
+    
+    // New i18n keys added for Phase 1
+    'status.simplifying': 'Simplifying...',
+    'status.addingDetails': 'Adding details...',
+    'status.creating': 'Creating...',
+    'status.connecting': 'Connecting...',
+    'status.connected': 'Connected',
+    'status.redirecting': 'Redirecting...',
+    'status.active': 'Active',
+    'status.inactive': 'Inactive',
+    'status.loadingSessions': 'Loading sessions...',
+    
+    'learner.complete': 'Complete',
+    'learner.beginning': 'Beginning',
+    'learner.limitReached': 'Limit Reached',
+    
+    'session.noTrainings': 'No trainings available - create one first',
+    'session.noSessions': 'No sessions created yet',
+    'session.createFirst': 'Create your first session using the form',
+    
+    'validation.correctErrors': 'Please correct the errors above',
+    'validation.requiredFields': 'Please fill in all required fields',
+    'validation.firstNameRequired': 'First name is required',
+    'validation.lastNameRequired': 'Last name is required',
+    'validation.passwordsDoNotMatch': 'Passwords do not match',
+    'validation.confirmPassword': 'Please confirm your password',
+    
+    'success.linkCopied': 'Session link copied to clipboard!',
+    'success.redirecting': 'Redirecting...',
+    
+    'error.copyFailed': 'Failed to copy link. Please copy manually.',
+    'error.registrationFailed': 'Registration failed. Please try again.',
+    'error.navigation': 'Navigation error',
+    
+    'warning.deleteSession': 'Are you sure you want to delete this session? This action cannot be undone.',
+    
+    'button.stop': 'Stop',
+    
+    // Backend API error keys (Phase 3)
+    'error.auth.adminRequired': 'Admin privileges required',
+    'error.api.trainersOverview': 'Failed to retrieve trainers overview',
+    'error.api.traineesOverview': 'Failed to retrieve trainees overview',
+    'error.api.trainingsOverview': 'Failed to retrieve trainings overview',
+    'error.api.sessionsOverview': 'Failed to retrieve sessions overview',
+    'error.api.adminStatistics': 'Failed to retrieve admin statistics',
+    'error.api.platformHealth': 'Failed to retrieve platform health metrics',
+    'error.api.trainerDetails': 'Failed to retrieve trainer details',
+    
+    // File validation errors
+    'error.file.noFile': 'No file provided',
+    'error.file.invalidType': 'File type not allowed. Supported formats: PDF, PPT, PPTX',
+    'error.file.empty': 'File is empty',
+    'error.file.tooLarge': 'File too large. Maximum size: 50MB',
+    'error.file.invalidMimeType': 'Invalid file type. Expected: PDF, PPT, or PPTX',
+    
+    // Training validation
+    'validation.trainingNameRequired': 'Training name cannot be empty',
+    'validation.aiTrainingDescriptionRequired': 'Description is required for AI-generated trainings',
+    
+    // Additional training keys
+    'training.noTrainings': 'No trainings yet',
+    'training.createFirst': 'Create your first training to get started!',
+    'training.noFile': 'No file',
+    'training.noDescription': 'No description',
+    
+    // Additional session keys
+    'session.noConversations': 'No conversations found for this session',
+    'session.noChats': 'Learners haven\'t started chatting yet',
+    
+    // Additional validation keys
+    'validation.selectDate': 'Please select at least one date to filter'
 };
 
 export default en;
