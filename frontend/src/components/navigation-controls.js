@@ -5,7 +5,7 @@
 
 // Phase 3: Configuration for slide limitation (shared config)
 const SLIDE_LIMIT_CONFIG = {
-    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
+    MAX_FREE_SLIDES: 2,  // Change this number to modify the slide limit
     CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
 };
 

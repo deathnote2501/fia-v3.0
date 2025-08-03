@@ -71,8 +71,8 @@ class TrainingRepository(TrainingRepositoryPort):
         )
         training_model = result.scalar_one_or_none()
         if training_model:
-            await self.session.delete(training_model)
-            await self.session.commit()
+            self.session.delete(training_model)
+            # Note: commit will be handled by the controller
             return True
         return False
     

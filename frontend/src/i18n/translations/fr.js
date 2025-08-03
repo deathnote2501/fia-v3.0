@@ -197,7 +197,7 @@ export const fr = {
     
     // Page d'accueil
     'landing.title': 'Sur quoi souhaitez-vous vous former ?',
-    'landing.placeholder': 'Exemple : Gestion de projet, Marketing digital...',
+    'landing.placeholder': 'IA Générative, Linkedin, Marketing digital...',
     'landing.startButton': 'Démarrer ma formation',
     'landing.brandName': 'Dice3.ai',
     

@@ -808,7 +808,7 @@ class TrainerDashboard {
                                     <span class="me-3">${training.file_name || (window.safeT ? window.safeT('training.noFile') : 'No file')}</span>
                                     ${training.file_size ? `<span class="badge bg-secondary me-3">${this.formatFileSize(training.file_size)}</span>` : ''}
                                     <i class="bi bi-calendar me-1"></i>
-                                    <span>${new Date(training.created_at).toLocaleDateString()}</span>
+                                    <span>${window.formatLocalizedDate ? window.formatLocalizedDate(training.created_at) : new Date(training.created_at).toLocaleDateString()}</span>
                                 </div>
                             </div>
                             <div class="col-md-4 text-end">

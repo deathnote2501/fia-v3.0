@@ -346,6 +346,12 @@ function escapeHtml(text) {
  * @returns {string} Formatted date
  */
 function formatDate(dateString) {
+    // Use global localized date formatting if available
+    if (window.formatLocalizedDateTime) {
+        return window.formatLocalizedDateTime(dateString);
+    }
+    
+    // Fallback to English format
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
         year: 'numeric',

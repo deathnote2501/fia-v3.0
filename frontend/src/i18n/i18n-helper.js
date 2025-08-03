@@ -59,6 +59,59 @@ export function safeT(key, customFallback = null) {
 }
 
 /**
+ * Format date according to current locale
+ * @param {string|Date} dateInput - Date string or Date object
+ * @param {Object} options - Formatting options
+ * @returns {string} Formatted date
+ */
+export function formatLocalizedDate(dateInput, options = {}) {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    
+    // Get current language from i18n service, fallback to 'en'
+    const currentLanguage = (window.i18n && window.i18n.currentLanguage) || 'en';
+    
+    // Map language codes to locale codes
+    const localeMap = {
+        'fr': 'fr-FR',
+        'en': 'en-US',
+        'es': 'es-ES',
+        'de': 'de-DE'
+    };
+    
+    const locale = localeMap[currentLanguage] || 'en-US';
+    
+    // Default options for short date format
+    const defaultOptions = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        ...options
+    };
+    
+    try {
+        return date.toLocaleDateString(locale, defaultOptions);
+    } catch (error) {
+        console.warn('Date formatting error:', error);
+        return date.toLocaleDateString('en-US', defaultOptions);
+    }
+}
+
+/**
+ * Format date with time according to current locale
+ * @param {string|Date} dateInput - Date string or Date object
+ * @returns {string} Formatted date with time
+ */
+export function formatLocalizedDateTime(dateInput) {
+    return formatLocalizedDate(dateInput, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
  * Fonction raccourci pour traduire (disponible globalement)
  */
 export function setupGlobalTranslation() {
@@ -69,7 +122,11 @@ export function setupGlobalTranslation() {
     // Add safeT globally
     window.safeT = safeT;
     
-    console.log('🔧 [i18n-helper] Fonctions t() et safeT() disponibles globalement');
+    // Add date formatting functions globally
+    window.formatLocalizedDate = formatLocalizedDate;
+    window.formatLocalizedDateTime = formatLocalizedDateTime;
+    
+    console.log('🔧 [i18n-helper] Fonctions t(), safeT() et formatage de dates disponibles globalement');
 }
 
 /**
