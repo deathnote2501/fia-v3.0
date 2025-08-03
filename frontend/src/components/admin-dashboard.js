@@ -1286,7 +1286,7 @@ async function viewSessionDetails(sessionId) {
         
     } catch (error) {
         console.error('Error loading session details:', error);
-        alert('Failed to load session details. Please try again.');
+        alert(window.safeT ? window.safeT('admin.error.sessionDetails') : 'Failed to load session details. Please try again.');
     }
 }
 
@@ -1295,7 +1295,7 @@ async function downloadSessionReport(sessionId) {
     try {
         const token = authManager.getToken();
         if (!token) {
-            alert('Please login to download session reports.');
+            alert(window.safeT ? window.safeT('admin.error.loginRequired') : 'Please login to download session reports.');
             return;
         }
 

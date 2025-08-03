@@ -5,7 +5,7 @@
 
 // Phase 3: Configuration for slide limitation (shared config)
 const SLIDE_LIMIT_CONFIG = {
-    MAX_FREE_SLIDES: 2,  // Change this number to modify the slide limit
+    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
     CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
 };
 
@@ -133,7 +133,7 @@ export class NavigationControls {
             if (sessionLimits.has_slide_limit && currentPosition >= sessionLimits.max_slides) {
                 newNextBtn.disabled = true;
                 newNextBtn.classList.add('opacity-50');
-                newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Upgrade Required';
+                newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>' + (window.safeT ? window.safeT('b2c.upgradeRequired') : 'Upgrade Required');
                 console.log(`🚫 [NAVIGATION-CONTROLS] Next button disabled - B2C slide limit reached (${currentPosition}/${sessionLimits.max_slides})`);
                 
                 // Show B2C upgrade modal

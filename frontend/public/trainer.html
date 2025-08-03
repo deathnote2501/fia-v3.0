@@ -19,7 +19,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <i class="bi bi-mortarboard-fill me-2"></i>
-                Dashboard
+                <span data-i18n="page.header.dashboard">Dashboard</span>
             </a>
             
             <div class="navbar-nav ms-auto">
@@ -43,7 +43,7 @@
                 <div class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle me-1"></i>
-                        <span id="trainer-name">Trainer</span>
+                        <span id="trainer-name" data-i18n="page.header.trainer">Trainer</span>
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profile-modal">
@@ -483,8 +483,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="button.cancel">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-profile-btn" data-i18n="button.saveChanges">Save Changes</button>
                 </div>
             </div>
         </div>

@@ -20,6 +20,11 @@ export const fr = {
     'nav.profile': 'Profil',
     'nav.logout': 'Déconnexion',
     
+    // Headers et titres de page
+    'page.header.trainerLogin': 'Connexion Formateur',
+    'page.header.dashboard': 'Tableau de bord',
+    'page.header.trainer': 'Formateur',
+    
     // Dashboard
     'dashboard.title': 'Tableau de bord',
     'dashboard.trainings': 'Formations',
@@ -127,6 +132,9 @@ export const fr = {
     'button.refresh': 'Actualiser',
     'button.close': 'Fermer',
     'button.copy': 'Copier',
+    'button.createAccount': 'Créer un compte',
+    'button.saveChanges': 'Sauvegarder les modifications',
+    'button.signIn': 'Se connecter',
     
     // Messages d'état
     'status.loading': 'Chargement...',
@@ -242,6 +250,15 @@ export const fr = {
     'chat.quiz': 'Quiz',
     'chat.examples': 'Exemples',
     'chat.keyPoints': 'Points clés',
+    
+    // B2C et navigation
+    'b2c.upgradeRequired': 'Mise à niveau requise',
+    'nav.trainerDashboard': 'tableau de bord formateur',
+    'nav.adminDashboard': 'tableau de bord admin',
+    
+    // Admin alerts
+    'admin.error.sessionDetails': 'Échec du chargement des détails de session. Veuillez réessayer.',
+    'admin.error.loginRequired': 'Veuillez vous connecter pour télécharger les rapports de session.',
     
     // Tooltips
     'tooltip.comment': 'Demander des commentaires ou avis sur cette diapositive',

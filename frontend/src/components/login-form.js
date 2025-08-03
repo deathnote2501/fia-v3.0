@@ -76,11 +76,11 @@ class LoginForm {
                 
                 // Determine redirect URL based on user role
                 let redirectUrl = '/frontend/public/trainer.html'; // Default for trainers
-                let dashboardType = 'trainer dashboard';
+                let dashboardType = window.safeT ? window.safeT('nav.trainerDashboard') : 'trainer dashboard';
                 
                 if (user && user.is_superuser) {
                     redirectUrl = '/frontend/public/admin.html';
-                    dashboardType = 'admin dashboard';
+                    dashboardType = window.safeT ? window.safeT('nav.adminDashboard') : 'admin dashboard';
                     console.log('🔥 LOGIN - Admin user detected, redirecting to admin.html');
                 } else {
                     console.log('🔥 LOGIN - Regular trainer, redirecting to trainer.html');

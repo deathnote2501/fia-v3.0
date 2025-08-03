@@ -1717,7 +1717,7 @@ body.landing-page {
         /* Mobile Grid: Vertical layout with 5 zones */
         display: grid !important;
         grid-template-columns: 1fr !important;
-        grid-template-rows: auto 1fr 250px auto auto !important;
+        grid-template-rows: auto 1fr 200px auto auto !important;
         grid-template-areas:
             "mobile-toolbar"
             "mobile-content" 
