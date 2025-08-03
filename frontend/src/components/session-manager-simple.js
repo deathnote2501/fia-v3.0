@@ -10,6 +10,23 @@
 // Use relative URLs - no need for CORS since frontend and API are on same server
 const API_BASE = '';
 
+/**
+ * Build API URL that respects HTTPS in production
+ * @param {string} endpoint - API endpoint (e.g., '/api/trainings')
+ * @returns {string} - Full URL with correct protocol
+ */
+function buildApiUrl(endpoint) {
+    // Force HTTPS in production to avoid Mixed Content errors
+    if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
+        // Production HTTPS - build absolute URL with HTTPS
+        const baseUrl = `https://${window.location.hostname}`;
+        return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+    } else {
+        // Local development or HTTP - use relative URLs
+        return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    }
+}
+
 // ============================================================================
 // UTILITAIRES
 // ============================================================================
@@ -107,8 +124,8 @@ async function createSession() {
             throw new Error(window.safeT ? window.safeT('validation.requiredFields') : 'Please fill in all required fields');
         }
         
-        // Direct fetch call
-        const response = await fetch('/api/training-sessions', {
+        // Direct fetch call with HTTPS-safe URL
+        const response = await fetch(buildApiUrl('/api/training-sessions'), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(sessionData)
@@ -147,7 +164,7 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
-        const response = await fetch('/api/trainings', {
+        const response = await fetch(buildApiUrl('/api/trainings'), {
             headers: getAuthHeaders()
         });
         
@@ -191,13 +208,13 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">${window.safeT ? window.safeT('status.loadingGeneric') : 'Loading...'}</td></tr>`;
         
         // Build query parameters for date filtering
-        let url = '/api/training-sessions';
+        let endpoint = '/api/training-sessions';
         const params = new URLSearchParams();
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
-        if (params.toString()) url += '?' + params.toString();
+        if (params.toString()) endpoint += '?' + params.toString();
         
-        const response = await fetch(url, {
+        const response = await fetch(buildApiUrl(endpoint), {
             headers: getAuthHeaders()
         });
         
@@ -266,7 +283,7 @@ async function deleteSession(sessionId) {
     }
     
     try {
-        const response = await fetch(`/api/training-sessions/${sessionId}`, {
+        const response = await fetch(buildApiUrl(`/api/training-sessions/${sessionId}`), {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -446,7 +463,8 @@ async function showChatHistory(sessionId, sessionName) {
             throw new Error('Authentication required. Please log in again.');
         }
         
-        const url = `/api/dashboard/chat-history/${sessionId}`;
+        const endpoint = `/api/dashboard/chat-history/${sessionId}`;
+        const url = buildApiUrl(endpoint);
         console.log(`🌐 [DEBUG] Making API call to: ${url}`);
         console.log(`🔐 [DEBUG] Auth token exists: ${!!getAuthToken()}`);
         

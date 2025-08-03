@@ -184,14 +184,9 @@ export class TTSManager {
         
         console.log(`✅ TTS [MANAGER] Processed ${processedCount} existing messages`);
         
-        // Auto-play the last assistant message if any were processed
-        if (processedCount > 0 && assistantMessages.length > 0) {
-            const lastMessage = assistantMessages[assistantMessages.length - 1];
-            if (lastMessage.ttsAudio) {
-                console.log('🔊 TTS [MANAGER] Auto-playing last assistant message');
-                await this.playAudio(lastMessage);
-            }
-        }
+        // Don't auto-play any existing messages when enabling TTS
+        // Only new messages received after TTS is enabled should auto-play
+        console.log('🔊 TTS [MANAGER] TTS enabled - existing messages prepared for manual playback only');
     }
     
     /**

@@ -7,6 +7,26 @@
 const API_BASE_URL = '';
 
 /**
+ * Build API URL that respects HTTPS in production to avoid Mixed Content errors
+ * @param {string} endpoint - API endpoint (e.g., '/api/trainings')
+ * @returns {string} - Full URL with correct protocol
+ */
+export function buildSecureApiUrl(endpoint) {
+    // Force HTTPS in production to avoid Mixed Content errors
+    if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
+        // Production HTTPS - build absolute URL with HTTPS
+        const baseUrl = `https://${window.location.hostname}`;
+        return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+    } else {
+        // Local development or HTTP - use relative URLs
+        return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    }
+}
+
+// Make buildSecureApiUrl available globally for other modules
+window.buildSecureApiUrl = buildSecureApiUrl;
+
+/**
  * API client with common functionality
  */
 class APIClient {
@@ -21,8 +41,8 @@ class APIClient {
      * @returns {Promise}
      */
     async request(endpoint, options = {}) {
-        // Always use relative URLs to avoid HTTPS/HTTP issues
-        const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        // Use the global buildSecureApiUrl function
+        const url = buildSecureApiUrl(endpoint);
         const startTime = performance.now();
         
         const defaultOptions = {
