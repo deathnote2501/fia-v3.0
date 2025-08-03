@@ -98,7 +98,7 @@ export const fr = {
     'form.label.sessionName': 'Nom de la session',
     'form.label.sessionDescription': 'Description',
     'form.label.rememberMe': 'Se souvenir de moi',
-    'form.label.agreeTerms': 'J\\'accepte les <a href="#" class="text-primary">Conditions d\\'utilisation</a> et la <a href="#" class="text-primary">Politique de confidentialité</a>',
+    'form.label.agreeTerms': 'J\'accepte les <a href="#" class="text-primary">Conditions d\'utilisation</a> et la <a href="#" class="text-primary">Politique de confidentialité</a>',
     'form.label.aiGenerated': 'Générée avec IA',
     
     // Textes d'aide de formulaire
@@ -106,7 +106,7 @@ export const fr = {
     'form.text.fileFormats': 'Formats supportés : PDF, PPT, PPTX (Max : 50MB)',
     'form.text.selectTrainingHelp': 'Sélectionner le matériel de formation pour cette session',
     'form.text.alreadyAccount': 'Vous avez déjà un compte ?',
-    'form.text.noAccount': 'Vous n\\'avez pas de compte ?',
+    'form.text.noAccount': 'Vous n\'avez pas de compte ?',
     'form.text.forgotPassword': 'Mot de passe oublié ?',
     
     // Actions communes
@@ -349,16 +349,16 @@ export const fr = {
     'message.sessionReportDownloadStarted': 'Téléchargement du rapport de session démarré !',
     'message.sessionReportDownloadFailed': 'Échec du téléchargement du rapport. Veuillez réessayer.',
     'message.deleteSessionLoginRequired': 'Veuillez vous connecter pour supprimer les sessions.',
-    'message.deleteSessionAccessDenied': 'Accès refusé. Vous ne pouvez supprimer que les sessions en tant qu\\'administrateur.',
+    'message.deleteSessionAccessDenied': 'Accès refusé. Vous ne pouvez supprimer que les sessions en tant qu\'administrateur.',
     'message.sessionNotFound': 'Session non trouvée.',
     'message.sessionDeleted': 'Session supprimée avec succès !',
     'message.sessionDeleteFailed': 'Échec de suppression de session. Veuillez réessayer.',
-    'message.deleteSessionConfirm': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\\'apprenant associées.',
+    'message.deleteSessionConfirm': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\'apprenant associées.',
     
     // Messages de confirmation (pattern confirm.*)
     'confirm.deleteTraining': 'Êtes-vous sûr de vouloir supprimer "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également le fichier associé.',
     'confirm.deleteSession': 'Êtes-vous sûr de vouloir supprimer cette session ?\\n\\nCette action ne peut pas être annulée.',
-    'confirm.deleteSessionAdmin': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\\'apprenant associées.'
+    'confirm.deleteSessionAdmin': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\'apprenant associées.'
 };
 
 export default fr;

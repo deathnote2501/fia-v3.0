@@ -913,9 +913,10 @@ function loadTrainings() {
 }
 
 
-// Initialize when DOM is loaded
+// Initialize when DOM is loaded AND i18n is ready
 console.log('🚨 ÉTAPE 4 - Ajout du listener DOMContentLoaded');
-document.addEventListener('DOMContentLoaded', () => {
+
+function initializeTrainerDashboard() {
     console.log('🌐 ÉTAPE 4 - DOM chargé, instanciation TrainerDashboard');
     console.log('🌐 ÉTAPE 4 - document.readyState:', document.readyState);
     window.trainerDashboard = new TrainerDashboard();
@@ -923,16 +924,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser la navigation hash après l'instanciation du dashboard
     setupTabClickListeners();
     handleHashNavigation();
+}
+
+// Wait for i18n to be ready before initializing dashboard
+window.addEventListener('i18nReady', () => {
+    console.log('✅ ÉTAPE 4 - i18n ready, initializing TrainerDashboard');
+    initializeTrainerDashboard();
 });
 
-// Fallback si le DOM est déjà chargé
-if (document.readyState === 'loading') {
-    console.log('🚨 ÉTAPE 4 - DOM en cours de chargement, attente DOMContentLoaded');
-} else {
-    console.log('🚨 ÉTAPE 4 - DOM déjà chargé, instanciation immédiate');
-    window.trainerDashboard = new TrainerDashboard();
-    
-    // Initialiser la navigation hash après l'instanciation du dashboard
-    setupTabClickListeners();
-    handleHashNavigation();
-}
+// Fallback: if i18n event already fired, initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if i18n is already available
+    if (window.i18n && window.safeT) {
+        console.log('✅ ÉTAPE 4 - i18n already ready, initializing TrainerDashboard immediately');
+        initializeTrainerDashboard();
+    } else {
+        console.log('⏳ ÉTAPE 4 - Waiting for i18n to be ready...');
+    }
+});

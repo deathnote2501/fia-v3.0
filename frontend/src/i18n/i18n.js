@@ -53,10 +53,33 @@ class I18n {
     async loadTranslations() {
         try {
             const module = await import(`./translations/${this.currentLanguage}.js`);
-            this.translations[this.currentLanguage] = module.default || module[this.currentLanguage];
-            console.log(`✅ [i18n] Translations loaded for ${this.currentLanguage}`);
+            console.log(`🔍 [i18n] Loaded module for ${this.currentLanguage}:`, Object.keys(module));
+            
+            // Try different export patterns
+            let translations = null;
+            if (module.default) {
+                translations = module.default;
+                console.log(`✅ [i18n] Using default export for ${this.currentLanguage}`);
+            } else if (module[this.currentLanguage]) {
+                translations = module[this.currentLanguage];
+                console.log(`✅ [i18n] Using named export '${this.currentLanguage}' for ${this.currentLanguage}`);
+            } else {
+                // Fallback: use the first export found
+                const keys = Object.keys(module).filter(key => key !== 'default');
+                if (keys.length > 0) {
+                    translations = module[keys[0]];
+                    console.log(`✅ [i18n] Using fallback export '${keys[0]}' for ${this.currentLanguage}`);
+                }
+            }
+            
+            if (translations) {
+                this.translations[this.currentLanguage] = translations;
+                console.log(`✅ [i18n] ${Object.keys(translations).length} translations loaded for ${this.currentLanguage}`);
+            } else {
+                throw new Error('No valid translations found in module');
+            }
         } catch (error) {
-            console.warn(`⚠️ [i18n] Failed to load translations for ${this.currentLanguage}, falling back to keys`);
+            console.warn(`⚠️ [i18n] Failed to load translations for ${this.currentLanguage}:`, error);
             this.translations[this.currentLanguage] = {};
         }
     }

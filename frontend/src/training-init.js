@@ -656,6 +656,9 @@ class UnifiedTrainingApp {
             const planData = await planResponse.json();
             console.log('✅ [UNIFIED-APP] Training plan generated successfully:', planData);
             
+            // Plan generated, now send resume email to learner (non-blocking)
+            await this.sendResumeEmailToLearner();
+            
             // Plan generated, now load training content
             this.currentState = APP_STATES.LOADING_SLIDE;
             await this.loadTrainingContent();
@@ -666,6 +669,49 @@ class UnifiedTrainingApp {
         } finally {
             // Stop progress animation
             this.stopProgressAnimation();
+        }
+    }
+    
+    /**
+     * Send resume email to learner (non-blocking, silent errors)
+     */
+    async sendResumeEmailToLearner() {
+        try {
+            console.log('📧 [UNIFIED-APP] Sending resume email to learner...');
+            
+            // Check if we have the necessary data
+            if (!this.learnerSession?.id || !this.submittedProfileData?.email) {
+                console.warn('⚠️ [UNIFIED-APP] Missing session ID or email, skipping resume email');
+                return;
+            }
+            
+            const emailRequest = {
+                email: this.submittedProfileData.email,
+                language: this.submittedProfileData.language || 'fr'
+            };
+            
+            console.log('📧 [UNIFIED-APP] Sending resume email with data:', emailRequest);
+            
+            const emailResponse = await fetch(`/api/sessions/${this.learnerSession.id}/send-resume-link`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emailRequest)
+            });
+            
+            if (emailResponse.ok) {
+                const emailResult = await emailResponse.json();
+                console.log('✅ [UNIFIED-APP] Resume email sent successfully:', emailResult);
+            } else {
+                // Log error but don't throw - this is non-blocking
+                const errorText = await emailResponse.text().catch(() => 'Unknown error');
+                console.warn(`⚠️ [UNIFIED-APP] Resume email failed (${emailResponse.status}): ${errorText}`);
+            }
+            
+        } catch (error) {
+            // Silent error handling - email is optional feature
+            console.warn('⚠️ [UNIFIED-APP] Resume email error (non-critical):', error.message);
         }
     }
     

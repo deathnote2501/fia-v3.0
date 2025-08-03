@@ -53,3 +53,16 @@ class LearnerProgressUpdate(BaseModel):
     """Schema for updating learner progress"""
     current_slide_number: Optional[int] = Field(None, ge=1)
     time_spent_increment: Optional[int] = Field(None, ge=0)  # time to add in seconds
+
+
+class SendResumeEmailRequest(BaseModel):
+    """Schema for sending resume email to learner"""
+    email: EmailStr = Field(..., description="Email address of the learner")
+    language: Optional[str] = Field(default="fr", description="Language for the email content (fr/en)")
+
+
+class SendResumeEmailResponse(BaseModel):
+    """Schema for resume email response"""
+    success: bool = Field(..., description="Whether the email was sent successfully")
+    message: str = Field(..., description="Success or error message")
+    email_sent_to: Optional[str] = Field(None, description="Email address where the link was sent")

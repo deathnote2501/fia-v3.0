@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test i18n</title>
+</head>
+<body>
+    <h1 data-i18n="dashboard.title">dashboard.title</h1>
+    <p data-i18n="dashboard.trainings">dashboard.trainings</p>
+    <p data-i18n="dashboard.sessions">dashboard.sessions</p>
+    
+    <script type="module">
+        console.log('🔍 Testing i18n import...');
+        
+        try {
+            const module = await import('./src/i18n/translations/fr.js');
+            console.log('✅ Import successful');
+            console.log('Module keys:', Object.keys(module));
+            console.log('Default export exists:', !!module.default);
+            
+            if (module.default) {
+                console.log('Translation count:', Object.keys(module.default).length);
+                console.log('Dashboard translations:');
+                
+                // Test specific keys
+                const testKeys = ['dashboard.title', 'dashboard.trainings', 'dashboard.sessions'];
+                testKeys.forEach(key => {
+                    console.log(`  ${key}: "${module.default[key]}"`);
+                });
+                
+                // Update DOM elements
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    const key = element.getAttribute('data-i18n');
+                    const translation = module.default[key];
+                    if (translation) {
+                        element.textContent = translation;
+                        element.style.color = 'green';
+                    } else {
+                        element.style.color = 'red';
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('❌ Import failed:', error);
+            document.body.innerHTML += '<p style="color: red;">Import failed: ' + error.message + '</p>';
+        }
+    </script>
+</body>
+</html>

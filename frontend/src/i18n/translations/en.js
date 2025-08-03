@@ -5,7 +5,7 @@
 
 export const en = {
     // Page titles
-    'page.title.trainer': 'Trainer Dashboard - FIA v3.0',
+    'page.title.trainer': 'Dashboard',
     'page.title.login': 'Trainer Login - FIA v3.0',
     'page.title.register': 'Trainer Registration - FIA v3.0',
     'page.title.admin': 'Admin Dashboard - FIA v3.0',
@@ -106,7 +106,7 @@ export const en = {
     'form.text.fileFormats': 'Supported formats: PDF, PPT, PPTX (Max: 50MB)',
     'form.text.selectTrainingHelp': 'Select the training material for this session',
     'form.text.alreadyAccount': 'Already have an account?',
-    'form.text.noAccount': 'Don\\'t have an account?',
+    'form.text.noAccount': 'Don\'t have an account?',
     'form.text.forgotPassword': 'Forgot your password?',
     
     // Common actions

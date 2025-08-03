@@ -194,13 +194,8 @@ if PLAN_GENERATION_AVAILABLE:
 
 @app.get("/")
 async def root():
-    """Root endpoint - simple health check"""
-    return {
-        "message": "FIA v3.0 API is running", 
-        "status": "healthy",
-        "version": "0.1.0",
-        "environment": settings.environment
-    }
+    """Serve the frontend landing page"""
+    return FileResponse("../frontend/public/index.html")
 
 
 @app.get("/favicon.ico")

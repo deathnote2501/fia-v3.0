@@ -24,12 +24,17 @@ from app.domain.schemas.training_session import (
 )
 from app.domain.schemas.learner_session import (
     LearnerProfileCreate, 
-    LearnerSessionResponse
+    LearnerSessionResponse,
+    SendResumeEmailRequest,
+    SendResumeEmailResponse
 )
 from app.adapters.repositories.training_session_repository import TrainingSessionRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_repository import TrainingRepository
 from app.domain.services.plan_generation_service_v2 import PlanGenerationService
+from app.domain.services.session_notification_service import SessionNotificationService
+from app.adapters.outbound.email_adapter import EmailAdapter
+from app.adapters.outbound.settings_adapter import SettingsAdapter
 # from app.domain.services.plan_parser_service import PlanParserService
 
 # Configure logging
@@ -248,6 +253,103 @@ async def delete_training_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Session deletion failed"
+        )
+
+
+@router.post("/api/sessions/{session_id}/send-resume-link", response_model=SendResumeEmailResponse, status_code=status.HTTP_200_OK)
+async def send_session_resume_link(
+    session_id: UUID,
+    request: SendResumeEmailRequest,
+    current_trainer: Trainer = Depends(get_current_trainer),
+    db: AsyncSession = Depends(get_database_session)
+):
+    """
+    Send session resume link email to learner
+    
+    Requires trainer authentication. Sends an email to the learner with their session resume link.
+    The email is sent in the learner's preferred language.
+    """
+    
+    try:
+        logger.info(f"📧 SESSION_EMAIL [START] Sending resume link for session {session_id} to {request.email}")
+        
+        # Get learner session and verify it exists
+        learner_session_repo = LearnerSessionRepository(db)
+        learner_session = await learner_session_repo.get_by_id(session_id)
+        
+        if not learner_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Learner session not found"
+            )
+        
+        # Get training session to verify trainer ownership
+        training_session_repo = TrainingSessionRepository(db)
+        training_session = await training_session_repo.get_by_id(learner_session.training_session_id)
+        
+        if not training_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Training session not found"
+            )
+        
+        # Get training to verify trainer ownership
+        training_repo = TrainingRepository(db)
+        training = await training_repo.get_by_id(training_session.training_id)
+        
+        if not training:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Training not found"
+            )
+        
+        # Verify trainer owns this training
+        if training.trainer_id != current_trainer.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: You can only send emails for your own training sessions"
+            )
+        
+        # Initialize notification service with dependency injection
+        email_adapter = EmailAdapter()
+        settings_adapter = SettingsAdapter()
+        
+        notification_service = SessionNotificationService(
+            email_service=email_adapter,
+            settings_port=settings_adapter,
+            learner_session_repository=learner_session_repo,
+            training_session_repository=training_session_repo,
+            training_repository=training_repo
+        )
+        
+        # Send resume link email
+        email_sent = await notification_service.send_resume_link_to_learner(
+            learner_session_id=session_id,
+            recipient_email=request.email,
+            language=request.language
+        )
+        
+        if email_sent:
+            logger.info(f"✅ SESSION_EMAIL [SUCCESS] Resume link sent to {request.email} for session {session_id}")
+            return SendResumeEmailResponse(
+                success=True,
+                message=f"Resume link sent successfully to {request.email}",
+                email_sent_to=request.email
+            )
+        else:
+            logger.error(f"❌ SESSION_EMAIL [ERROR] Failed to send resume link to {request.email}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send resume link email"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ SESSION_EMAIL [ERROR] Unexpected error sending resume link: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while sending the resume link"
         )
 
 
