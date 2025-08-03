@@ -59,9 +59,9 @@
     margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
-.slide-content h1 { font-size: clamp(2rem, 2.5vw, 3.5rem); }
-.slide-content h2 { font-size: clamp(1.5rem, 2vw, 2.5rem); }
-.slide-content h3 { font-size: clamp(1rem, 1.5vw, 2rem); }
+.slide-content h1 { font-size: clamp(1.5rem, 2vw, 3rem); }
+.slide-content h2 { font-size: clamp(1.25rem, 1.75vw, 2.75rem); }
+.slide-content h3 { font-size: clamp(1rem, 1.5vw, 2.5rem); }
 .slide-content {
     font-size: clamp(0.75rem, 1.25vw, 1.75rem);
     line-height: 1.6;
@@ -770,14 +770,43 @@ body.is-admin .tab-pane.admin-only {
    ADMIN TABLE RESPONSIVE DESIGN
    ============================================== */
 
-/* Admin trainers overview table responsive enhancements */
-#trainers-overview-table {
+/* Admin tables uniform styling - applies to all admin overview tables */
+.sortable-table {
     min-width: 1400px; /* Ensure table doesn't get too compressed */
-    font-size: 0.875rem; /* Slightly smaller font for better fit */
+    font-size: 0.875rem; /* Consistent font size across all admin tables */
 }
 
-/* Mobile-first responsive design for admin table */
+/* Specific override for trainers table (legacy support) */
+#trainers-overview-table {
+    min-width: 1400px;
+    font-size: 0.875rem;
+}
+
+/* Mobile-first responsive design for all admin tables */
 @media (max-width: 1200px) {
+    .sortable-table {
+        min-width: 1200px;
+        font-size: 0.8rem;
+    }
+    
+    .sortable-table th,
+    .sortable-table td {
+        padding: 0.5rem 0.25rem;
+        white-space: nowrap;
+    }
+    
+    /* Make numeric columns more compact */
+    .sortable-table th[data-column*="trainings"],
+    .sortable-table th[data-column*="sessions"],
+    .sortable-table th[data-column*="learners"],
+    .sortable-table th[data-column*="slides"],
+    .sortable-table th[data-column*="time"],
+    .sortable-table th[data-column*="total"],
+    .sortable-table th[data-column*="avg"] {
+        min-width: 80px;
+    }
+    
+    /* Legacy support for trainers table */
     #trainers-overview-table {
         min-width: 1200px;
         font-size: 0.8rem;
@@ -789,7 +818,6 @@ body.is-admin .tab-pane.admin-only {
         white-space: nowrap;
     }
     
-    /* Make numeric columns more compact */
     #trainers-overview-table th[data-column*="trainings"],
     #trainers-overview-table th[data-column*="sessions"],
     #trainers-overview-table th[data-column*="learners"],
@@ -799,11 +827,21 @@ body.is-admin .tab-pane.admin-only {
 }
 
 @media (max-width: 992px) {
+    .sortable-table {
+        font-size: 0.75rem;
+    }
+    
+    /* Hide less critical columns on medium screens for tables with many columns */
+    .sortable-table th:nth-child(n+10),
+    .sortable-table td:nth-child(n+10) {
+        display: none;
+    }
+    
+    /* Legacy support for trainers table */
     #trainers-overview-table {
         font-size: 0.75rem;
     }
     
-    /* Hide less critical columns on medium screens */
     #trainers-overview-table th:nth-child(n+10),
     #trainers-overview-table td:nth-child(n+10) {
         display: none;
@@ -818,7 +856,18 @@ body.is-admin .tab-pane.admin-only {
 }
 
 @media (max-width: 768px) {
-    /* Show only essential columns on mobile */
+    /* Show only essential columns on mobile for all admin tables */
+    .sortable-table th:nth-child(n+7),
+    .sortable-table td:nth-child(n+7) {
+        display: none;
+    }
+    
+    .sortable-table {
+        min-width: 600px;
+        font-size: 0.7rem;
+    }
+    
+    /* Legacy support for trainers table */
     #trainers-overview-table th:nth-child(n+7),
     #trainers-overview-table td:nth-child(n+7) {
         display: none;
@@ -1154,4 +1203,436 @@ button:disabled {
 
 /* ============================================================================ */
 /* FIN STYLES INTERFACE INTRODUCTION POPOVERS                                  */
+/* ============================================================================ */
+
+/* ============================================================================ */
+/* LANDING PAGE STYLES                                                         */
+/* ============================================================================ */
+
+/* Background image styles */
+body.landing-page {
+    background-image: url('/frontend/src/image/bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Semi-transparent overlay container */
+.content-overlay {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Logo styling */
+.brand-logo {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.brand-logo:hover {
+    color: #fff;
+    transform: scale(1.05);
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.brand-icon {
+    margin-right: 0.5rem;
+    font-size: 2rem;
+}
+
+/* Main title styling */
+.main-title {
+    color: #212529;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Input field styling */
+.training-input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.75rem;
+    font-size: 1.1rem;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.training-input:focus {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #0d6efd;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.2);
+    outline: none;
+}
+
+/* CTA Button styling */
+.cta-button {
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 1rem 3rem;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.4);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cta-button:hover {
+    background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(13, 110, 253, 0.5);
+    color: white;
+}
+
+.cta-button:active {
+    transform: translateY(0);
+}
+
+.cta-icon {
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.cta-button:hover .cta-icon {
+    transform: translateX(3px);
+}
+
+/* Landing page responsive adjustments */
+@media (max-width: 768px) {
+    .content-overlay {
+        margin: 1rem;
+        padding: 2rem;
+    }
+    
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .brand-logo {
+        position: relative;
+        top: auto;
+        left: auto;
+        display: block;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+}
+
+/* Landing page loading state */
+.loading-state {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading-state .cta-button {
+    background: #6c757d;
+}
+
+/* ============================================================================ */
+/* FIN LANDING PAGE STYLES                                                     */
+/* ============================================================================ */
+
+/* ============================================================================ */
+/* TOAST NOTIFICATIONS STYLES                                                  */
+/* ============================================================================ */
+
+/* Toast Container - Fixed Position Top-Right */
+.toast-container {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 9999 !important;
+    max-width: 400px !important;
+    pointer-events: none !important;
+}
+
+/* Individual toasts should have pointer events for interaction */
+.toast-container .toast {
+    pointer-events: auto !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    min-width: 300px !important;
+}
+
+/* Toast Animation Enhancements */
+/* Smooth slide-in from right */
+.toast.showing {
+    animation: toastSlideInRight 0.3s ease-out forwards !important;
+}
+
+/* Smooth slide-out to right */
+.toast.hiding {
+    animation: toastSlideOutRight 0.25s ease-in forwards !important;
+}
+
+@keyframes toastSlideInRight {
+    from {
+        transform: translateX(100%) !important;
+        opacity: 0 !important;
+    }
+    to {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+    }
+}
+
+@keyframes toastSlideOutRight {
+    from {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+    }
+    to {
+        transform: translateX(100%) !important;
+        opacity: 0 !important;
+    }
+}
+
+/* Toast Type Colors (Bootstrap Compatible) */
+/* Success Toast - Bootstrap Green */
+.toast.text-bg-success {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border-left: 4px solid #146c43 !important;
+}
+
+.toast.text-bg-success .bi {
+    color: #d1f2eb !important;
+}
+
+/* Error/Danger Toast - Bootstrap Red */
+.toast.text-bg-danger {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+    border-left: 4px solid #b02a37 !important;
+}
+
+.toast.text-bg-danger .bi {
+    color: #f8d7da !important;
+}
+
+/* Warning Toast - Bootstrap Yellow */
+.toast.text-bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+    border-left: 4px solid #ffb700 !important;
+}
+
+.toast.text-bg-warning .bi {
+    color: #664d03 !important;
+}
+
+.toast.text-bg-warning .btn-close {
+    filter: invert(1) grayscale(100%) brightness(30%) !important;
+}
+
+/* Info Toast - Bootstrap Blue */
+.toast.text-bg-info {
+    background-color: #0dcaf0 !important;
+    color: #000 !important;
+    border-left: 4px solid #0aa1c0 !important;
+}
+
+.toast.text-bg-info .bi {
+    color: #055160 !important;
+}
+
+.toast.text-bg-info .btn-close {
+    filter: invert(1) grayscale(100%) brightness(30%) !important;
+}
+
+/* Toast Content Styling */
+.toast .toast-body {
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
+}
+
+.toast .toast-body .bi {
+    font-size: 18px !important;
+    margin-right: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.toast .toast-body .flex-grow-1 {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Contact support text styling */
+.toast .toast-body small {
+    display: block !important;
+    margin-top: 6px !important;
+    opacity: 0.8 !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+}
+
+/* Close Button Styling */
+.toast .btn-close {
+    padding: 8px !important;
+    margin: 4px 8px 4px 0 !important;
+    opacity: 0.8 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.toast .btn-close:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
+.toast .btn-close:focus {
+    box-shadow: none !important;
+    outline: 2px solid rgba(255, 255, 255, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
+/* Responsive Design - Mobile Optimization */
+/* Mobile devices (max-width: 576px) */
+@media (max-width: 576px) {
+    .toast-container {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        width: auto !important;
+    }
+
+    .toast-container .toast {
+        min-width: auto !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+
+    .toast .toast-body {
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+    }
+
+    .toast .toast-body .bi {
+        font-size: 16px !important;
+        margin-right: 6px !important;
+    }
+
+    /* Adjust animations for mobile */
+    @keyframes toastSlideInRight {
+        from {
+            transform: translateY(-100%) !important;
+            opacity: 0 !important;
+        }
+        to {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+        }
+    }
+
+    @keyframes toastSlideOutRight {
+        from {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+        }
+        to {
+            transform: translateY(-100%) !important;
+            opacity: 0 !important;
+        }
+    }
+}
+
+/* Tablet devices (max-width: 768px) */
+@media (max-width: 768px) and (min-width: 577px) {
+    .toast-container {
+        top: 15px !important;
+        right: 15px !important;
+        max-width: 350px !important;
+    }
+
+    .toast-container .toast {
+        min-width: 280px !important;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .toast-container .toast {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+}
+
+/* Print Styles - Hide toasts when printing */
+@media print {
+    .toast-container {
+        display: none !important;
+    }
+}
+
+/* Accessibility Enhancements */
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .toast-container .toast {
+        border: 2px solid currentColor !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .toast.showing,
+    .toast.hiding {
+        animation: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+
+    .toast.showing {
+        opacity: 1 !important;
+    }
+
+    .toast.hiding {
+        opacity: 0 !important;
+    }
+}
+
+/* Focus visible for better keyboard navigation */
+.toast:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.6) !important;
+    outline-offset: 2px !important;
+}
+
+/* Performance Optimizations */
+.toast-container {
+    will-change: transform !important;
+}
+
+.toast-container .toast {
+    will-change: transform, opacity !important;
+    backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
+}
+
+/* ============================================================================ */
+/* FIN TOAST NOTIFICATIONS STYLES                                              */
 /* ============================================================================ */

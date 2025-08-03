@@ -17,7 +17,7 @@ from openai import OpenAI
 from app.domain.ports.outbound_ports import ImageGenerationServicePort
 from app.infrastructure.settings import settings
 from app.infrastructure.rate_limiter import openai_rate_limiter, RateLimitExceeded
-from app.infrastructure.gemini_call_logger import gemini_call_logger
+from app.infrastructure.gemini_call_logger import gemini_call_logger, ServiceType
 
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,8 @@ class OpenAIAdapter(ImageGenerationServicePort):
                     "model": "dall-e-3",
                     "size": "1024x1024",
                     "quality": "hd"
-                }
+                },
+                service_type=ServiceType.IMAGE
             )
             
             logger.debug(f"Generating infographic with prompt - Call ID: {call_id}")
@@ -113,8 +114,15 @@ class OpenAIAdapter(ImageGenerationServicePort):
                 }
             }
             
-            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT avec estimation de tokens
             processing_time = time.time() - start_time
+            
+            # Estimation des tokens pour DALL-E (pas de métadonnées natives)
+            # Approximation : 1 token ≈ 4 caractères pour l'anglais
+            estimated_input_tokens = len(prompt) // 4
+            # DALL-E ne génère pas de tokens de texte en sortie, juste une image
+            estimated_output_tokens = 0
+            
             gemini_call_logger.log_output(
                 call_id=call_id,
                 service_name="openai_dalle",
@@ -130,8 +138,11 @@ class OpenAIAdapter(ImageGenerationServicePort):
                 additional_metadata={
                     "slide_title": slide_title,
                     "slide_id": str(slide_id) if slide_id else None,
-                    "image_saved": image_path is not None
-                }
+                    "image_saved": image_path is not None,
+                    "estimated_tokens": True
+                },
+                input_tokens=estimated_input_tokens,
+                output_tokens=estimated_output_tokens
             )
             
             logger.info(f"Successfully generated infographic (revised prompt: {image_data.revised_prompt[:100] if image_data.revised_prompt else 'None'}...)")

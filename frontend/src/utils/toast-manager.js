@@ -47,16 +47,16 @@ class ToastManager {
      * Load toast CSS if not already present
      */
     loadToastCSS() {
-        // Check if CSS is already loaded
-        if (document.getElementById('toast-notifications-css')) {
+        // Check if main CSS is already loaded (should be in most pages)
+        if (document.getElementById('main-css') || document.querySelector('link[href*="main.css"]')) {
             return;
         }
 
-        // Create link element for CSS
+        // Create link element for main CSS
         const link = document.createElement('link');
-        link.id = 'toast-notifications-css';
+        link.id = 'main-css';
         link.rel = 'stylesheet';
-        link.href = '../src/styles/toast-notifications.css';
+        link.href = '../src/styles/main.css';
         
         // Insert in head
         document.head.appendChild(link);

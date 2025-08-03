@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 from app.infrastructure.settings import settings
-from app.infrastructure.gemini_call_logger import gemini_call_logger
+from app.infrastructure.gemini_call_logger import gemini_call_logger, ServiceType
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -250,7 +250,8 @@ class VertexAIAdapter:
                     "method": "generate_content_with_grounding",
                     "project_id": project_id,
                     "location": location
-                }
+                },
+                service_type=ServiceType.CONVERSATION  # Grounding pour conversations enrichies
             )
             
             logger.info(f"🚀 VERTEX AI [GROUNDING] Starting content generation - Call ID: {call_id}")
@@ -286,7 +287,16 @@ class VertexAIAdapter:
                     result_cleaned = result_cleaned[:-3]
                 result = result_cleaned.strip()
             
-            # 🔍 NOUVEAU: Logger centralisé - OUTPUT (grounding)
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT (grounding) avec tokens
+            # Note: Le grounding avec genai.Client peut avoir des métadonnées différentes
+            grounding_usage_metadata = None
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                grounding_usage_metadata = {
+                    'prompt_token_count': getattr(response.usage_metadata, 'prompt_token_count', None),
+                    'candidates_token_count': getattr(response.usage_metadata, 'candidates_token_count', None),
+                    'total_token_count': getattr(response.usage_metadata, 'total_token_count', None)
+                }
+            
             gemini_call_logger.log_output(
                 call_id=call_id,
                 service_name="vertex_ai_adapter_grounding",
@@ -298,7 +308,8 @@ class VertexAIAdapter:
                     "has_grounding": grounding_metadata is not None,
                     "grounding_sources": len(grounding_metadata.grounding_chunks) if grounding_metadata and hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks else 0,
                     "method": "generate_content_with_grounding"
-                }
+                },
+                usage_metadata=grounding_usage_metadata
             )
             
             self._log_api_call(
@@ -356,7 +367,7 @@ class VertexAIAdapter:
                 "response_mime_type": "application/json"  # Pas de response_schema complexe
             }
             
-            # 🔍 NOUVEAU: Logger centralisé - INPUT
+            # 🔍 NOUVEAU: Logger centralisé - INPUT avec détection automatique du type de service
             call_id = gemini_call_logger.log_input(
                 service_name="vertex_ai_adapter",
                 prompt=str(prompt),
@@ -365,7 +376,8 @@ class VertexAIAdapter:
                 additional_context={
                     "generation_config": config,
                     "method": "generate_content"
-                }
+                },
+                service_type=ServiceType.CONVERSATION  # Par défaut, peut être surchargé par les services appelants
             )
             
             # LOG DÉTAILLÉ INPUT (existant - réduit)
@@ -382,7 +394,15 @@ class VertexAIAdapter:
             duration = time.time() - start_time
             result = response.text
             
-            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT avec extraction de tokens
+            usage_metadata_dict = None
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                usage_metadata_dict = {
+                    'prompt_token_count': getattr(response.usage_metadata, 'prompt_token_count', None),
+                    'candidates_token_count': getattr(response.usage_metadata, 'candidates_token_count', None),
+                    'total_token_count': getattr(response.usage_metadata, 'total_token_count', None)
+                }
+            
             gemini_call_logger.log_output(
                 call_id=call_id,
                 service_name="vertex_ai_adapter", 
@@ -392,9 +412,9 @@ class VertexAIAdapter:
                 processing_time=duration,
                 additional_metadata={
                     "response_type": type(result).__name__,
-                    "usage_metadata": str(response.usage_metadata) if hasattr(response, 'usage_metadata') else None,
                     "method": "generate_content"
-                }
+                },
+                usage_metadata=usage_metadata_dict
             )
             
             # LOG DÉTAILLÉ OUTPUT (existant - réduit)

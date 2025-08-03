@@ -3,11 +3,13 @@ FIA v3.0 - Admin Repository
 Repository for admin dashboard statistics and trainer overview queries
 """
 
+import logging
 from typing import List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, distinct, case, cast, Integer
 from sqlalchemy.orm import joinedload
 
+from app.domain.ports.admin_repository_port import AdminRepositoryPort
 from app.infrastructure.models.trainer_model import TrainerModel
 from app.infrastructure.models.training_model import TrainingModel
 from app.infrastructure.models.training_session_model import TrainingSessionModel
@@ -15,9 +17,13 @@ from app.infrastructure.models.learner_session_model import LearnerSessionModel
 from app.infrastructure.models.training_slide_model import TrainingSlideModel
 from app.infrastructure.models.chat_message_model import ChatMessageModel
 from app.infrastructure.models.training_submodule_model import TrainingSubmoduleModel
+from app.infrastructure.models.training_module_model import TrainingModuleModel
+from app.infrastructure.models.learner_training_plan_model import LearnerTrainingPlanModel
+
+logger = logging.getLogger(__name__)
 
 
-class AdminRepository:
+class AdminRepository(AdminRepositoryPort):
     """Repository for admin dashboard queries"""
     
     def __init__(self, session: AsyncSession):
@@ -50,8 +56,8 @@ class AdminRepository:
             func.count(distinct(LearnerSessionModel.email)).label('unique_learners'),
             func.coalesce(func.sum(LearnerSessionModel.total_time_spent), 0).label('total_time_seconds'),
             
-            # Simplified slide statistics - use a constant for now since the relationship is complex
-            func.coalesce(func.sum(cast(0, Integer)), 0).label('total_slides_generated')
+            # Slide statistics - sum of current_slide_number from all learner sessions
+            func.coalesce(func.sum(LearnerSessionModel.current_slide_number), 0).label('total_slides_generated')
             
         ).select_from(
             TrainerModel
@@ -288,10 +294,10 @@ class AdminRepository:
             # Count learners for this session
             func.count(distinct(LearnerSessionModel.email)).label('total_learners'),
             
-            # Get max slides for this session (proxy for total slides)
-            func.coalesce(func.max(LearnerSessionModel.current_slide_number), 0).label('total_slides'),
+            # Get max current slide (highest slide reached by any learner)
+            func.coalesce(func.max(LearnerSessionModel.current_slide_number), 0).label('max_slide_reached'),
             
-            # Get average current slide number for progress calculation
+            # Get average progress: average of individual learner current positions
             func.coalesce(func.avg(LearnerSessionModel.current_slide_number), 0).label('avg_current_slide')
             
         ).select_from(
@@ -321,10 +327,14 @@ class AdminRepository:
             training_type = "IA" if row.is_ai_generated else "Humain"
             status = "Active" if row.is_active else "Inactive"
             
-            # Calculate progress percentage (simple calculation)
+            # Get the real total slides count for this training session
+            total_slides_in_plan = await self._get_total_slides_for_session(row.session_id)
+            
+            # Calculate progress percentage based on average current position vs real total
             progress_percentage = 0
-            if row.total_slides > 0 and row.avg_current_slide > 0:
-                progress_percentage = min(100, (row.avg_current_slide / row.total_slides) * 100)
+            if total_slides_in_plan > 0 and row.avg_current_slide > 0:
+                # Average progress of all learners as percentage of total slides in the plan
+                progress_percentage = min(100, (row.avg_current_slide / total_slides_in_plan) * 100)
             
             # For token costs, use placeholder values for now
             # In a real implementation, these would come from API logs or a dedicated token tracking system
@@ -341,7 +351,7 @@ class AdminRepository:
                 "training_type": training_type,
                 "session_date": row.session_date.isoformat() if row.session_date else None,
                 "status": status,
-                "total_slides": row.total_slides,
+                "total_slides": total_slides_in_plan,
                 "progress_percentage": round(progress_percentage, 1),
                 "input_tokens": input_tokens,
                 "output_tokens": output_tokens,
@@ -438,3 +448,35 @@ class AdminRepository:
             return f"{whole_hours}h"
         else:
             return f"{whole_hours}h {remaining_minutes}min"
+    
+    async def _get_total_slides_for_session(self, session_id: str) -> int:
+        """
+        Get the total number of slides in the training plan for a specific session
+        
+        Args:
+            session_id: The training session ID
+            
+        Returns:
+            Total number of slides in the training plan
+        """
+        try:
+            # Query to get total slides count for this session
+            # Following the same pattern as dashboard_controller.py
+            total_slides_result = await self.session.execute(
+                select(func.count(TrainingSlideModel.id))
+                .join(TrainingSubmoduleModel, TrainingSlideModel.submodule_id == TrainingSubmoduleModel.id)
+                .join(TrainingModuleModel, TrainingSubmoduleModel.module_id == TrainingModuleModel.id)
+                .join(LearnerTrainingPlanModel, TrainingModuleModel.plan_id == LearnerTrainingPlanModel.id)
+                .join(LearnerSessionModel, LearnerTrainingPlanModel.learner_session_id == LearnerSessionModel.id)
+                .join(TrainingSessionModel, LearnerSessionModel.training_session_id == TrainingSessionModel.id)
+                .where(TrainingSessionModel.id == session_id)
+                .distinct()  # Avoid counting the same slide multiple times
+            )
+            
+            total_slides = total_slides_result.scalar() or 0
+            return total_slides
+            
+        except Exception as e:
+            # If there's an error getting the real count, fall back to max_slide_reached
+            logger.error(f"Error getting total slides for session {session_id}: {e}")
+            return 0

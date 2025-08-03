@@ -12,6 +12,7 @@ import json
 from app.domain.ports.outbound_ports import LiveConversationServicePort
 from app.infrastructure.live_api_client import LiveAPIClient, AudioData, LiveResponse, LiveAPIError
 from app.infrastructure.rate_limiter import gemini_rate_limiter
+from app.infrastructure.gemini_call_logger import gemini_call_logger, ServiceType
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +138,20 @@ class LiveAPIAdapter(LiveConversationServicePort):
             - is_complete: bool - Whether response is complete
         """
         try:
-            logger.info(f"🎙️ LIVE_API [HANDLE_CONVERSATION] Starting for session {session_id}, input size: {len(audio_input)} bytes")
+            # 🔍 NOUVEAU: Logger centralisé - INPUT pour Live API
+            call_id = gemini_call_logger.log_input(
+                service_name="live_api_adapter",
+                prompt=f"Live audio conversation - {len(audio_input)} bytes audio input",
+                session_id=session_id,
+                additional_context={
+                    "audio_size_bytes": len(audio_input),
+                    "mime_type": mime_type,
+                    "method": "handle_live_conversation"
+                },
+                service_type=ServiceType.LIVE
+            )
+            
+            logger.info(f"🎙️ LIVE_API [HANDLE_CONVERSATION] Starting for session {session_id}, input size: {len(audio_input)} bytes - Call ID: {call_id}")
             
             # Check if session exists
             if session_id not in self.active_sessions:
@@ -196,6 +210,28 @@ class LiveAPIAdapter(LiveConversationServicePort):
                     "is_complete": True,
                     "error": None
             }
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT pour Live API
+            # Live API utilise l'audio, estimation des tokens pour le texte généré
+            estimated_output_tokens = len(mock_text) // 4 if mock_text else 0
+            
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="live_api_adapter",
+                response={
+                    "text_response": mock_text,
+                    "audio_size": len(response_data["audio_response"]),
+                    "metadata": response_data["metadata"]
+                },
+                session_id=session_id,
+                additional_metadata={
+                    "mock": True,
+                    "text_only": True,
+                    "estimated_tokens": True
+                },
+                input_tokens=0,  # Audio input, pas de tokens texte
+                output_tokens=estimated_output_tokens
+            )
                 
             logger.info(f"✅ LIVE_API [CONVERSATION] Mock response generated for session: {session_id}")
             return response_data

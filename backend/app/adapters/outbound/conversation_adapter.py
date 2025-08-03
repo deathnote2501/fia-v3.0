@@ -11,7 +11,7 @@ from uuid import UUID
 from app.domain.ports.outbound_ports import ConversationServicePort
 from app.infrastructure.adapters.vertex_ai_adapter import VertexAIAdapter
 from app.infrastructure.rate_limiter import gemini_rate_limiter
-from app.infrastructure.gemini_call_logger import gemini_call_logger
+from app.infrastructure.gemini_call_logger import gemini_call_logger, ServiceType
 from app.infrastructure.settings import settings
 from app.domain.services.learner_profile_enrichment_service import LearnerProfileEnrichmentService
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
@@ -145,7 +145,8 @@ class ConversationAdapter(ConversationServicePort):
                     "prompt_type": prompt_type,
                     "action_type": action_type,
                     "generation_config": self._get_generation_config(prompt_type)
-                }
+                },
+                service_type=ServiceType.CONVERSATION
             )
             
             response_text = await self.vertex_adapter.generate_content(
@@ -155,6 +156,11 @@ class ConversationAdapter(ConversationServicePort):
             )
             
             # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            # Note: Les tokens sont déjà comptés dans vertex_ai_adapter.generate_content()
+            # Ici nous loggons au niveau conversation avec estimation simple
+            estimated_input_tokens = len(prompt) // 4  # Approximation 1 token ≈ 4 chars
+            estimated_output_tokens = len(response_text) // 4
+            
             gemini_call_logger.log_output(
                 call_id=call_id,
                 service_name=f"conversation_{action_type}",
@@ -162,8 +168,11 @@ class ConversationAdapter(ConversationServicePort):
                 learner_session_id=str(learner_session_id) if learner_session_id else None,
                 additional_metadata={
                     "parsed_successfully": True,
-                    "action_type": action_type
-                }
+                    "action_type": action_type,
+                    "estimated_tokens": True
+                },
+                input_tokens=estimated_input_tokens,
+                output_tokens=estimated_output_tokens
             )
             
             logger.info(f"🤖 CONVERSATION [{action_type.upper()}] Generated response - Call ID: {call_id}")
@@ -354,7 +363,8 @@ class ConversationAdapter(ConversationServicePort):
                     "slide_title": slide_title,
                     "generation_config": generation_config,
                     "action_type": "quiz_generation"
-                }
+                },
+                service_type=ServiceType.CONVERSATION
             )
             
             response_text = await self.vertex_adapter.generate_content(
@@ -362,15 +372,21 @@ class ConversationAdapter(ConversationServicePort):
                 generation_config=generation_config
             )
             
-            # 🔍 NOUVEAU: Logger centralisé - OUTPUT
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT avec estimation tokens
+            estimated_input_tokens = len(prompt) // 4
+            estimated_output_tokens = len(response_text) // 4
+            
             gemini_call_logger.log_output(
                 call_id=call_id,
                 service_name="conversation_quiz",
                 response=response_text,
                 additional_metadata={
                     "action_type": "quiz_generation",
-                    "slide_title": slide_title
-                }
+                    "slide_title": slide_title,
+                    "estimated_tokens": True
+                },
+                input_tokens=estimated_input_tokens,
+                output_tokens=estimated_output_tokens
             )
             
             logger.info(f"🤖 CONVERSATION [QUIZ] Generated quiz for slide comprehension")

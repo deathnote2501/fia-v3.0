@@ -13,12 +13,21 @@ from app.infrastructure.auth import get_current_trainer
 from app.infrastructure.database import get_database_session
 from app.domain.entities.trainer import Trainer
 from app.domain.services.admin_dashboard_service import AdminDashboardService
+from app.adapters.repositories.admin_repository import AdminRepository
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
+
+
+async def get_admin_dashboard_service(
+    session: AsyncSession = Depends(get_database_session)
+) -> AdminDashboardService:
+    """Dependency to get admin dashboard service with proper dependency injection"""
+    admin_repository = AdminRepository(session)
+    return AdminDashboardService(admin_repository)
 
 
 async def get_current_admin_trainer(
@@ -35,7 +44,7 @@ async def get_current_admin_trainer(
 @router.get("/trainers-overview")
 async def get_trainers_overview(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> List[Dict[str, Any]]:
     """
     Get overview of all trainers with their complete statistics
@@ -43,8 +52,6 @@ async def get_trainers_overview(
     logger.info(f"Admin {admin_trainer.email} requested trainers overview")
     
     try:
-        # Use the admin dashboard service to get real statistics
-        admin_service = AdminDashboardService(session)
         trainers_overview = await admin_service.get_trainers_overview()
         
         logger.info(f"Successfully retrieved overview for {len(trainers_overview)} trainers")
@@ -58,7 +65,7 @@ async def get_trainers_overview(
 @router.get("/trainees-overview")
 async def get_trainees_overview(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> List[Dict[str, Any]]:
     """
     Get overview of all trainees with their learning statistics
@@ -66,8 +73,6 @@ async def get_trainees_overview(
     logger.info(f"Admin {admin_trainer.email} requested trainees overview")
     
     try:
-        # Use the admin dashboard service to get trainees statistics
-        admin_service = AdminDashboardService(session)
         trainees_overview = await admin_service.get_trainees_overview()
         
         logger.info(f"Successfully retrieved overview for {len(trainees_overview)} trainees")
@@ -81,7 +86,7 @@ async def get_trainees_overview(
 @router.get("/trainings-overview")
 async def get_trainings_overview(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> List[Dict[str, Any]]:
     """
     Get overview of all trainings with their statistics
@@ -89,8 +94,6 @@ async def get_trainings_overview(
     logger.info(f"Admin {admin_trainer.email} requested trainings overview")
     
     try:
-        # Use the admin dashboard service to get trainings statistics
-        admin_service = AdminDashboardService(session)
         trainings_overview = await admin_service.get_trainings_overview()
         
         logger.info(f"Successfully retrieved overview for {len(trainings_overview)} trainings")
@@ -104,7 +107,7 @@ async def get_trainings_overview(
 @router.get("/sessions-overview")
 async def get_sessions_overview(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> List[Dict[str, Any]]:
     """
     Get overview of all training sessions with their statistics and token costs
@@ -112,8 +115,6 @@ async def get_sessions_overview(
     logger.info(f"Admin {admin_trainer.email} requested sessions overview")
     
     try:
-        # Use the admin dashboard service to get sessions statistics
-        admin_service = AdminDashboardService(session)
         sessions_overview = await admin_service.get_sessions_overview()
         
         logger.info(f"Successfully retrieved overview for {len(sessions_overview)} sessions")
@@ -127,7 +128,7 @@ async def get_sessions_overview(
 @router.get("/stats")
 async def get_admin_stats(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> Dict[str, Any]:
     """
     Get global admin statistics
@@ -135,8 +136,6 @@ async def get_admin_stats(
     logger.info(f"Admin {admin_trainer.email} requested admin stats")
     
     try:
-        # Use the admin dashboard service to get real global statistics
-        admin_service = AdminDashboardService(session)
         global_stats = await admin_service.get_global_statistics()
         
         logger.info("Successfully retrieved admin stats")
@@ -150,7 +149,7 @@ async def get_admin_stats(
 @router.get("/health")
 async def get_platform_health(
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> Dict[str, Any]:
     """
     Get platform health and performance metrics
@@ -158,7 +157,6 @@ async def get_platform_health(
     logger.info(f"Admin {admin_trainer.email} requested platform health metrics")
     
     try:
-        admin_service = AdminDashboardService(session)
         health_metrics = await admin_service.get_platform_health_metrics()
         
         logger.info("Successfully retrieved platform health metrics")
@@ -173,7 +171,7 @@ async def get_platform_health(
 async def get_trainer_details(
     trainer_id: str,
     admin_trainer: Trainer = Depends(get_current_admin_trainer),
-    session: AsyncSession = Depends(get_database_session)
+    admin_service: AdminDashboardService = Depends(get_admin_dashboard_service)
 ) -> Dict[str, Any]:
     """
     Get detailed statistics for a specific trainer
@@ -181,7 +179,6 @@ async def get_trainer_details(
     logger.info(f"Admin {admin_trainer.email} requested details for trainer {trainer_id}")
     
     try:
-        admin_service = AdminDashboardService(session)
         trainer_details = await admin_service.get_trainer_detailed_stats(trainer_id)
         
         logger.info(f"Successfully retrieved details for trainer {trainer_id}")

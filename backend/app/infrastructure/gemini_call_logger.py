@@ -1,6 +1,6 @@
 """
 FIA v3.0 - Gemini Call Logger
-Service centralisé pour logger tous les appels et réponses Gemini/VertexAI
+Service centralisé pour logger tous les appels et réponses Gemini/VertexAI avec comptage de tokens
 ATTENTION: Ce service ne doit PAS impacter la logique métier existante
 """
 
@@ -10,8 +10,45 @@ import time
 from typing import Optional, Dict, Any, Union
 from datetime import datetime, timezone
 from uuid import UUID
+from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+
+class ServiceType(Enum):
+    """Types de services pour catégoriser les appels AI"""
+    PLAN = "plan_generation"
+    SLIDES = "slide_generation"  
+    CONVERSATION = "conversation"
+    TTS = "tts_generation"
+    LIVE = "live_conversation"
+    IMAGE = "image_generation"
+    CONTEXT_CACHE = "context_cache"
+    DOCUMENT_PROCESSING = "document_processing"
+    
+    @classmethod
+    def from_service_name(cls, service_name: str) -> 'ServiceType':
+        """Détecter le type de service depuis le nom du service"""
+        service_name_lower = service_name.lower()
+        
+        if "plan" in service_name_lower:
+            return cls.PLAN
+        elif "slide" in service_name_lower:
+            return cls.SLIDES
+        elif "conversation" in service_name_lower or "chat" in service_name_lower:
+            return cls.CONVERSATION
+        elif "tts" in service_name_lower or "speech" in service_name_lower:
+            return cls.TTS
+        elif "live" in service_name_lower:
+            return cls.LIVE
+        elif "image" in service_name_lower or "dalle" in service_name_lower:
+            return cls.IMAGE
+        elif "cache" in service_name_lower:
+            return cls.CONTEXT_CACHE
+        elif "document" in service_name_lower:
+            return cls.DOCUMENT_PROCESSING
+        else:
+            return cls.CONVERSATION  # Default fallback
 
 
 class GeminiCallLogger:
@@ -40,7 +77,8 @@ class GeminiCallLogger:
         prompt: str,
         session_id: Optional[Union[str, UUID]] = None,
         learner_session_id: Optional[Union[str, UUID]] = None,
-        additional_context: Optional[Dict[str, Any]] = None
+        additional_context: Optional[Dict[str, Any]] = None,
+        service_type: Optional[ServiceType] = None
     ) -> str:
         """
         Logger un prompt/input envoyé à Gemini
@@ -51,6 +89,7 @@ class GeminiCallLogger:
             session_id: ID de session technique
             learner_session_id: ID de session apprenant
             additional_context: Contexte additionnel (config, metadata)
+            service_type: Type de service pour catégorisation (auto-détecté si None)
             
         Returns:
             call_id: Identifiant unique pour tracer l'appel
@@ -72,6 +111,9 @@ class GeminiCallLogger:
             self.call_counter += 1
             call_id = f"call_{self.call_counter}_{int(time.time())}"
             
+            # Détecter le type de service si non fourni
+            detected_service_type = service_type or ServiceType.from_service_name(service_name)
+            
             # Préparer le contexte de session
             session_info = self._format_session_info(session_id, learner_session_id)
             
@@ -79,6 +121,7 @@ class GeminiCallLogger:
             logger.info("=" * 100)
             logger.info(f"🎯 [GEMINI_CALL] [INPUT] [{service_name.upper()}] {session_info}")
             logger.info(f"📋 Call ID: {call_id}")
+            logger.info(f"🏷️ Service Type: {detected_service_type.value}")
             logger.info(f"⏰ Timestamp: {datetime.now(timezone.utc).isoformat()}")
             logger.info(f"📏 Prompt Length: {len(prompt)} characters")
             
@@ -105,10 +148,13 @@ class GeminiCallLogger:
         session_id: Optional[Union[str, UUID]] = None,
         learner_session_id: Optional[Union[str, UUID]] = None,
         processing_time: Optional[float] = None,
-        additional_metadata: Optional[Dict[str, Any]] = None
+        additional_metadata: Optional[Dict[str, Any]] = None,
+        input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+        usage_metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """
-        Logger la réponse reçue de Gemini
+        Logger la réponse reçue de Gemini avec comptage de tokens
         
         Args:
             call_id: ID de l'appel correspondant (retourné par log_input)
@@ -118,6 +164,9 @@ class GeminiCallLogger:
             learner_session_id: ID de session apprenant
             processing_time: Temps de traitement en secondes
             additional_metadata: Métadonnées additionnelles
+            input_tokens: Nombre de tokens d'entrée (prompt)
+            output_tokens: Nombre de tokens de sortie (réponse)
+            usage_metadata: Métadonnées d'usage complètes de l'API
         """
         try:
             # Skip si c'était un appel dédupliqué
@@ -126,6 +175,11 @@ class GeminiCallLogger:
                 
             # Préparer le contexte de session
             session_info = self._format_session_info(session_id, learner_session_id)
+            
+            # Extraire les tokens depuis usage_metadata si disponibles
+            extracted_input_tokens, extracted_output_tokens = self._extract_tokens_from_metadata(
+                usage_metadata, input_tokens, output_tokens
+            )
             
             # Formater la réponse pour affichage
             formatted_response = self._format_response(response)
@@ -136,6 +190,10 @@ class GeminiCallLogger:
             logger.info(f"📋 Call ID: {call_id}")
             logger.info(f"⏰ Timestamp: {datetime.now(timezone.utc).isoformat()}")
             logger.info(f"📏 Response Length: {len(str(response))} characters")
+            
+            # Afficher les tokens si disponibles
+            if extracted_input_tokens is not None or extracted_output_tokens is not None:
+                logger.info(f"🪙 TOKENS - Input: {extracted_input_tokens or 'N/A'} | Output: {extracted_output_tokens or 'N/A'} | Total: {(extracted_input_tokens or 0) + (extracted_output_tokens or 0) if extracted_input_tokens and extracted_output_tokens else 'N/A'}")
             
             if processing_time:
                 logger.info(f"⚡ Processing Time: {processing_time:.3f}s")
@@ -210,6 +268,41 @@ class GeminiCallLogger:
             
         return f"[{' | '.join(info_parts)}]"
     
+    def _extract_tokens_from_metadata(
+        self, 
+        usage_metadata: Optional[Dict[str, Any]], 
+        input_tokens: Optional[int], 
+        output_tokens: Optional[int]
+    ) -> tuple[Optional[int], Optional[int]]:
+        """
+        Extraire les tokens depuis les métadonnées d'usage ou utiliser les valeurs fournies
+        
+        Args:
+            usage_metadata: Métadonnées d'usage de l'API Vertex AI
+            input_tokens: Tokens d'entrée fournis manuellement
+            output_tokens: Tokens de sortie fournis manuellement
+            
+        Returns:
+            tuple: (input_tokens, output_tokens) ou (None, None) si non disponibles
+        """
+        try:
+            # Priorité aux valeurs fournies explicitement
+            final_input_tokens = input_tokens
+            final_output_tokens = output_tokens
+            
+            # Si les valeurs ne sont pas fournies, essayer d'extraire depuis usage_metadata
+            if usage_metadata and isinstance(usage_metadata, dict):
+                if final_input_tokens is None:
+                    final_input_tokens = usage_metadata.get('prompt_token_count')
+                if final_output_tokens is None:
+                    final_output_tokens = usage_metadata.get('candidates_token_count')
+                    
+            return final_input_tokens, final_output_tokens
+            
+        except Exception as e:
+            logger.warning(f"⚠️ GEMINI_CALL_LOGGER [TOKEN_EXTRACTION] Failed to extract tokens: {e}")
+            return input_tokens, output_tokens
+    
     def _format_response(self, response: Union[str, Dict[str, Any]]) -> str:
         """Formater la réponse pour un affichage lisible"""
         try:
@@ -229,12 +322,53 @@ class GeminiCallLogger:
             # En cas de problème de formatage, retourner la représentation string
             return str(response)
     
+    def log_tokens(
+        self,
+        call_id: str,
+        service_name: str, 
+        service_type: ServiceType,
+        input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+        learner_session_id: Optional[Union[str, UUID]] = None
+    ) -> None:
+        """
+        Méthode spécialisée pour logger uniquement les tokens (utilisée pour les services sans prompt/response)
+        
+        Args:
+            call_id: ID de l'appel
+            service_name: Nom du service
+            service_type: Type de service (enum)
+            input_tokens: Nombre de tokens d'entrée
+            output_tokens: Nombre de tokens de sortie
+            learner_session_id: ID de session apprenant
+        """
+        try:
+            session_info = self._format_session_info(None, learner_session_id)
+            total_tokens = (input_tokens or 0) + (output_tokens or 0)
+            
+            logger.info("=" * 50)
+            logger.info(f"🪙 [TOKENS_ONLY] [{service_name.upper()}] {session_info}")
+            logger.info(f"📋 Call ID: {call_id}")
+            logger.info(f"🏷️ Service Type: {service_type.value}")
+            logger.info(f"🪙 TOKENS - Input: {input_tokens or 'N/A'} | Output: {output_tokens or 'N/A'} | Total: {total_tokens or 'N/A'}")
+            logger.info("=" * 50)
+            
+        except Exception as e:
+            logger.error(f"❌ GEMINI_CALL_LOGGER [TOKENS_ERROR] Failed to log tokens for call {call_id}: {e}")
+    
     def get_stats(self) -> Dict[str, Any]:
-        """Obtenir les statistiques du logger"""
+        """Obtenir les statistiques du logger avec support tokens"""
         return {
             "service_name": "GeminiCallLogger",
             "total_calls_logged": self.call_counter,
             "status": "active",
+            "features": [
+                "input_output_logging",
+                "token_counting", 
+                "service_type_detection",
+                "usage_metadata_extraction"
+            ],
+            "supported_service_types": [service_type.value for service_type in ServiceType],
             "last_check": datetime.now(timezone.utc).isoformat()
         }
 

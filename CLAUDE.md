@@ -365,6 +365,9 @@ Grep pattern="def __init__" path="app/domain/services" -A 3
 - `POST /api/context-cache/*` - Document caching and management
 - `POST /api/document-processing/*` - Document analysis and parsing
 - `GET /api/rate-limit/*` - Rate limiting status and testing
+- `GET /api/sessions/{id}/token-usage` - **NEW: Comprehensive token usage statistics**
+- `GET /api/sessions/{id}/token-usage/analytics` - **NEW: Service type analytics with insights**
+- `GET /api/token-usage/health` - **NEW: Token usage service health check**
 - `POST /api/trainings/` - Create training with file upload
 - `GET /api/trainings/` - List trainer's trainings
 - `GET /api/trainings/{id}/download` - Download training files
@@ -409,6 +412,180 @@ Grep pattern="def __init__" path="app/domain/services" -A 3
 - ✅ **TTS spinner functionality and audio feedback** (NEW)
 - ✅ **Robust i18n system with SafeT helper** (NEW)
 - ✅ **Zero technical key display guarantee** (NEW)
+
+## Token Usage Tracking System (August 2025)
+
+### 🪙 Unified Token Counting for AI Services
+
+The platform includes a comprehensive **token usage tracking system** that monitors and analyzes AI/Gemini API consumption across all services with cost estimation and optimization insights.
+
+### Core Components
+
+#### 1. TokenUsageService (`app/domain/services/token_usage_service.py`)
+- **Comprehensive Analytics**: Session-based token aggregation and cost estimation
+- **Service Type Breakdown**: Categorizes usage by AI service type (plan, conversation, TTS, etc.)
+- **Cost Calculation**: Real-time cost estimation based on Gemini 2.0 Flash pricing
+- **Usage Insights**: Intelligent recommendations for optimization
+
+#### 2. LoggerAdapterPort & LoggerAdapter (`app/domain/ports/outbound_ports.py`, `app/adapters/outbound/logger_adapter.py`)
+- **Log Parsing**: Extracts token data from application logs 
+- **Session Filtering**: Isolates token usage per learner session
+- **Recent Calls Timeline**: Tracks AI interaction history
+
+#### 3. Enhanced GeminiCallLogger (`app/infrastructure/gemini_call_logger.py`)
+- **Service Type Classification**: Automatic categorization of AI calls
+- **Token Extraction**: Captures input/output tokens from Vertex AI usage_metadata
+- **Unified Logging**: Consistent logging format across all AI adapters
+
+### Service Type Coverage
+
+```python
+class ServiceType(Enum):
+    PLAN = "plan_generation"           # Training plan generation
+    SLIDES = "slide_generation"        # Slide content creation  
+    CONVERSATION = "conversation"      # Learner chat interactions
+    TTS = "tts_generation"            # Text-to-speech audio
+    LIVE = "live_conversation"        # Live API audio conversations
+    IMAGE = "image_generation"        # AI-generated images/infographics
+```
+
+### API Endpoints
+
+#### GET `/api/sessions/{learner_session_id}/token-usage`
+Returns comprehensive token usage statistics including:
+
+```json
+{
+  "learner_session_id": "session-123",
+  "query_time": "2025-01-28T14:30:00Z",
+  "summary": {
+    "total_tokens": 1250,
+    "input_tokens": 480,
+    "output_tokens": 770,
+    "total_calls": 8,
+    "session_duration_seconds": 1800.5
+  },
+  "by_service_type": {
+    "plan_generation": {
+      "input_tokens": 120,
+      "output_tokens": 350,
+      "calls": 1,
+      "service_names": ["vertex_ai_adapter"]
+    },
+    "conversation": {
+      "input_tokens": 280,
+      "output_tokens": 320,
+      "calls": 5,
+      "service_names": ["conversation_chat", "conversation_hint"]
+    }
+  },
+  "recent_calls": [
+    {
+      "call_id": "call_1_1732789200",
+      "service_name": "conversation_chat",
+      "service_type": "conversation",
+      "timestamp": "2025-01-28T14:25:00Z",
+      "input_tokens": 45,
+      "output_tokens": 78,
+      "processing_time": 1.8
+    }
+  ],
+  "cost_estimation": {
+    "currency": "USD",
+    "input_cost": 0.000036,
+    "output_cost": 0.000231,
+    "total_cost": 0.000267,
+    "note": "Estimated costs based on Gemini 2.0 Flash pricing"
+  }
+}
+```
+
+#### GET `/api/sessions/{learner_session_id}/token-usage/analytics`
+Provides service-specific analytics with insights:
+
+```json
+{
+  "learner_session_id": "session-123",
+  "service_types": { /* Service breakdown */ },
+  "insights": [
+    "Most token-intensive service: conversation (600 tokens)",
+    "Total AI interactions: 8 calls",
+    "High conversation engagement detected - learner actively asking questions"
+  ],
+  "recommendations": [
+    "Consider using context caching for frequently accessed training materials",
+    "Token usage is within normal ranges"
+  ]
+}
+```
+
+### Token Estimation Strategies
+
+For services without native token metrics:
+- **TTS Services**: `text_length / 4` input tokens, `0` output tokens (audio)
+- **Image Generation**: `prompt_length / 4` input tokens, `0` output tokens (image)
+- **Live API**: Estimation based on audio duration and conversation context
+
+### Implementation Features
+
+- **KISS Architecture**: Simple, focused implementation following hexagonal principles
+- **Dependency Injection**: Clean service instantiation with proper port interfaces
+- **Real-time Cost Tracking**: Immediate cost feedback based on current Gemini pricing
+- **Session Isolation**: Token usage tracked per learner session for accurate analytics
+- **Error Resilience**: Graceful fallbacks when token data unavailable
+
+### Usage Examples
+
+#### Get Token Usage for a Session
+```bash
+# Get comprehensive token usage statistics
+GET /api/sessions/abc123-def456/token-usage
+
+# With time range filtering
+GET /api/sessions/abc123-def456/token-usage?start_time=2025-01-01T00:00:00Z&end_time=2025-01-31T23:59:59Z
+```
+
+#### Get Analytics and Insights
+```bash
+# Get service type analytics with recommendations
+GET /api/sessions/abc123-def456/token-usage/analytics
+```
+
+#### Health Check
+```bash
+# Verify token usage service status
+GET /api/token-usage/health
+```
+
+#### Example Response Processing
+```javascript
+// Frontend JavaScript example
+const sessionId = 'abc123-def456';
+const response = await fetch(`/api/sessions/${sessionId}/token-usage`);
+const tokenData = await response.json();
+
+// Extract key metrics
+const totalCost = tokenData.cost_estimation.total_cost;
+const mostUsedService = tokenData.insights[0];
+const optimizationTips = tokenData.recommendations;
+
+console.log(`Session cost: $${totalCost.toFixed(6)}`);
+console.log(`Optimization: ${optimizationTips[0]}`);
+```
+
+### Files Created
+
+**New Implementation:**
+- `app/domain/services/token_usage_service.py` - Core analytics service
+- `app/domain/schemas/token_usage.py` - Pydantic response schemas
+- `app/adapters/outbound/logger_adapter.py` - Log parsing adapter
+- `app/adapters/inbound/token_usage_controller.py` - FastAPI endpoints
+- Enhanced all AI adapters with token tracking integration
+
+**Updated Integration:**
+- Updated `app/main.py` - Exposed token usage endpoints
+- Enhanced `app/infrastructure/gemini_call_logger.py` - Service type classification
+- Updated all AI adapters for consistent token logging
 
 ## Progressive Learner Profile Enrichment System
 

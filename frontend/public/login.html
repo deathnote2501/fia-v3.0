@@ -107,26 +107,10 @@
     <script src="../src/utils/api.js"></script>
     <script src="../src/utils/auth.js"></script>
     <script src="../src/utils/validation.js"></script>
-    <script src="../src/components/login-form.js"></script>
-    
-    <script>
-        // Initialize i18n when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.i18n) {
-                // Update all elements with data-i18n attributes
-                window.i18n.updateDOM();
-                
-                // Update title specifically
-                const titleElement = document.querySelector('title[data-i18n]');
-                if (titleElement) {
-                    const key = titleElement.getAttribute('data-i18n');
-                    const translation = window.i18n.t(key);
-                    if (translation && translation !== key) {
-                        titleElement.textContent = translation;
-                    }
-                }
-            }
-        });
+    <script type="module">
+        import { autoInitializeBasicPage } from '../src/components/page-init.js';
+        autoInitializeBasicPage();
     </script>
+    <script src="../src/components/login-form.js"></script>
 </body>
 </html>

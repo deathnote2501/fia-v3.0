@@ -138,13 +138,20 @@ class I18n {
             element.placeholder = this.t(key);
         });
         
+        // Update document title if it has data-i18n attribute
+        const titleElement = document.querySelector('title[data-i18n]');
+        if (titleElement) {
+            const key = titleElement.getAttribute('data-i18n');
+            document.title = this.t(key);
+        }
+        
         // Mettre à jour l'attribut lang du document
         document.documentElement.lang = this.currentLanguage;
         
-        // Déclencher un événement pour que les composants puissent réagir
-        window.dispatchEvent(new CustomEvent('languageChanged', { 
-            detail: { language: this.currentLanguage } 
-        }));
+        // Call updateLearnerInterface directly instead of event to avoid recursion
+        if (window.updateLearnerInterface && typeof window.updateLearnerInterface === 'function') {
+            window.updateLearnerInterface();
+        }
     }
     
     /**

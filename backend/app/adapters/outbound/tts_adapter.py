@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Optional
 
 from app.domain.ports.outbound_ports import TTSServicePort
 from app.adapters.outbound.gemini_tts_adapter import GeminiTTSAdapter, GeminiTTSError
+from app.infrastructure.gemini_call_logger import gemini_call_logger, ServiceType
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +46,51 @@ class TTSAdapter(TTSServicePort):
             Dict containing audio_data, duration_seconds, and metadata
         """
         try:
-            logger.info(f"🔊 TTS [KISS] Generating speech - Voice: {voice_name}, Lang: {language_code}")
-            return await self.gemini_tts_adapter.generate_speech(
+            # 🔍 NOUVEAU: Logger centralisé - INPUT pour TTS
+            call_id = gemini_call_logger.log_input(
+                service_name="tts_adapter",
+                prompt=f"Text-to-Speech: {text[:100]}...",
+                additional_context={
+                    "text_length": len(text),
+                    "voice_name": voice_name,
+                    "language_code": language_code,
+                    "method": "generate_speech"
+                },
+                service_type=ServiceType.TTS
+            )
+            
+            logger.info(f"🔊 TTS [KISS] Generating speech - Voice: {voice_name}, Lang: {language_code} - Call ID: {call_id}")
+            result = await self.gemini_tts_adapter.generate_speech(
                 text=text,
                 voice_name=voice_name,
                 language_code=language_code
             )
+            
+            # 🔍 NOUVEAU: Logger centralisé - OUTPUT pour TTS
+            # TTS consomme du texte en entrée et génère de l'audio en sortie
+            estimated_input_tokens = len(text) // 4
+            estimated_output_tokens = 0  # TTS génère de l'audio, pas de tokens de texte
+            
+            gemini_call_logger.log_output(
+                call_id=call_id,
+                service_name="tts_adapter",
+                response={
+                    "audio_generated": True,
+                    "audio_size_bytes": len(result.get("audio_data", b"")),
+                    "duration_seconds": result.get("duration_seconds", 0),
+                    "metadata": result.get("metadata", {})
+                },
+                additional_metadata={
+                    "voice_name": voice_name,
+                    "language_code": language_code,
+                    "estimated_tokens": True
+                },
+                input_tokens=estimated_input_tokens,
+                output_tokens=estimated_output_tokens
+            )
+            
+            return result
+            
         except Exception as e:
             logger.error(f"❌ TTS [GENERATE] Failed to generate speech: {str(e)}")
             raise GeminiTTSError(f"Speech generation failed: {str(e)}", e)

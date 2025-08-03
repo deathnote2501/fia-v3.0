@@ -332,3 +332,84 @@ class TTSServicePort(ABC):
             List of voice information dictionaries
         """
         pass
+
+
+class LoggerAdapterPort(ABC):
+    """Port for accessing application logs and extracting token usage statistics"""
+    
+    @abstractmethod
+    async def get_token_usage_by_session(
+        self,
+        learner_session_id: str,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Get token usage statistics for a specific learner session
+        
+        Args:
+            learner_session_id: ID of the learner session
+            start_time: Optional start time filter (ISO format)
+            end_time: Optional end time filter (ISO format)
+            
+        Returns:
+            Dict containing:
+            - total_tokens: int - Total tokens used
+            - input_tokens: int - Total input tokens
+            - output_tokens: int - Total output tokens
+            - by_service_type: Dict[str, Dict] - Breakdown by service type
+            - call_count: int - Number of AI calls made
+            - session_duration: Optional[float] - Duration in seconds
+        """
+        pass
+    
+    @abstractmethod
+    async def get_service_type_breakdown(
+        self,
+        learner_session_id: str
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Get detailed breakdown of token usage by service type
+        
+        Args:
+            learner_session_id: ID of the learner session
+            
+        Returns:
+            Dict mapping service type to usage statistics:
+            {
+                "plan_generation": {"input_tokens": 150, "output_tokens": 300, "calls": 1},
+                "conversation": {"input_tokens": 800, "output_tokens": 1200, "calls": 5},
+                ...
+            }
+        """
+        pass
+    
+    @abstractmethod
+    async def get_recent_calls(
+        self,
+        learner_session_id: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent AI calls for a session
+        
+        Args:
+            learner_session_id: ID of the learner session
+            limit: Maximum number of calls to return
+            
+        Returns:
+            List of call information:
+            [
+                {
+                    "call_id": "call_123",
+                    "service_name": "conversation_chat",
+                    "service_type": "conversation",
+                    "timestamp": "2025-01-01T12:00:00Z",
+                    "input_tokens": 50,
+                    "output_tokens": 100,
+                    "processing_time": 2.5
+                },
+                ...
+            ]
+        """
+        pass

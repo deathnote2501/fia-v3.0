@@ -10,156 +10,15 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
-    <style>
-        /* Background image styles */
-        body {
-            background-image: url('../src/image/bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-            font-family: 'Arial', sans-serif;
-        }
-        
-        /* Semi-transparent overlay container */
-        .content-overlay {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            padding: 3rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Logo styling */
-        .brand-logo {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            color: white;
-            text-decoration: none;
-            font-size: 1.5rem;
-            font-weight: 600;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .brand-logo:hover {
-            color: #fff;
-            transform: scale(1.05);
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-        }
-        
-        .brand-icon {
-            margin-right: 0.5rem;
-            font-size: 2rem;
-        }
-        
-        /* Main title styling */
-        .main-title {
-            color: #212529;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            text-align: center;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-        }
-        
-        /* Input field styling */
-        .training-input {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 0.75rem;
-            font-size: 1.1rem;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .training-input:focus {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: #0d6efd;
-            box-shadow: 0 4px 20px rgba(13, 110, 253, 0.2);
-            outline: none;
-        }
-        
-        /* CTA Button styling */
-        .cta-button {
-            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-            border: none;
-            border-radius: 0.75rem;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 600;
-            padding: 1rem 3rem;
-            box-shadow: 0 4px 20px rgba(13, 110, 253, 0.4);
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .cta-button:hover {
-            background: linear-gradient(135deg, #0b5ed7, #0a58ca);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(13, 110, 253, 0.5);
-            color: white;
-        }
-        
-        .cta-button:active {
-            transform: translateY(0);
-        }
-        
-        .cta-icon {
-            margin-left: 0.5rem;
-            transition: transform 0.3s ease;
-        }
-        
-        .cta-button:hover .cta-icon {
-            transform: translateX(3px);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .content-overlay {
-                margin: 1rem;
-                padding: 2rem;
-            }
-            
-            .main-title {
-                font-size: 2rem;
-            }
-            
-            .brand-logo {
-                position: relative;
-                top: auto;
-                left: auto;
-                display: block;
-                text-align: center;
-                margin-bottom: 2rem;
-            }
-        }
-        
-        /* Loading state */
-        .loading-state {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
-        .loading-state .cta-button {
-            background: #6c757d;
-        }
-    </style>
+    <!-- Custom styles -->
+    <link href="/frontend/src/styles/main.css" rel="stylesheet">
+    
 </head>
-<body>
+<body class="landing-page">
     <!-- Brand Logo -->
     <a href="#" class="brand-logo d-none d-md-block">
         <i class="bi bi-dice-3-fill brand-icon"></i>
-        <span data-i18n="landing.brandName">Dice3.ai</span>
+        <span data-i18n="landing.brandName">Jerome IAvarone</span>
     </a>
     
     <!-- Main Content Container -->
@@ -169,7 +28,7 @@
             <div class="d-block d-md-none mb-4 text-center">
                 <a href="#" class="brand-logo position-relative">
                     <i class="bi bi-dice-3-fill brand-icon"></i>
-                    <span data-i18n="landing.brandName">Dice3.ai</span>
+                    <span data-i18n="landing.brandName">Jerome IAvarone</span>
                 </a>
             </div>
             
@@ -206,45 +65,12 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- i18n Service -->
-    <script type="module">
-        import { initializeI18n, setupGlobalTranslation } from '../src/i18n/i18n-helper.js';
-        
-        // Initialize i18n when DOM is loaded
-        window.addEventListener('DOMContentLoaded', async () => {
-            console.log('🌐 [LANDING] Initializing i18n service...');
-            
-            try {
-                await initializeI18n();
-                setupGlobalTranslation();
-                
-                // Update all elements with data-i18n attributes
-                if (window.i18n) {
-                    window.i18n.updateDOM();
-                    
-                    // Update custom attributes (placeholder)
-                    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
-                        const key = element.getAttribute('data-i18n-placeholder');
-                        element.placeholder = window.i18n.t(key);
-                    });
-                    
-                    // Update document title
-                    const titleElement = document.querySelector('title[data-i18n]');
-                    if (titleElement) {
-                        const key = titleElement.getAttribute('data-i18n');
-                        document.title = window.i18n.t(key);
-                    }
-                }
-                
-                console.log('✅ [LANDING] i18n service initialized successfully');
-            } catch (error) {
-                console.warn('⚠️ [LANDING] Failed to initialize i18n:', error);
-            }
-        });
-    </script>
-    
     <!-- Landing Page JavaScript -->
-    <script type="module" src="../src/components/landing-page.js"></script>
+    <script type="module">
+        import { autoInitializeBasicPage } from '/frontend/src/components/page-init.js';
+        autoInitializeBasicPage();
+    </script>
+    <script type="module" src="/frontend/src/components/landing-page.js"></script>
     
 </body>
 </html>

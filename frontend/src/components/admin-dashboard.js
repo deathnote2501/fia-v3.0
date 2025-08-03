@@ -262,19 +262,19 @@ class AdminDashboard {
                         <small class="text-muted" title="${this.formatDateFull(trainer.created_at)}">${this.formatDate(trainer.created_at)}</small>
                     </td>
                     <td>
-                        <span class="badge bg-primary" title="Non-AI trainings with uploaded files">${this.formatNumber(trainer.trainings_with_support)}</span>
+                        ${this.formatNumber(trainer.trainings_with_support)}
                     </td>
                     <td>
-                        <span class="badge bg-success" title="AI-generated trainings">${this.formatNumber(trainer.trainings_ai_generated)}</span>
+                        ${this.formatNumber(trainer.trainings_ai_generated)}
                     </td>
                     <td>
-                        <span class="badge bg-info" title="Currently active sessions">${this.formatNumber(trainer.active_sessions)}</span>
+                        ${this.formatNumber(trainer.active_sessions)}
                     </td>
                     <td>
-                        <span class="badge bg-secondary" title="All sessions created">${this.formatNumber(trainer.total_sessions)}</span>
+                        ${this.formatNumber(trainer.total_sessions)}
                     </td>
                     <td>
-                        <span class="badge bg-warning text-dark" title="Unique learners across all sessions">${this.formatNumber(trainer.unique_learners)}</span>
+                        ${this.formatNumber(trainer.unique_learners)}
                     </td>
                     <td>
                         <span class="text-muted" title="Total learning time from all learners">${trainer.total_time_all_learners || '0min'}</span>
@@ -283,7 +283,7 @@ class AdminDashboard {
                         <span class="text-muted" title="Average time spent per slide">${trainer.average_time_per_slide || '0min'}</span>
                     </td>
                     <td>
-                        <span class="badge bg-dark" title="Total slides generated across all trainings">${this.formatNumber(trainer.total_slides_generated)}</span>
+                        ${this.formatNumber(trainer.total_slides_generated)}
                     </td>
                     <td>
                         <span class="text-muted" title="Average slides per training">${this.formatDecimal(trainer.average_slides_per_training)}</span>
@@ -402,19 +402,19 @@ class AdminDashboard {
                         </div>
                     </td>
                     <td>
-                        <span class="badge bg-secondary">${this.formatNumber(trainee.total_sessions)}</span>
+                        ${this.formatNumber(trainee.total_sessions)}
                     </td>
                     <td>
-                        <span class="badge bg-success">${this.formatNumber(trainee.ai_sessions)}</span>
+                        ${this.formatNumber(trainee.ai_sessions)}
                     </td>
                     <td>
-                        <span class="badge bg-primary">${this.formatNumber(trainee.trainer_sessions)}</span>
+                        ${this.formatNumber(trainee.trainer_sessions)}
                     </td>
                     <td>
                         <span class="text-muted">${trainee.total_time || '0min'}</span>
                     </td>
                     <td>
-                        <span class="badge bg-info">${this.formatNumber(trainee.total_slides_viewed)}</span>
+                        ${this.formatNumber(trainee.total_slides_viewed)}
                     </td>
                 </tr>
             `).join('');
@@ -422,6 +422,9 @@ class AdminDashboard {
             console.log('🎨 ADMIN - Setting trainees HTML:', traineesHtml.length, 'characters');
             tableBody.innerHTML = traineesHtml;
             console.log('✅ ADMIN - Trainees table updated with', traineesData.length, 'trainees');
+            
+            // Setup table sorting after content is loaded
+            this.setupTableSorting();
 
         } catch (error) {
             console.error('🚨 ADMIN - Failed to load trainees overview:', error);
@@ -577,16 +580,13 @@ class AdminDashboard {
                         <strong>${this.escapeHtml(training.training_name)}</strong>
                     </td>
                     <td>
-                        <span class="badge ${training.training_type === 'IA' ? 'bg-success' : 'bg-primary'}">
-                            <i class="bi bi-${training.training_type === 'IA' ? 'robot' : 'person'} me-1"></i>
-                            ${training.training_type || 'N/A'}
-                        </span>
+                        ${training.training_type || 'N/A'}
                     </td>
                     <td>
-                        <span class="badge bg-info">${this.formatNumber(training.total_learners)}</span>
+                        ${this.formatNumber(training.total_learners)}
                     </td>
                     <td>
-                        <span class="badge bg-secondary">${this.formatNumber(training.total_sessions)}</span>
+                        ${this.formatNumber(training.total_sessions)}
                     </td>
                     <td>
                         <span class="text-muted">${training.total_time || '0min'}</span>
@@ -595,7 +595,7 @@ class AdminDashboard {
                         <span class="text-muted">${training.avg_time_per_session || '0min'}</span>
                     </td>
                     <td>
-                        <span class="badge bg-primary">${this.formatNumber(training.total_slides)}</span>
+                        ${this.formatNumber(training.total_slides)}
                     </td>
                     <td>
                         <span class="text-muted">${this.formatDecimal(training.avg_slides_per_session)}</span>
@@ -606,6 +606,9 @@ class AdminDashboard {
             console.log('🎨 ADMIN - Setting trainings HTML:', trainingsHtml.length, 'characters');
             tableBody.innerHTML = trainingsHtml;
             console.log('✅ ADMIN - Trainings table updated with', trainingsData.length, 'trainings');
+            
+            // Setup table sorting after content is loaded
+            this.setupTableSorting();
 
         } catch (error) {
             console.error('🚨 ADMIN - Failed to load trainings overview:', error);
@@ -764,22 +767,16 @@ class AdminDashboard {
                         <span class="text-muted">${this.escapeHtml(session.training_name || 'N/A')}</span>
                     </td>
                     <td>
-                        <span class="badge ${session.training_type === 'IA' ? 'bg-success' : 'bg-primary'}">
-                            <i class="bi bi-${session.training_type === 'IA' ? 'robot' : 'person'} me-1"></i>
-                            ${session.training_type || 'N/A'}
-                        </span>
+                        ${session.training_type || 'N/A'}
                     </td>
                     <td>
                         <small class="text-muted">${this.formatDate(session.session_date)}</small>
                     </td>
                     <td>
-                        <span class="badge ${this.getStatusBadgeClass(session.status)}">
-                            <i class="bi bi-${this.getStatusIcon(session.status)} me-1"></i>
-                            ${session.status || 'N/A'}
-                        </span>
+                        ${session.status || 'N/A'}
                     </td>
                     <td>
-                        <span class="badge bg-info">${this.formatNumber(session.total_slides)}</span>
+                        ${this.formatNumber(session.total_slides)}
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
@@ -810,31 +807,15 @@ class AdminDashboard {
                             </small>
                         </div>
                     </td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button class="btn btn-outline-primary" 
-                                    onclick="viewSessionDetails('${session.session_id}')" 
-                                    title="View Details">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-outline-secondary" 
-                                    onclick="downloadSessionReport('${session.session_id}')" 
-                                    title="Download Report">
-                                <i class="bi bi-download"></i>
-                            </button>
-                            <button class="btn btn-outline-danger" 
-                                    onclick="deleteSession('${session.session_id}', '${session.session_name}')" 
-                                    title="Delete Session">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
                 </tr>
             `).join('');
 
             console.log('🎨 ADMIN - Setting sessions HTML:', sessionsHtml.length, 'characters');
             tableBody.innerHTML = sessionsHtml;
             console.log('✅ ADMIN - Sessions table updated with', sessionsData.length, 'sessions');
+            
+            // Setup table sorting after content is loaded
+            this.setupTableSorting();
 
         } catch (error) {
             console.error('🚨 ADMIN - Failed to load sessions overview:', error);
@@ -901,7 +882,7 @@ class AdminDashboard {
     showSessionsLoadingState(tableBody) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center text-muted py-5">
+                <td colspan="8" class="text-center text-muted py-5">
                     <div>
                         <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                             <span class="visually-hidden">Loading...</span>
@@ -922,7 +903,7 @@ class AdminDashboard {
     showSessionsEmptyState(tableBody) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center text-muted py-5">
+                <td colspan="8" class="text-center text-muted py-5">
                     <div>
                         <i class="bi bi-calendar-event display-4 mb-3 text-secondary"></i>
                         <h6 class="text-muted mb-2">No Sessions Found</h6>
@@ -942,7 +923,7 @@ class AdminDashboard {
     showSessionsErrorState(tableBody, errorMessage = 'Failed to load sessions overview') {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center py-5">
+                <td colspan="8" class="text-center py-5">
                     <div>
                         <i class="bi bi-exclamation-triangle display-4 mb-3 text-warning"></i>
                         <h6 class="text-danger mb-2">${window.safeT ? window.safeT('error.loadingData', 'Error Loading Data') : 'Error Loading Data'}</h6>
@@ -960,20 +941,23 @@ class AdminDashboard {
     }
 
     setupTableSorting() {
-        const table = document.getElementById('trainers-overview-table');
-        if (!table || table.hasAttribute('data-sorting-enabled')) return;
-
-        table.setAttribute('data-sorting-enabled', 'true');
+        // Setup sorting for all tables with sortable-table class
+        const tables = document.querySelectorAll('table.sortable-table');
         
-        const headers = table.querySelectorAll('th.sortable');
-        headers.forEach(header => {
-            header.addEventListener('click', () => {
-                this.sortTable(header);
-            });
+        tables.forEach(table => {
+            if (table.hasAttribute('data-sorting-enabled')) return;
+            table.setAttribute('data-sorting-enabled', 'true');
             
-            // Add hover effect for better UX
-            header.style.cursor = 'pointer';
-            header.title = `Click to sort by ${header.textContent.trim()}`;
+            const headers = table.querySelectorAll('th.sortable');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    this.sortTable(header);
+                });
+                
+                // Add hover effect for better UX
+                header.style.cursor = 'pointer';
+                header.title = `Click to sort by ${header.textContent.trim()}`;
+            });
         });
     }
 
