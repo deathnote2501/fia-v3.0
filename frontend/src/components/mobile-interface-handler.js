@@ -132,6 +132,11 @@ export class MobileInterfaceHandler {
                 // Click desktop button
                 desktopPreviousBtn.click();
                 
+                // Scroll to top after slide transition
+                setTimeout(() => {
+                    this.scrollToSlideTop();
+                }, 1000);
+                
                 // Hide loading after a delay (slide transition time)
                 setTimeout(() => {
                     this.hideButtonLoading(mobilePreviousBtn);
@@ -153,6 +158,11 @@ export class MobileInterfaceHandler {
                 
                 // Click desktop button
                 desktopNextBtn.click();
+                
+                // Scroll to top after slide transition
+                setTimeout(() => {
+                    this.scrollToSlideTop();
+                }, 1000);
                 
                 // Hide loading after a delay (slide transition time)
                 setTimeout(() => {
@@ -176,6 +186,11 @@ export class MobileInterfaceHandler {
                 // Click desktop button
                 desktopSimplifyBtn.click();
                 
+                // Scroll to top after content generation
+                setTimeout(() => {
+                    this.scrollToSlideTop();
+                }, 2000);
+                
                 // Hide loading after content generation
                 setTimeout(() => {
                     this.hideButtonLoading(mobileSimplifyBtn);
@@ -198,6 +213,11 @@ export class MobileInterfaceHandler {
                 // Click desktop button
                 desktopMoreDetailsBtn.click();
                 
+                // Scroll to top after content generation
+                setTimeout(() => {
+                    this.scrollToSlideTop();
+                }, 2000);
+                
                 // Hide loading after content generation
                 setTimeout(() => {
                     this.hideButtonLoading(mobileMoreDetailsBtn);
@@ -219,6 +239,11 @@ export class MobileInterfaceHandler {
                 
                 // Click desktop button
                 desktopChartBtn.click();
+                
+                // Scroll to first chart after chart generation
+                setTimeout(() => {
+                    this.scrollToFirstChart();
+                }, 3000);
                 
                 // Hide loading after chart generation
                 setTimeout(() => {
@@ -815,5 +840,89 @@ export class MobileInterfaceHandler {
      */
     isMobileViewport() {
         return window.innerWidth <= 768;
+    }
+    
+    /**
+     * Scroll to top of slide content on mobile
+     * Used for navigation, simplify, and more details actions
+     */
+    scrollToSlideTop() {
+        if (!this.isMobileViewport()) {
+            console.log('📱 [MOBILE-INTERFACE] Not mobile viewport - skipping scroll');
+            return;
+        }
+        
+        // Find the slide content container
+        const slideContent = document.getElementById('slide-content');
+        const mainContainer = document.querySelector('.training-container');
+        const slideContainer = document.querySelector('#slide-container');
+        
+        // Priority order for scrolling target
+        const scrollTarget = slideContent || slideContainer || mainContainer || window;
+        
+        if (scrollTarget === window) {
+            // Scroll to top of page
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            console.log('📱 [MOBILE-INTERFACE] Scrolled to top of page');
+        } else {
+            // Scroll to top of container
+            scrollTarget.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            console.log('📱 [MOBILE-INTERFACE] Scrolled to top of slide content');
+        }
+    }
+    
+    /**
+     * Scroll to first chart on mobile after chart generation
+     * Used specifically for chart button action
+     */
+    scrollToFirstChart() {
+        if (!this.isMobileViewport()) {
+            console.log('📱 [MOBILE-INTERFACE] Not mobile viewport - skipping chart scroll');
+            return;
+        }
+        
+        // Wait a bit for chart to be rendered
+        setTimeout(() => {
+            // Look for generated charts container
+            const chartContainer = document.querySelector('.generated-charts-container');
+            const chartCanvas = document.querySelector('.generated-charts-container canvas');
+            const chartElement = document.querySelector('.chart-container');
+            
+            // Priority order for chart targets
+            const chartTarget = chartCanvas || chartContainer || chartElement;
+            
+            if (chartTarget) {
+                // Scroll to the chart with some offset for better UX
+                const offsetTop = chartTarget.offsetTop - 20; // 20px offset from top
+                
+                // Find the scrollable container
+                const scrollContainer = document.getElementById('slide-content') || 
+                                      document.querySelector('.training-container') || 
+                                      window;
+                
+                if (scrollContainer === window) {
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    scrollContainer.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                console.log('📱 [MOBILE-INTERFACE] Scrolled to first chart');
+            } else {
+                console.log('📱 [MOBILE-INTERFACE] No chart found to scroll to, scrolling to top instead');
+                this.scrollToSlideTop();
+            }
+        }, 500); // Wait 500ms for chart rendering
     }
 }
