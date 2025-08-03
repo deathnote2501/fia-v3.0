@@ -279,7 +279,7 @@ async function copySessionLink(token) {
  * @param {string} sessionId - Session ID to delete
  */
 async function deleteSession(sessionId) {
-    if (!confirm(window.safeT ? window.safeT('warning.deleteSession') : 'Are you sure you want to delete this session? This action cannot be undone.')) {
+    if (!confirm(window.safeT ? window.safeT('confirm.deleteSession') : 'Are you sure you want to delete this session? This action cannot be undone.')) {
         return;
     }
     

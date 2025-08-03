@@ -121,7 +121,7 @@ class AdminDashboard {
             const result = await authManager.updateProfile(profileData);
             
             if (result.success) {
-                showAlert('Profile updated successfully!', 'success');
+                showAlert(window.safeT ? window.safeT('message.profileUpdated') : 'Profile updated successfully!', 'success');
                 
                 // Refresh user data from updated profile
                 await this.refreshUserData();
@@ -130,12 +130,12 @@ class AdminDashboard {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('profile-modal'));
                 if (modal) modal.hide();
             } else {
-                showAlert(result.message || 'Profile update failed.', 'error');
+                showAlert(result.message || (window.safeT ? window.safeT('message.profileUpdateFailed') : 'Profile update failed.'), 'error');
             }
 
         } catch (error) {
             console.error('Profile update error:', error);
-            showAlert('Failed to update profile. Please try again.', 'error');
+            showAlert(window.safeT ? window.safeT('message.profileUpdateError') : 'Failed to update profile. Please try again.', 'error');
         }
     }
 
@@ -1341,24 +1341,27 @@ async function downloadSessionReport(sessionId) {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
-        showAlert('Session report download started!', 'success');
+        showAlert(window.safeT ? window.safeT('message.sessionReportDownloadStarted') : 'Session report download started!', 'success');
 
     } catch (error) {
         console.error('Download error:', error);
-        showAlert('Failed to download session report. Please try again.', 'error');
+        showAlert(window.safeT ? window.safeT('message.sessionReportDownloadFailed') : 'Failed to download session report. Please try again.', 'error');
     }
 }
 
 async function deleteSession(sessionId, sessionName) {
     // Confirm deletion
-    const confirmed = confirm(`Are you sure you want to delete session "${sessionName}"?\n\nThis action cannot be undone and will also delete all associated learner data.`);
+    const message = window.safeT 
+        ? window.safeT('confirm.deleteSessionAdmin').replace('{name}', sessionName)
+        : `Are you sure you want to delete session "${sessionName}"?\n\nThis action cannot be undone and will also delete all associated learner data.`;
+    const confirmed = confirm(message);
     
     if (!confirmed) return;
 
     try {
         const token = authManager.getToken();
         if (!token) {
-            showAlert('Please login to delete sessions.', 'error');
+            showAlert(window.safeT ? window.safeT('message.deleteSessionLoginRequired') : 'Please login to delete sessions.', 'error');
             return;
         }
 
@@ -1371,20 +1374,20 @@ async function deleteSession(sessionId, sessionName) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                showAlert('Session expired. Please login again.', 'error');
+                showAlert(window.safeT ? window.safeT('message.sessionExpired') : 'Session expired. Please login again.', 'error');
                 authManager.logout();
                 return;
             } else if (response.status === 403) {
-                showAlert('Access denied. You can only delete sessions as an administrator.', 'error');
+                showAlert(window.safeT ? window.safeT('message.deleteSessionAccessDenied') : 'Access denied. You can only delete sessions as an administrator.', 'error');
                 return;
             } else if (response.status === 404) {
-                showAlert('Session not found.', 'error');
+                showAlert(window.safeT ? window.safeT('message.sessionNotFound') : 'Session not found.', 'error');
                 return;
             }
             throw new Error(`Delete failed: ${response.status}`);
         }
 
-        showAlert('Session deleted successfully!', 'success');
+        showAlert(window.safeT ? window.safeT('message.sessionDeleted') : 'Session deleted successfully!', 'success');
         
         // Refresh the sessions list
         if (window.adminDashboard) {
@@ -1393,7 +1396,7 @@ async function deleteSession(sessionId, sessionName) {
 
     } catch (error) {
         console.error('Delete error:', error);
-        showAlert('Failed to delete session. Please try again.', 'error');
+        showAlert(window.safeT ? window.safeT('message.sessionDeleteFailed') : 'Failed to delete session. Please try again.', 'error');
     }
 }
 

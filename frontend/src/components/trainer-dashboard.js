@@ -300,7 +300,7 @@ class TrainerDashboard {
             if (isAIGenerated) {
                 const description = formData.get('description');
                 if (!description || description.trim().length === 0) {
-                    showAlert('Please provide a detailed description for AI generation.', 'error');
+                    showAlert(window.safeT ? window.safeT('message.aiDescriptionRequired') : 'Please provide a detailed description for AI generation.', 'error');
                     return;
                 }
                 // Set AI flag in form data
@@ -308,7 +308,7 @@ class TrainerDashboard {
             } else {
                 const file = formData.get('file');
                 if (!file || file.size === 0) {
-                    showAlert('Please select a file to upload.', 'error');
+                    showAlert(window.safeT ? window.safeT('message.fileRequired') : 'Please select a file to upload.', 'error');
                     return;
                 }
                 // Ensure AI flag is false
@@ -531,7 +531,7 @@ class TrainerDashboard {
             // Show loading state
             const submitBtn = form.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${window.safeT ? window.safeT('status.creating') : 'Generating...'}`;
 
             const response = await apiClient.post('/api/sessions', sessionData);
 
@@ -544,12 +544,12 @@ class TrainerDashboard {
                 linkContainer.classList.remove('d-none');
             }
 
-            showAlert('Session created successfully!', 'success');
+            showAlert(window.safeT ? window.safeT('message.sessionCreated') : 'Session created successfully!', 'success');
             form.reset();
 
         } catch (error) {
             console.error('Session creation error:', error);
-            showAlert('Failed to create session. Please try again.', 'error');
+            showAlert(window.safeT ? window.safeT('message.sessionCreateFailed') : 'Failed to create session. Please try again.', 'error');
         } finally {
             // Reset button state
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -580,7 +580,7 @@ class TrainerDashboard {
             const result = await authManager.updateProfile(profileData);
             
             if (result.success) {
-                showAlert('Profile updated successfully!', 'success');
+                showAlert(window.safeT ? window.safeT('message.profileUpdated') : 'Profile updated successfully!', 'success');
                 
                 // Refresh user data from updated profile
                 await this.refreshUserData();
@@ -589,12 +589,12 @@ class TrainerDashboard {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('profile-modal'));
                 if (modal) modal.hide();
             } else {
-                showAlert(result.message || 'Profile update failed.', 'error');
+                showAlert(result.message || (window.safeT ? window.safeT('message.profileUpdateFailed') : 'Profile update failed.'), 'error');
             }
 
         } catch (error) {
             console.error('Profile update error:', error);
-            showAlert('Failed to update profile. Please try again.', 'error');
+            showAlert(window.safeT ? window.safeT('message.profileUpdateError') : 'Failed to update profile. Please try again.', 'error');
         }
     }
 
@@ -693,7 +693,7 @@ class TrainerDashboard {
                              'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
         
         if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|ppt|pptx)$/i)) {
-            showAlert('Invalid file type. Please select a PDF, PPT, or PPTX file.', 'error');
+            showAlert(window.safeT ? window.safeT('message.invalidFileType') : 'Invalid file type. Please select a PDF, PPT, or PPTX file.', 'error');
             fileInput.value = '';
             fileInfo.classList.add('d-none');
             return;
@@ -702,7 +702,7 @@ class TrainerDashboard {
         // Validate file size (50MB = 50 * 1024 * 1024 bytes)
         const maxSize = 50 * 1024 * 1024;
         if (file.size > maxSize) {
-            showAlert('File too large. Maximum size is 50MB.', 'error');
+            showAlert(window.safeT ? window.safeT('message.fileTooLarge') : 'File too large. Maximum size is 50MB.', 'error');
             fileInput.value = '';
             fileInfo.classList.add('d-none');
             return;
@@ -805,7 +805,7 @@ async function downloadTraining(trainingId, fileName) {
     try {
         const token = authManager.getToken();
         if (!token) {
-            showAlert('Please login to download files.', 'error');
+            showAlert(window.safeT ? window.safeT('message.loginRequired') : 'Please login to download files.', 'error');
             return;
         }
 
@@ -821,14 +821,14 @@ async function downloadTraining(trainingId, fileName) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                showAlert('Session expired. Please login again.', 'error');
+                showAlert(window.safeT ? window.safeT('message.sessionExpired') : 'Session expired. Please login again.', 'error');
                 authManager.logout();
                 return;
             } else if (response.status === 403) {
-                showAlert('Access denied. You can only download your own files.', 'error');
+                showAlert(window.safeT ? window.safeT('message.accessDenied') : 'Access denied. You can only download your own files.', 'error');
                 return;
             } else if (response.status === 404) {
-                showAlert('File not found.', 'error');
+                showAlert(window.safeT ? window.safeT('message.fileNotFound') : 'File not found.', 'error');
                 return;
             }
             throw new Error(`Download failed: ${response.status}`);
@@ -846,24 +846,27 @@ async function downloadTraining(trainingId, fileName) {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
-        showAlert('Download started!', 'success');
+        showAlert(window.safeT ? window.safeT('message.downloadStarted') : 'Download started!', 'success');
 
     } catch (error) {
         console.error('Download error:', error);
-        showAlert('Failed to download file. Please try again.', 'error');
+        showAlert(window.safeT ? window.safeT('message.downloadFailed') : 'Failed to download file. Please try again.', 'error');
     }
 }
 
 async function deleteTraining(trainingId, trainingName) {
     // Confirm deletion
-    const confirmed = confirm(`Are you sure you want to delete "${trainingName}"?\n\nThis action cannot be undone and will also delete the associated file.`);
+    const message = window.safeT 
+        ? window.safeT('confirm.deleteTraining').replace('{name}', trainingName)
+        : `Are you sure you want to delete "${trainingName}"?\n\nThis action cannot be undone and will also delete the associated file.`;
+    const confirmed = confirm(message);
     
     if (!confirmed) return;
 
     try {
         const token = authManager.getToken();
         if (!token) {
-            showAlert('Please login to delete trainings.', 'error');
+            showAlert(window.safeT ? window.safeT('message.deleteTrainingLoginRequired') : 'Please login to delete trainings.', 'error');
             return;
         }
 
@@ -876,20 +879,20 @@ async function deleteTraining(trainingId, trainingName) {
 
         if (!response.ok) {
             if (response.status === 401) {
-                showAlert('Session expired. Please login again.', 'error');
+                showAlert(window.safeT ? window.safeT('message.sessionExpired') : 'Session expired. Please login again.', 'error');
                 authManager.logout();
                 return;
             } else if (response.status === 403) {
-                showAlert('Access denied. You can only delete your own trainings.', 'error');
+                showAlert(window.safeT ? window.safeT('message.deleteTrainingAccessDenied') : 'Access denied. You can only delete your own trainings.', 'error');
                 return;
             } else if (response.status === 404) {
-                showAlert('Training not found.', 'error');
+                showAlert(window.safeT ? window.safeT('message.deleteTrainingNotFound') : 'Training not found.', 'error');
                 return;
             }
             throw new Error(`Delete failed: ${response.status}`);
         }
 
-        showAlert('Training deleted successfully!', 'success');
+        showAlert(window.safeT ? window.safeT('message.trainingDeleted') : 'Training deleted successfully!', 'success');
         
         // Refresh the trainings list
         if (window.trainerDashboard) {
@@ -898,7 +901,7 @@ async function deleteTraining(trainingId, trainingName) {
 
     } catch (error) {
         console.error('Delete error:', error);
-        showAlert('Failed to delete training. Please try again.', 'error');
+        showAlert(window.safeT ? window.safeT('message.trainingDeleteFailed') : 'Failed to delete training. Please try again.', 'error');
     }
 }
 

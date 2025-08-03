@@ -4,6 +4,14 @@
  */
 
 export const fr = {
+    // Titres des pages
+    'page.title.trainer': 'Tableau de bord Formateur - FIA v3.0',
+    'page.title.login': 'Connexion Formateur - FIA v3.0',
+    'page.title.register': 'Inscription Formateur - FIA v3.0',
+    'page.title.admin': 'Tableau de bord Admin - FIA v3.0',
+    'page.title.training': 'FIA v3.0 - Plan de Formation Personnalisé',
+    'page.title.landing': 'Dice3.ai',
+    
     // Navigation et titre principal
     'app.title': 'FIA v3.0 Trainer',
     'nav.dashboard': 'Tableau de bord',
@@ -22,6 +30,11 @@ export const fr = {
     'dashboard.totalSlides': 'Total slides',
     'dashboard.recentActivity': 'Activité récente',
     'dashboard.noActivity': 'Aucune activité récente',
+    'dashboard.training': 'Formation',
+    'dashboard.createNewTraining': 'Créer une nouvelle formation',
+    'dashboard.myTrainings': 'Mes formations',
+    'dashboard.newSession': 'Nouvelle session',
+    'dashboard.refreshTrainings': 'Actualiser la liste des formations',
     
     // Formation
     'training.title': 'Formation',
@@ -71,6 +84,30 @@ export const fr = {
     'profile.language': 'Langue préférée',
     'profile.cancel': 'Annuler',
     'profile.saveChanges': 'Sauvegarder les modifications',
+    
+    // Étiquettes de formulaire
+    'form.label.email': 'Adresse email',
+    'form.label.firstName': 'Prénom',
+    'form.label.lastName': 'Nom de famille',
+    'form.label.password': 'Mot de passe',
+    'form.label.confirmPassword': 'Confirmer le mot de passe',
+    'form.label.trainingName': 'Nom de la formation',
+    'form.label.description': 'Description',
+    'form.label.uploadMaterial': 'Télécharger le matériel de formation',
+    'form.label.selectTraining': 'Sélectionner une formation',
+    'form.label.sessionName': 'Nom de la session',
+    'form.label.sessionDescription': 'Description',
+    'form.label.rememberMe': 'Se souvenir de moi',
+    'form.label.agreeTerms': 'J\\'accepte les <a href="#" class="text-primary">Conditions d\\'utilisation</a> et la <a href="#" class="text-primary">Politique de confidentialité</a>',
+    'form.label.aiGenerated': 'Générée avec IA',
+    
+    // Textes d'aide de formulaire
+    'form.text.passwordMin': 'Minimum 8 caractères',
+    'form.text.fileFormats': 'Formats supportés : PDF, PPT, PPTX (Max : 50MB)',
+    'form.text.selectTrainingHelp': 'Sélectionner le matériel de formation pour cette session',
+    'form.text.alreadyAccount': 'Vous avez déjà un compte ?',
+    'form.text.noAccount': 'Vous n\\'avez pas de compte ?',
+    'form.text.forgotPassword': 'Mot de passe oublié ?',
     
     // Actions communes
     'button.create': 'Créer',
@@ -285,7 +322,43 @@ export const fr = {
     'session.noChats': 'Les apprenants n\'ont pas encore commencé à discuter',
     
     // Clés de validation supplémentaires
-    'validation.selectDate': 'Veuillez sélectionner au moins une date pour filtrer'
+    'validation.selectDate': 'Veuillez sélectionner au moins une date pour filtrer',
+    
+    // Messages d'alerte JavaScript
+    'message.aiDescriptionRequired': 'Veuillez fournir une description détaillée pour la génération IA.',
+    'message.fileRequired': 'Veuillez sélectionner un fichier à télécharger.',
+    'message.sessionCreated': 'Session créée avec succès !',
+    'message.sessionCreateFailed': 'Échec de création de session. Veuillez réessayer.',
+    'message.profileUpdated': 'Profil mis à jour avec succès !',
+    'message.profileUpdateFailed': 'Échec de mise à jour du profil.',
+    'message.profileUpdateError': 'Échec de mise à jour du profil. Veuillez réessayer.',
+    'message.invalidFileType': 'Type de fichier invalide. Veuillez sélectionner un fichier PDF, PPT ou PPTX.',
+    'message.fileTooLarge': 'Fichier trop volumineux. Taille maximale : 50MB.',
+    'message.loginRequired': 'Veuillez vous connecter pour télécharger les fichiers.',
+    'message.sessionExpired': 'Session expirée. Veuillez vous reconnecter.',
+    'message.accessDenied': 'Accès refusé. Vous ne pouvez télécharger que vos propres fichiers.',
+    'message.fileNotFound': 'Fichier non trouvé.',
+    'message.downloadStarted': 'Téléchargement démarré !',
+    'message.downloadFailed': 'Échec du téléchargement. Veuillez réessayer.',
+    'message.deleteTrainingConfirm': 'Êtes-vous sûr de vouloir supprimer "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également le fichier associé.',
+    'message.deleteTrainingLoginRequired': 'Veuillez vous connecter pour supprimer les formations.',
+    'message.deleteTrainingAccessDenied': 'Accès refusé. Vous ne pouvez supprimer que vos propres formations.',
+    'message.deleteTrainingNotFound': 'Formation non trouvée.',
+    'message.trainingDeleted': 'Formation supprimée avec succès !',
+    'message.trainingDeleteFailed': 'Échec de suppression de formation. Veuillez réessayer.',
+    'message.sessionReportDownloadStarted': 'Téléchargement du rapport de session démarré !',
+    'message.sessionReportDownloadFailed': 'Échec du téléchargement du rapport. Veuillez réessayer.',
+    'message.deleteSessionLoginRequired': 'Veuillez vous connecter pour supprimer les sessions.',
+    'message.deleteSessionAccessDenied': 'Accès refusé. Vous ne pouvez supprimer que les sessions en tant qu\\'administrateur.',
+    'message.sessionNotFound': 'Session non trouvée.',
+    'message.sessionDeleted': 'Session supprimée avec succès !',
+    'message.sessionDeleteFailed': 'Échec de suppression de session. Veuillez réessayer.',
+    'message.deleteSessionConfirm': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\\'apprenant associées.',
+    
+    // Messages de confirmation (pattern confirm.*)
+    'confirm.deleteTraining': 'Êtes-vous sûr de vouloir supprimer "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également le fichier associé.',
+    'confirm.deleteSession': 'Êtes-vous sûr de vouloir supprimer cette session ?\\n\\nCette action ne peut pas être annulée.',
+    'confirm.deleteSessionAdmin': 'Êtes-vous sûr de vouloir supprimer la session "{name}" ?\\n\\nCette action ne peut pas être annulée et supprimera également toutes les données d\\'apprenant associées.'
 };
 
 export default fr;

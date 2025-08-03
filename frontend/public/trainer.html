@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trainer Dashboard - FIA v3.0</title>
+    <title data-i18n="page.title.trainer">Trainer Dashboard - FIA v3.0</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -134,7 +134,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-people display-6 me-3"></i>
                                             <div>
-                                                <h5 class="card-title">Unique Learners</h5>
+                                                <h5 class="card-title" data-i18n="dashboard.learners">Unique Learners</h5>
                                                 <h3 class="mb-0" id="learners-count">0</h3>
                                             </div>
                                         </div>
@@ -148,7 +148,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-clock display-6 me-3"></i>
                                             <div>
-                                                <h5 class="card-title">Total Time</h5>
+                                                <h5 class="card-title" data-i18n="dashboard.totalTime">Total Time</h5>
                                                 <h3 class="mb-0" id="total-time">0h</h3>
                                             </div>
                                         </div>
@@ -174,7 +174,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-collection display-6 me-3"></i>
                                             <div>
-                                                <h5 class="card-title">Total Slides</h5>
+                                                <h5 class="card-title" data-i18n="dashboard.totalSlides">Total Slides</h5>
                                                 <h3 class="mb-0" id="total-slides">0</h3>
                                             </div>
                                         </div>
@@ -186,11 +186,11 @@
                         <!-- Recent Activity -->
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0">Recent Activity</h5>
+                                <h5 class="mb-0" data-i18n="dashboard.recentActivity">Recent Activity</h5>
                             </div>
                             <div class="card-body">
                                 <div id="recent-activity">
-                                    <p class="text-muted">No recent activity</p>
+                                    <p class="text-muted" data-i18n="dashboard.noActivity">No recent activity</p>
                                 </div>
                             </div>
                         </div>
@@ -199,7 +199,7 @@
                     <!-- Training Tab -->
                     <div class="tab-pane fade" id="create-training">
                         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                            <h1 class="h2">Training</h1>
+                            <h1 class="h2" data-i18n="dashboard.training">Training</h1>
                         </div>
 
                         <!-- Training Creation Form -->
@@ -209,18 +209,18 @@
                                     <div class="card-header">
                                         <h5 class="mb-0">
                                             <i class="bi bi-plus-circle me-2"></i>
-                                            Create New Training
+                                            <span data-i18n="dashboard.createNewTraining">Create New Training</span>
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         <form id="training-form" enctype="multipart/form-data">
                                             <div class="mb-3">
-                                                <label for="training-name" class="form-label">Training Name</label>
+                                                <label for="training-name" class="form-label" data-i18n="form.label.trainingName">Training Name</label>
                                                 <input type="text" class="form-control" id="training-name" name="name" required>
                                             </div>
 
                                             <div class="mb-3">
-                                                <label for="training-description" class="form-label">Description</label>
+                                                <label for="training-description" class="form-label" data-i18n="form.label.description">Description</label>
                                                 <textarea class="form-control" id="training-description" name="description" rows="4"></textarea>
                                             </div>
 
@@ -230,7 +230,7 @@
                                                     <input class="form-check-input me-3" type="checkbox" id="ai-generated-toggle" name="is_ai_generated" value="false">
                                                     <label class="form-check-label d-flex align-items-center" for="ai-generated-toggle">
                                                         <i class="bi bi-toggle-off me-2" id="toggle-icon"></i>
-                                                        <span id="toggle-text">Generated with AI</span>
+                                                        <span id="toggle-text" data-i18n="form.label.aiGenerated">Generated with AI</span>
                                                     </label>
                                                 </div>
                                                 <div class="form-text" id="toggle-help-text">
@@ -240,9 +240,9 @@
                                             </div>
 
                                             <div class="mb-3">
-                                                <label for="training-file" class="form-label">Upload Training Material</label>
+                                                <label for="training-file" class="form-label" data-i18n="form.label.uploadMaterial">Upload Training Material</label>
                                                 <input type="file" class="form-control" id="training-file" name="file" accept=".pdf,.ppt,.pptx" required>
-                                                <div class="form-text">Supported formats: PDF, PPT, PPTX (Max: 50MB)</div>
+                                                <div class="form-text" data-i18n="form.text.fileFormats">Supported formats: PDF, PPT, PPTX (Max: 50MB)</div>
                                                 
                                                 <!-- File info display -->
                                                 <div id="file-info" class="mt-2 d-none">
@@ -268,7 +268,7 @@
                                             <div class="d-grid">
                                                 <button type="submit" class="btn btn-primary" id="submit-training-btn">
                                                     <i class="bi bi-upload me-2"></i>
-                                                    Create Training
+                                                    <span data-i18n=\"training.create\">Create Training</span>
                                                 </button>
                                             </div>
                                         </form>
@@ -284,18 +284,18 @@
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0">
                                             <i class="bi bi-folder me-2"></i>
-                                            My Trainings
+                                            <span data-i18n="dashboard.myTrainings">My Trainings</span>
                                         </h5>
                                         <button class="btn btn-sm btn-primary" onclick="loadTrainings()">
                                             <i class="bi bi-arrow-clockwise me-1"></i>
-                                            Refresh
+                                            <span data-i18n="button.refresh">Refresh</span>
                                         </button>
                                     </div>
                                     <div class="card-body">
                                         <div id="trainings-list">
                                             <div class="text-center text-muted py-3">
                                                 <i class="bi bi-hourglass-split display-6"></i>
-                                                <p class="mt-2">Loading trainings...</p>
+                                                <p class="mt-2" data-i18n="status.loadingTrainings">Loading trainings...</p>
                                             </div>
                                         </div>
                                     </div>
@@ -317,32 +317,32 @@
                                     <div class="card-header">
                                         <h5 class="mb-0">
                                             <i class="bi bi-plus-circle me-2"></i>
-                                            New Session
+                                            <span data-i18n="dashboard.newSession">New Session</span>
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         <form id="session-form">
                                             <div class="mb-3">
-                                                <label for="session-training" class="form-label">Select Training</label>
+                                                <label for="session-training" class="form-label" data-i18n="form.label.selectTraining">Select Training</label>
                                                 <div class="input-group">
                                                     <select class="form-select" id="session-training" name="training_id" required>
                                                         <option value="">Choose a training...</option>
                                                     </select>
-                                                    <button class="btn btn-outline-secondary" type="button" onclick="loadTrainings()" title="Refresh trainings list">
+                                                    <button class="btn btn-outline-secondary" type="button" onclick="loadTrainings()" data-i18n-title="dashboard.refreshTrainings" title="Refresh trainings list">
                                                         <i class="bi bi-arrow-clockwise"></i>
                                                     </button>
                                                 </div>
-                                                <div class="form-text">Select the training material for this session</div>
+                                                <div class="form-text" data-i18n="form.text.selectTrainingHelp">Select the training material for this session</div>
                                             </div>
 
                                             <div class="mb-3">
-                                                <label for="session-name" class="form-label">Session Name</label>
+                                                <label for="session-name" class="form-label" data-i18n="form.label.sessionName">Session Name</label>
                                                 <input type="text" class="form-control" id="session-name" name="name" required 
                                                        placeholder="e.g., Morning Session - Team A">
                                             </div>
 
                                             <div class="mb-3">
-                                                <label for="session-description" class="form-label">Description</label>
+                                                <label for="session-description" class="form-label" data-i18n="form.label.sessionDescription">Description</label>
                                                 <textarea class="form-control" id="session-description" name="description" rows="3" 
                                                           placeholder="Optional description for this session"></textarea>
                                             </div>
@@ -470,15 +470,15 @@
                 <div class="modal-body">
                     <form id="profile-form">
                         <div class="mb-3">
-                            <label for="profile-first-name" class="form-label">First Name</label>
+                            <label for="profile-first-name" class="form-label" data-i18n="form.label.firstName">First Name</label>
                             <input type="text" class="form-control" id="profile-first-name" name="first_name">
                         </div>
                         <div class="mb-3">
-                            <label for="profile-last-name" class="form-label">Last Name</label>
+                            <label for="profile-last-name" class="form-label" data-i18n="form.label.lastName">Last Name</label>
                             <input type="text" class="form-control" id="profile-last-name" name="last_name">
                         </div>
                         <div class="mb-3">
-                            <label for="profile-email" class="form-label">Email</label>
+                            <label for="profile-email" class="form-label" data-i18n="form.label.email">Email</label>
                             <input type="email" class="form-control" id="profile-email" name="email" readonly>
                         </div>
                     </form>

@@ -4,6 +4,14 @@
  */
 
 export const en = {
+    // Page titles
+    'page.title.trainer': 'Trainer Dashboard - FIA v3.0',
+    'page.title.login': 'Trainer Login - FIA v3.0',
+    'page.title.register': 'Trainer Registration - FIA v3.0',
+    'page.title.admin': 'Admin Dashboard - FIA v3.0',
+    'page.title.training': 'FIA v3.0 - Personal Training Plan',
+    'page.title.landing': 'Dice3.ai',
+    
     // Navigation and main title
     'app.title': 'FIA v3.0 Trainer',
     'nav.dashboard': 'Dashboard',
@@ -22,6 +30,11 @@ export const en = {
     'dashboard.totalSlides': 'Total Slides',
     'dashboard.recentActivity': 'Recent Activity',
     'dashboard.noActivity': 'No recent activity',
+    'dashboard.training': 'Training',
+    'dashboard.createNewTraining': 'Create New Training',
+    'dashboard.myTrainings': 'My Trainings',
+    'dashboard.newSession': 'New Session',
+    'dashboard.refreshTrainings': 'Refresh trainings list',
     
     // Training
     'training.title': 'Training',
@@ -71,6 +84,30 @@ export const en = {
     'profile.language': 'Preferred Language',
     'profile.cancel': 'Cancel',
     'profile.saveChanges': 'Save Changes',
+    
+    // Form labels
+    'form.label.email': 'Email Address',
+    'form.label.firstName': 'First Name',
+    'form.label.lastName': 'Last Name',
+    'form.label.password': 'Password',
+    'form.label.confirmPassword': 'Confirm Password',
+    'form.label.trainingName': 'Training Name',
+    'form.label.description': 'Description',
+    'form.label.uploadMaterial': 'Upload Training Material',
+    'form.label.selectTraining': 'Select Training',
+    'form.label.sessionName': 'Session Name',
+    'form.label.sessionDescription': 'Description',
+    'form.label.rememberMe': 'Remember me',
+    'form.label.agreeTerms': 'I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>',
+    'form.label.aiGenerated': 'Generated with AI',
+    
+    // Form help texts
+    'form.text.passwordMin': 'Minimum 8 characters',
+    'form.text.fileFormats': 'Supported formats: PDF, PPT, PPTX (Max: 50MB)',
+    'form.text.selectTrainingHelp': 'Select the training material for this session',
+    'form.text.alreadyAccount': 'Already have an account?',
+    'form.text.noAccount': 'Don\\'t have an account?',
+    'form.text.forgotPassword': 'Forgot your password?',
     
     // Common actions
     'button.create': 'Create',
@@ -285,7 +322,43 @@ export const en = {
     'session.noChats': 'Learners haven\'t started chatting yet',
     
     // Additional validation keys
-    'validation.selectDate': 'Please select at least one date to filter'
+    'validation.selectDate': 'Please select at least one date to filter',
+    
+    // JavaScript alert messages
+    'message.aiDescriptionRequired': 'Please provide a detailed description for AI generation.',
+    'message.fileRequired': 'Please select a file to upload.',
+    'message.sessionCreated': 'Session created successfully!',
+    'message.sessionCreateFailed': 'Failed to create session. Please try again.',
+    'message.profileUpdated': 'Profile updated successfully!',
+    'message.profileUpdateFailed': 'Profile update failed.',
+    'message.profileUpdateError': 'Failed to update profile. Please try again.',
+    'message.invalidFileType': 'Invalid file type. Please select a PDF, PPT, or PPTX file.',
+    'message.fileTooLarge': 'File too large. Maximum size is 50MB.',
+    'message.loginRequired': 'Please login to download files.',
+    'message.sessionExpired': 'Session expired. Please login again.',
+    'message.accessDenied': 'Access denied. You can only download your own files.',
+    'message.fileNotFound': 'File not found.',
+    'message.downloadStarted': 'Download started!',
+    'message.downloadFailed': 'Failed to download file. Please try again.',
+    'message.deleteTrainingConfirm': 'Are you sure you want to delete "{name}"?\\n\\nThis action cannot be undone and will also delete the associated file.',
+    'message.deleteTrainingLoginRequired': 'Please login to delete trainings.',
+    'message.deleteTrainingAccessDenied': 'Access denied. You can only delete your own trainings.',
+    'message.deleteTrainingNotFound': 'Training not found.',
+    'message.trainingDeleted': 'Training deleted successfully!',
+    'message.trainingDeleteFailed': 'Failed to delete training. Please try again.',
+    'message.sessionReportDownloadStarted': 'Session report download started!',
+    'message.sessionReportDownloadFailed': 'Failed to download session report. Please try again.',
+    'message.deleteSessionLoginRequired': 'Please login to delete sessions.',
+    'message.deleteSessionAccessDenied': 'Access denied. You can only delete sessions as an administrator.',
+    'message.sessionNotFound': 'Session not found.',
+    'message.sessionDeleted': 'Session deleted successfully!',
+    'message.sessionDeleteFailed': 'Failed to delete session. Please try again.',
+    'message.deleteSessionConfirm': 'Are you sure you want to delete session "{name}"?\\n\\nThis action cannot be undone and will also delete all associated learner data.',
+    
+    // Confirmation messages (confirm.* pattern)
+    'confirm.deleteTraining': 'Are you sure you want to delete "{name}"?\\n\\nThis action cannot be undone and will also delete the associated file.',
+    'confirm.deleteSession': 'Are you sure you want to delete this session?\\n\\nThis action cannot be undone.',
+    'confirm.deleteSessionAdmin': 'Are you sure you want to delete session "{name}"?\\n\\nThis action cannot be undone and will also delete all associated learner data.'
 };
 
 export default en;

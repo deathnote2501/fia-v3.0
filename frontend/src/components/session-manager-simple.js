@@ -25,7 +25,21 @@ function getAuthToken() {
  * Get default headers for authenticated requests
  */
 function getAuthHeaders() {
+    // Use global authManager if available for better token validation
+    if (window.authManager && window.authManager.isAuthenticated()) {
+        return {
+            'Content-Type': 'application/json',
+            ...window.authManager.getAuthHeader()
+        };
+    }
+    
+    // Fallback to direct localStorage access
     const token = getAuthToken();
+    if (!token) {
+        console.error('❌ [AUTH] No authentication token found');
+        throw new Error('Authentication required');
+    }
+    
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -223,7 +237,7 @@ async function loadSessions(dateFrom = '', dateTo = '') {
     } catch (error) {
         console.error('Error loading sessions:', error);
         sessionsList.innerHTML = `<div class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle"></i><p class="mt-2">${window.safeT ? window.safeT('error.loadingSessions') : 'Error loading sessions'}</p></div>`;
-        showAlert('Failed to load sessions', 'danger');
+        showAlert(window.safeT ? window.safeT('error.loadingSessions') : 'Failed to load sessions', 'danger');
     }
 }
 
@@ -247,7 +261,7 @@ async function copySessionLink(token) {
  * Delete training session
  */
 async function deleteSession(sessionId) {
-    if (!confirm(window.safeT ? window.safeT('warning.deleteSession') : 'Are you sure you want to delete this session?')) {
+    if (!confirm(window.safeT ? window.safeT('confirm.deleteSession') : 'Are you sure you want to delete this session?')) {
         return;
     }
     
@@ -398,12 +412,15 @@ function clearDateFilter() {
  * Show chat history modal for a session
  */
 async function showChatHistory(sessionId, sessionName) {
+    console.log(`🔍 [DEBUG] showChatHistory called with sessionId: ${sessionId}, sessionName: ${sessionName}`);
+    
     const modal = new bootstrap.Modal(document.getElementById('chat-history-modal'));
     const content = document.getElementById('chat-history-content');
     const modalTitle = document.querySelector('#chat-history-modal .modal-title');
     
-    // Update modal title
+    // Update modal title with the actual session name
     modalTitle.innerHTML = `<i class="bi bi-chat-dots me-2"></i>Conversation History - ${escapeHtml(sessionName)}`;
+    console.log(`📝 [DEBUG] Modal title set to: Conversation History - ${sessionName}`);
     
     // Show loading state
     content.innerHTML = `
@@ -414,19 +431,49 @@ async function showChatHistory(sessionId, sessionName) {
     `;
     
     modal.show();
+    console.log(`🖥️ [DEBUG] Modal displayed, loading chat history for session: ${sessionId}`);
     
     try {
-        const response = await fetch(`/api/dashboard/chat-history/${sessionId}`, {
-            headers: getAuthHeaders()
+        // Check authentication before making API call
+        if (window.authManager && !window.authManager.isAuthenticated()) {
+            console.error('❌ [DEBUG] User not authenticated');
+            throw new Error('Authentication required. Please log in again.');
+        }
+        
+        const url = `/api/dashboard/chat-history/${sessionId}`;
+        console.log(`🌐 [DEBUG] Making API call to: ${url}`);
+        console.log(`🔐 [DEBUG] Auth token exists: ${!!getAuthToken()}`);
+        
+        const headers = getAuthHeaders();
+        console.log(`🔐 [DEBUG] Using headers:`, Object.keys(headers));
+        
+        const response = await fetch(url, {
+            headers: headers
         });
         
+        console.log(`📡 [DEBUG] API response status: ${response.status} ${response.statusText}`);
+        
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.error(`❌ [DEBUG] API error response: ${errorText}`);
+            
+            if (response.status === 401) {
+                console.error('❌ [DEBUG] Authentication failed - token may be expired');
+                if (window.authManager) {
+                    window.authManager.clearToken();
+                    window.location.href = '/frontend/public/login.html';
+                }
+                throw new Error('Authentication expired. Please log in again.');
+            }
+            
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
         const chatHistory = await response.json();
+        console.log(`📊 [DEBUG] Received ${chatHistory.length} chat messages`);
         
         if (chatHistory.length === 0) {
+            console.log(`ℹ️ [DEBUG] No conversations found for session ${sessionId}`);
             content.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <i class="bi bi-chat-x display-6"></i>
@@ -440,6 +487,7 @@ async function showChatHistory(sessionId, sessionName) {
         // Group messages by learner
         const messagesByLearner = {};
         chatHistory.forEach(msg => {
+            console.log(`💬 [DEBUG] Processing message from: ${msg.learner_email}`);
             if (!messagesByLearner[msg.learner_email]) {
                 messagesByLearner[msg.learner_email] = [];
             }
@@ -450,6 +498,8 @@ async function showChatHistory(sessionId, sessionName) {
         let html = '';
         Object.keys(messagesByLearner).forEach(learnerEmail => {
             const messages = messagesByLearner[learnerEmail];
+            console.log(`👤 [DEBUG] Rendering ${messages.length} messages for learner: ${learnerEmail}`);
+            
             html += `
                 <div class="mb-4">
                     <h6 class="text-primary border-bottom pb-2">
@@ -459,7 +509,8 @@ async function showChatHistory(sessionId, sessionName) {
                     </h6>
             `;
             
-            messages.forEach(msg => {
+            messages.forEach((msg, index) => {
+                console.log(`📝 [DEBUG] Message ${index + 1}: "${msg.learner_message?.substring(0, 50)}..."`);
                 html += `
                     <div class="mb-3">
                         <div class="card border-start border-primary border-3">
@@ -487,15 +538,16 @@ async function showChatHistory(sessionId, sessionName) {
             html += '</div>';
         });
         
+        console.log(`✅ [DEBUG] Rendering complete HTML for chat history`);
         content.innerHTML = html;
         
     } catch (error) {
-        console.error('Failed to load chat history:', error);
+        console.error('❌ [ERROR] Failed to load chat history:', error);
         content.innerHTML = `
             <div class="text-center text-danger py-4">
                 <i class="bi bi-exclamation-triangle display-6"></i>
                 <p class="mt-2">${window.safeT ? window.safeT('error.loadingData') : 'Failed to load conversation history'}</p>
-                <small>Please try again later</small>
+                <small>Error: ${error.message}</small>
             </div>
         `;
     }
