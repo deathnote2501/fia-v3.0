@@ -216,14 +216,44 @@ export class MobileInterfaceHandler {
             // Sync mobile toggle with desktop toggle
             mobileTTSToggle.addEventListener('change', (e) => {
                 console.log('📱 [MOBILE-INTERFACE] Mobile TTS toggle changed:', e.target.checked);
+                
+                // Update desktop toggle state
                 desktopTTSToggle.checked = e.target.checked;
-                desktopTTSToggle.dispatchEvent(new Event('change'));
+                
+                // Trigger desktop TTS click event (which activates TTS functionality)
+                desktopTTSToggle.click();
+                
+                console.log('📱 [MOBILE-INTERFACE] Desktop TTS toggle synchronized and activated');
             });
             
-            // Sync desktop toggle changes back to mobile
+            // Sync desktop toggle changes back to mobile (without triggering infinite loop)
             desktopTTSToggle.addEventListener('change', (e) => {
-                mobileTTSToggle.checked = e.target.checked;
+                // Only sync if mobile toggle state is different to avoid loops
+                if (mobileTTSToggle.checked !== e.target.checked) {
+                    mobileTTSToggle.checked = e.target.checked;
+                    console.log('📱 [MOBILE-INTERFACE] Mobile TTS toggle synced from desktop:', e.target.checked);
+                }
             });
+            
+            // Additional sync for TTS manager state changes
+            const syncTTSStates = () => {
+                // Get TTS manager state from ChatInterface if available
+                if (window.fiaApp && window.fiaApp.chatInterface && window.fiaApp.chatInterface.ttsManager) {
+                    const ttsEnabled = window.fiaApp.chatInterface.ttsManager.enabled;
+                    if (mobileTTSToggle.checked !== ttsEnabled) {
+                        mobileTTSToggle.checked = ttsEnabled;
+                        console.log('📱 [MOBILE-INTERFACE] Mobile TTS synced with TTS Manager state:', ttsEnabled);
+                    }
+                    if (desktopTTSToggle.checked !== ttsEnabled) {
+                        desktopTTSToggle.checked = ttsEnabled;
+                        console.log('📱 [MOBILE-INTERFACE] Desktop TTS synced with TTS Manager state:', ttsEnabled);
+                    }
+                }
+            };
+            
+            // Sync states periodically and on page interactions
+            setInterval(syncTTSStates, 1000); // Every second
+            document.addEventListener('click', syncTTSStates);
         }
         
         // Mobile Live API Button → Desktop Live API Button
@@ -236,6 +266,9 @@ export class MobileInterfaceHandler {
                 console.log('📱 [MOBILE-INTERFACE] Mobile Live API button clicked');
                 desktopLiveAPIBtn.click();
             });
+            
+            // Sync Live API button states from desktop to mobile
+            this.syncLiveAPIButtonStates(desktopLiveAPIBtn, mobileLiveAPIBtn);
         }
         
         console.log('📱 [MOBILE-INTERFACE] Mobile TTS events configured');
@@ -256,13 +289,16 @@ export class MobileInterfaceHandler {
             // Auto-expanding textarea for mobile
             this.setupAutoExpandingTextarea(mobileChatInput);
             
-            // Sync content between mobile and desktop inputs
+            // Sync content mobile → desktop
             mobileChatInput.addEventListener('input', (e) => {
                 desktopChatInput.value = e.target.value;
                 
                 // Update mobile voice button state based on text content
                 this.updateMobileVoiceButtonState(e.target.value);
             });
+            
+            // Sync content desktop → mobile (for voice transcription)
+            this.syncDesktopToMobileInput(desktopChatInput, mobileChatInput);
             
             // Handle mobile Enter key
             mobileChatInput.addEventListener('keydown', (e) => {
@@ -536,6 +572,94 @@ export class MobileInterfaceHandler {
         
         observer.observe(desktopBtn, { attributes: true });
         console.log('📱 [MOBILE-INTERFACE] Desktop voice button state sync configured');
+    }
+    
+    /**
+     * Sync Live API button states from desktop to mobile
+     * @param {HTMLButtonElement} desktopBtn - Desktop Live API button
+     * @param {HTMLButtonElement} mobileBtn - Mobile Live API button
+     */
+    syncLiveAPIButtonStates(desktopBtn, mobileBtn) {
+        if (!desktopBtn || !mobileBtn) return;
+        
+        // Watch for class changes on desktop button
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const desktopClasses = desktopBtn.className;
+                    
+                    // Remove all mobile states
+                    mobileBtn.classList.remove('recording', 'connecting');
+                    
+                    // Apply matching state
+                    if (desktopClasses.includes('recording')) {
+                        mobileBtn.classList.add('recording');
+                        console.log('📱 [MOBILE-INTERFACE] Mobile Live API → Recording state');
+                    } else if (desktopClasses.includes('connecting')) {
+                        mobileBtn.classList.add('connecting');
+                        console.log('📱 [MOBILE-INTERFACE] Mobile Live API → Connecting state');
+                    } else {
+                        console.log('📱 [MOBILE-INTERFACE] Mobile Live API → Default state');
+                    }
+                }
+            });
+        });
+        
+        observer.observe(desktopBtn, { attributes: true });
+        console.log('📱 [MOBILE-INTERFACE] Live API button state sync configured');
+    }
+    
+    /**
+     * Sync input content from desktop to mobile (for voice transcription)
+     * @param {HTMLTextAreaElement} desktopInput - Desktop chat input
+     * @param {HTMLTextAreaElement} mobileInput - Mobile chat input
+     */
+    syncDesktopToMobileInput(desktopInput, mobileInput) {
+        if (!desktopInput || !mobileInput) return;
+        
+        // Watch for value changes in desktop input (voice transcription)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                    this.syncInputValues(desktopInput, mobileInput);
+                }
+            });
+        });
+        
+        // Also listen for input events
+        desktopInput.addEventListener('input', () => {
+            this.syncInputValues(desktopInput, mobileInput);
+        });
+        
+        // Listen for property changes (programmatic value changes)
+        let lastValue = desktopInput.value;
+        setInterval(() => {
+            if (desktopInput.value !== lastValue) {
+                lastValue = desktopInput.value;
+                this.syncInputValues(desktopInput, mobileInput);
+            }
+        }, 100); // Check every 100ms
+        
+        console.log('📱 [MOBILE-INTERFACE] Desktop to mobile input sync configured');
+    }
+    
+    /**
+     * Sync input values and update mobile button state
+     * @param {HTMLTextAreaElement} desktopInput - Desktop input
+     * @param {HTMLTextAreaElement} mobileInput - Mobile input
+     */
+    syncInputValues(desktopInput, mobileInput) {
+        if (desktopInput.value !== mobileInput.value) {
+            mobileInput.value = desktopInput.value;
+            
+            // Adjust mobile textarea height
+            this.adjustTextareaHeight(mobileInput);
+            
+            // Update mobile voice button state
+            this.updateMobileVoiceButtonState(mobileInput.value);
+            
+            console.log('📱 [MOBILE-INTERFACE] Input synced from desktop to mobile:', desktopInput.value.substring(0, 50));
+        }
     }
     
     /**

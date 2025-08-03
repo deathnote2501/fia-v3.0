@@ -1878,6 +1878,26 @@ body.landing-page {
         flex: none !important;
     }
     
+    /* Mobile Live API Button States - matching desktop behavior */
+    #mobile-live-api-btn.recording {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: white !important;
+        animation: pulse-recording 1.5s infinite !important;
+    }
+    
+    #mobile-live-api-btn.connecting {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    #mobile-live-api-btn {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        font-size: 0.8rem !important;
+    }
+    
     /* Mobile TTS Controls: Simplified as they're now part of chat controls */
     .mobile-tts-controls {
         display: none !important; /* This zone is no longer used */

@@ -160,12 +160,22 @@ export class ChatInterface {
         const ttsToggle = document.getElementById('tts-toggle');
         
         if (ttsToggle) {
-            // Setup TTS toggle listener
-            ttsToggle.addEventListener('click', () => {
-                const isCurrentlyEnabled = this.ttsManager.enabled;
-                this.ttsManager.setEnabled(!isCurrentlyEnabled);
+            // TTS toggle functionality (works for both click and change events)
+            const handleTTSToggle = () => {
+                const newState = ttsToggle.checked;
+                this.ttsManager.setEnabled(newState);
                 
-                console.log(`🔊 TTS [APP] TTS ${!isCurrentlyEnabled ? 'enabled' : 'disabled'} by user`);
+                console.log(`🔊 TTS [APP] TTS ${newState ? 'enabled' : 'disabled'} by user`);
+            };
+            
+            // Setup TTS toggle listener for click events (desktop interaction)
+            ttsToggle.addEventListener('click', () => {
+                handleTTSToggle();
+            });
+            
+            // Setup TTS toggle listener for change events (mobile synchronization)
+            ttsToggle.addEventListener('change', () => {
+                handleTTSToggle();
             });
             
             // Set language based on learner profile
@@ -173,7 +183,7 @@ export class ChatInterface {
                 this.ttsManager.setLanguage(this.learnerSession.language);
             }
             
-            console.log('✅ [TTS] TTS functionality initialized');
+            console.log('✅ [TTS] TTS functionality initialized with desktop & mobile sync');
         } else {
             console.error('❌ [TTS] TTS toggle not found');
         }
