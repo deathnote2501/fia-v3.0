@@ -46,6 +46,11 @@ class SettingsPort(ABC):
         pass
     
     @abstractmethod
+    def get_frontend_url(self) -> str:
+        """Get the frontend base URL"""
+        pass
+    
+    @abstractmethod
     def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get any setting by key with optional default"""
         pass

@@ -20,8 +20,8 @@ class EmailAdapter(EmailServicePort):
     def __init__(self):
         self.api_key = settings.brevo_api_key
         self.api_url = "https://api.brevo.com/v3/smtp/email"
-        self.sender_email = settings.sender_email
-        self.sender_name = settings.sender_name
+        self.sender_email = settings.brevo_sender_email
+        self.sender_name = settings.brevo_sender_name
         
     async def send_session_invitation(
         self,
@@ -242,6 +242,51 @@ class EmailAdapter(EmailServicePort):
             logger.error(f"Error sending trainer notification: {str(e)}")
             return False
     
+    async def send_session_resume_link(
+        self,
+        recipient_email: str,
+        session_link: str,
+        training_name: str,
+        language: str = "fr"
+    ) -> bool:
+        """Send session resume link email to learner"""
+        try:
+            # Build i18n email content based on learner language
+            email_content = self._build_resume_link_content(
+                session_link, training_name, language
+            )
+            
+            subject = email_content["subject"]
+            html_content = email_content["html_content"]
+            
+            email_data = {
+                "sender": {
+                    "name": self.sender_name,
+                    "email": self.sender_email
+                },
+                "to": [
+                    {
+                        "email": recipient_email,
+                        "name": "Learner"
+                    }
+                ],
+                "subject": subject,
+                "htmlContent": html_content
+            }
+            
+            success = await self._send_email(email_data)
+            
+            if success:
+                logger.info(f"Session resume link sent successfully to {recipient_email} (language: {language})")
+            else:
+                logger.error(f"Failed to send session resume link to {recipient_email}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error sending session resume link: {str(e)}")
+            return False
+    
     def _build_trainer_notification_content(self, notification_type: str, data: Dict[str, Any]) -> str:
         """Build HTML content for trainer notifications"""
         base_template = """
@@ -297,6 +342,80 @@ class EmailAdapter(EmailServicePort):
             content = f"<p>Notification: {data}</p>"
         
         return base_template.format(content=content)
+    
+    def _build_resume_link_content(self, session_link: str, training_name: str, language: str) -> Dict[str, str]:
+        """Build i18n email content for session resume link"""
+        
+        if language.lower() in ["en", "english"]:
+            # English content
+            subject = f"Your Training Session Link - {training_name}"
+            
+            greeting = "Hello,"
+            intro = "We are happy to count you among our learners."
+            link_text = "Your training link is the following:"
+            resume_text = "It allows you to resume your training at any time."
+            closing = "Have a great day!"
+            button_text = "Resume My Training"
+            
+        else:
+            # French content (default)
+            subject = f"Votre lien de formation - {training_name}"
+            
+            greeting = "Bonjour,"
+            intro = "Nous sommes heureux de vous compter parmi nos apprenants."
+            link_text = "Votre lien de formation est le suivant :"
+            resume_text = "Il vous permet de reprendre votre formation à tout moment."
+            closing = "Bonne journée !"
+            button_text = "Reprendre ma formation"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>{subject}</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #0d6efd;">FIA v3.0 - Formation IA</h2>
+                
+                <p>{greeting}</p>
+                
+                <p>{intro}</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <h3 style="margin: 0; color: #0d6efd;">{training_name}</h3>
+                </div>
+                
+                <p>{link_text}</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{session_link}" 
+                       style="background-color: #0d6efd; color: white; padding: 12px 30px; 
+                              text-decoration: none; border-radius: 5px; display: inline-block;">
+                        {button_text}
+                    </a>
+                </div>
+                
+                <p>{resume_text}</p>
+                
+                <p>{closing}</p>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
+                
+                <p style="font-size: 12px; color: #6c757d;">
+                    FIA v3.0 - Plateforme d'apprentissage IA personnalisée<br>
+                    Cet email a été envoyé automatiquement lors de votre inscription à la formation.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return {
+            "subject": subject,
+            "html_content": html_content
+        }
     
     async def _send_email(self, email_data: Dict[str, Any]) -> bool:
         """Send email via Brevo API"""

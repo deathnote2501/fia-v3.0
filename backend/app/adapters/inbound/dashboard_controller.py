@@ -229,9 +229,10 @@ async def get_chat_history(
     """
     try:
         trainer_id = current_trainer.id
-        logger.info(f"Getting chat history for session {session_id} by trainer {trainer_id}")
+        logger.info(f"🔍 [DEBUG] Getting chat history for session {session_id} by trainer {trainer_id}")
         
-        # Verify the session belongs to this trainer
+        # STEP 1: Verify the session belongs to this trainer
+        logger.info(f"🔍 [DEBUG] STEP 1: Verifying session ownership")
         session_result = await db.execute(
             select(TrainingSessionModel)
             .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
@@ -243,10 +244,39 @@ async def get_chat_history(
         session = session_result.scalar_one_or_none()
         
         if not session:
-            logger.warning(f"Session {session_id} not found or access denied for trainer {trainer_id}")
+            logger.warning(f"❌ [DEBUG] Session {session_id} not found or access denied for trainer {trainer_id}")
+            
+            # EXTRA DEBUG: Check if session exists at all
+            session_exists_result = await db.execute(
+                select(TrainingSessionModel.id, TrainingModel.trainer_id)
+                .join(TrainingModel, TrainingSessionModel.training_id == TrainingModel.id)
+                .where(TrainingSessionModel.id == session_id)
+            )
+            session_exists = session_exists_result.first()
+            
+            if session_exists:
+                logger.warning(f"❌ [DEBUG] Session exists but belongs to trainer {session_exists.trainer_id}, not {trainer_id}")
+            else:
+                logger.warning(f"❌ [DEBUG] Session {session_id} does not exist at all")
+            
             return []
         
-        # Get chat messages for all learners in this session
+        logger.info(f"✅ [DEBUG] STEP 1: Session verified - belongs to trainer {trainer_id}")
+        
+        # STEP 2: Get learner sessions for this training session
+        logger.info(f"🔍 [DEBUG] STEP 2: Getting learner sessions")
+        learner_sessions_result = await db.execute(
+            select(LearnerSessionModel)
+            .where(LearnerSessionModel.training_session_id == session_id)
+        )
+        learner_sessions = learner_sessions_result.scalars().all()
+        logger.info(f"📊 [DEBUG] Found {len(learner_sessions)} learner sessions")
+        
+        for ls in learner_sessions:
+            logger.info(f"   - Learner session {ls.id} ({ls.email})")
+        
+        # STEP 3: Get chat messages for all learners in this session
+        logger.info(f"🔍 [DEBUG] STEP 3: Getting chat messages")
         chat_messages_result = await db.execute(
             select(ChatMessageModel)
             .join(LearnerSessionModel, ChatMessageModel.learner_session_id == LearnerSessionModel.id)
@@ -254,21 +284,54 @@ async def get_chat_history(
             .order_by(ChatMessageModel.created_at.asc())
         )
         chat_messages = chat_messages_result.scalars().all()
+        logger.info(f"📊 [DEBUG] Raw query returned {len(chat_messages)} chat messages")
         
-        # Format messages for display
+        # STEP 4: Alternative query - direct from chat_messages
+        logger.info(f"🔍 [DEBUG] STEP 4: Alternative direct query")
+        learner_session_ids = [str(ls.id) for ls in learner_sessions]
+        if learner_session_ids:
+            direct_messages_result = await db.execute(
+                select(ChatMessageModel)
+                .where(ChatMessageModel.learner_session_id.in_(learner_session_ids))
+                .order_by(ChatMessageModel.created_at.asc())
+            )
+            direct_messages = direct_messages_result.scalars().all()
+            logger.info(f"📊 [DEBUG] Direct query returned {len(direct_messages)} chat messages")
+            
+            for msg in direct_messages:
+                logger.info(f"   - Message {msg.id}: \"{msg.message[:50] if msg.message else 'No message'}...\"")
+                logger.info(f"     Response: \"{msg.response[:50] if msg.response else 'No response'}...\"")
+                logger.info(f"     Learner session: {msg.learner_session_id}")
+        
+        # Format messages for display using the working query
         formatted_messages = []
-        for msg in chat_messages:
-            formatted_messages.append({
+        messages_to_use = direct_messages if learner_session_ids and len(direct_messages) > 0 else chat_messages
+        
+        logger.info(f"🔍 [DEBUG] STEP 5: Formatting {len(messages_to_use)} messages")
+        for msg in messages_to_use:
+            # Get learner email from learner session
+            learner_email = "Unknown"
+            for ls in learner_sessions:
+                if str(ls.id) == str(msg.learner_session_id):
+                    learner_email = ls.email
+                    break
+            
+            formatted_message = {
                 "id": str(msg.id),
                 "learner_message": msg.message,
                 "ai_response": msg.response,
+                "message_type": msg.message_type,  # 'question' or 'answer'
                 "created_at": msg.created_at.strftime("%Y-%m-%d %H:%M:%S") if msg.created_at else None,
-                "learner_email": msg.learner_session.email if msg.learner_session else "Unknown"
-            })
+                "learner_email": learner_email
+            }
+            formatted_messages.append(formatted_message)
+            logger.info(f"   - Formatted message for {learner_email}")
         
-        logger.info(f"Found {len(formatted_messages)} chat messages for session {session_id}")
+        logger.info(f"✅ [DEBUG] Final result: {len(formatted_messages)} formatted messages for session {session_id}")
         return formatted_messages
         
     except Exception as e:
-        logger.error(f"Failed to get chat history for session {session_id}: {e}")
+        logger.error(f"❌ [DEBUG] Failed to get chat history for session {session_id}: {e}")
+        import traceback
+        logger.error(f"❌ [DEBUG] Traceback: {traceback.format_exc()}")
         return []

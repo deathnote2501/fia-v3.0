@@ -38,6 +38,10 @@ class SettingsAdapter(SettingsPort):
         """Get the rate limit per minute for Gemini API"""
         return settings.gemini_rate_limit_per_minute
     
+    def get_frontend_url(self) -> str:
+        """Get the frontend base URL"""
+        return settings.frontend_url
+    
     def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get any setting by key with optional default"""
         return getattr(settings, key, default)

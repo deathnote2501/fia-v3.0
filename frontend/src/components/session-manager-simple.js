@@ -418,8 +418,8 @@ async function showChatHistory(sessionId, sessionName) {
     const content = document.getElementById('chat-history-content');
     const modalTitle = document.querySelector('#chat-history-modal .modal-title');
     
-    // Update modal title with the actual session name
-    modalTitle.innerHTML = `<i class="bi bi-chat-dots me-2"></i>Conversation History - ${escapeHtml(sessionName)}`;
+    // Update modal title without session name
+    modalTitle.innerHTML = `<i class="bi bi-chat-dots me-2"></i>Conversation History`;
     console.log(`📝 [DEBUG] Modal title set to: Conversation History - ${sessionName}`);
     
     // Show loading state
@@ -494,49 +494,57 @@ async function showChatHistory(sessionId, sessionName) {
             messagesByLearner[msg.learner_email].push(msg);
         });
         
-        // Render messages
-        let html = '';
+        // Render messages in simple table format
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-borderless">
+                    <tbody>
+        `;
+        
+        // Flatten all messages and sort by timestamp
+        const allMessages = [];
         Object.keys(messagesByLearner).forEach(learnerEmail => {
             const messages = messagesByLearner[learnerEmail];
-            console.log(`👤 [DEBUG] Rendering ${messages.length} messages for learner: ${learnerEmail}`);
-            
-            html += `
-                <div class="mb-4">
-                    <h6 class="text-primary border-bottom pb-2">
-                        <i class="bi bi-person me-2"></i>
-                        ${escapeHtml(learnerEmail)}
-                        <small class="text-muted">(${messages.length} messages)</small>
-                    </h6>
-            `;
+            console.log(`👤 [DEBUG] Processing ${messages.length} messages for learner: ${learnerEmail}`);
             
             messages.forEach((msg, index) => {
-                console.log(`📝 [DEBUG] Message ${index + 1}: "${msg.learner_message?.substring(0, 50)}..."`);
-                html += `
-                    <div class="mb-3">
-                        <div class="card border-start border-primary border-3">
-                            <div class="card-body py-2">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <small class="text-muted fw-bold">Learner Question:</small>
-                                        <p class="mb-1">${escapeHtml(msg.learner_message || 'No message')}</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <small class="text-muted fw-bold">AI Response:</small>
-                                        <p class="mb-1">${escapeHtml(msg.ai_response || 'No response')}</p>
-                                    </div>
-                                </div>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock me-1"></i>
-                                    ${msg.created_at || 'Unknown time'}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                console.log(`📝 [DEBUG] Message ${index + 1}: "${msg.learner_message?.substring(0, 50)}..." (type: ${msg.message_type})`);
+                
+                // Use message_type from database: 'question' = Learner, 'answer' = AI
+                const messageType = msg.message_type === 'question' ? 'Learner' : 'AI';
+                const displayMessage = msg.learner_message || msg.ai_response || 'No message';
+                
+                allMessages.push({
+                    type: messageType,
+                    message: displayMessage,
+                    email: learnerEmail,
+                    timestamp: msg.created_at
+                });
             });
-            
-            html += '</div>';
         });
+        
+        // Sort messages by timestamp (if available)
+        allMessages.sort((a, b) => {
+            if (!a.timestamp || !b.timestamp) return 0;
+            return new Date(a.timestamp) - new Date(b.timestamp);
+        });
+        
+        // Render each message as a table row
+        allMessages.forEach((msg, index) => {
+            html += `
+                <tr>
+                    <td width="80" class="text-muted fw-bold align-top">${msg.type}:</td>
+                    <td class="align-top">${escapeHtml(msg.message)}</td>
+                </tr>
+                ${index < allMessages.length - 1 ? '<tr><td colspan="2"><hr class="my-2"></td></tr>' : ''}
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
         
         console.log(`✅ [DEBUG] Rendering complete HTML for chat history`);
         content.innerHTML = html;

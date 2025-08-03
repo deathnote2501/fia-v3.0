@@ -144,6 +144,17 @@ class EmailServicePort(ABC):
     ) -> bool:
         """Send notification to trainer"""
         pass
+    
+    @abstractmethod
+    async def send_session_resume_link(
+        self,
+        recipient_email: str,
+        session_link: str,
+        training_name: str,
+        language: str = "fr"
+    ) -> bool:
+        """Send session resume link email to learner"""
+        pass
 
 
 class FileStorageServicePort(ABC):
