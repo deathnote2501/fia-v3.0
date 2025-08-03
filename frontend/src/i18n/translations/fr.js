@@ -199,7 +199,7 @@ export const fr = {
     'landing.title': 'Sur quoi souhaitez-vous vous former ?',
     'landing.placeholder': 'IA Générative, Linkedin, Marketing digital...',
     'landing.startButton': 'Démarrer ma formation',
-    'landing.brandName': 'Dice3.ai',
+    'landing.brandName': 'Jerome IAvarone',
     'landing.progress.generating': 'Le formateur IA génère votre plan de formation personalisé',
     'landing.progress.status': 'Lancement de la generation...',
     'landing.progress.analyzing': 'Analyse de votre sujet...',
@@ -208,6 +208,8 @@ export const fr = {
     'landing.progress.preparing': 'Préparation de votre expérience d\'apprentissage...',
     'landing.progress.finalizing': 'Presque prêt ! Finalisation des détails...',
     'landing.progress.ready': 'Formation prête ! Redirection...',
+    'landing.error.minLength': 'Veuillez saisir au moins 5 caractères.',
+    'landing.error.creation': 'Erreur lors de la création. Veuillez réessayer.',
     
     // B2C Upgrade Modal
     'b2c.modal.title': 'Déverrouillez la Formation Complète',

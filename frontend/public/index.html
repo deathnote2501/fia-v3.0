@@ -91,7 +91,32 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- i18n System -->
-    <script type="module" src="/frontend/src/i18n/i18n.js"></script>
+    <script type="module">
+        // Initialize i18n for landing page
+        import I18n from '/frontend/src/i18n/i18n.js';
+        import { initializeI18n, setupGlobalTranslation } from '/frontend/src/i18n/i18n-helper.js';
+        
+        // Initialize i18n service globally and setup translations
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Create i18n instance globally
+                window.i18n = new I18n();
+                
+                // Wait for translations to load
+                await window.i18n.loadTranslations();
+                
+                // Setup global translation functions
+                setupGlobalTranslation();
+                
+                // Apply translations to DOM
+                window.i18n.updateDOM();
+                
+                console.log('✅ [LANDING] i18n initialized successfully');
+            } catch (error) {
+                console.error('❌ [LANDING] Failed to initialize i18n:', error);
+            }
+        });
+    </script>
     
     <!-- Landing Page JavaScript -->
     <script type="module">

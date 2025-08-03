@@ -49,7 +49,7 @@ class LandingPageManager {
         
         const topic = this.topicInput.value.trim();
         if (topic.length < 5) {
-            this.showError('Please enter at least 5 characters.');
+            this.showError(window.safeT ? window.safeT('landing.error.minLength') : 'Veuillez saisir au moins 5 caractères.');
             return;
         }
         
@@ -60,7 +60,7 @@ class LandingPageManager {
             await this.createTrainingWorkflow(topic);
         } catch (error) {
             console.error('❌ [LANDING] Error:', error);
-            this.showError('Error during creation. Please try again.');
+            this.showError(window.safeT ? window.safeT('landing.error.creation') : 'Erreur lors de la création. Veuillez réessayer.');
             this.setLoadingState(false);
         }
     }
@@ -71,7 +71,7 @@ class LandingPageManager {
             this.contentOverlay.classList.add('loading-state');
             this.submitBtn.innerHTML = `
                 <span class="spinner-border spinner-border-sm me-2"></span>
-                Creating Training...
+                ${window.safeT ? window.safeT('status.creating') : 'Création...'}
             `;
             this.topicInput.disabled = true;
             
@@ -160,7 +160,7 @@ class LandingPageManager {
         this.progressBar.style.width = '0%';
         this.progressBar.setAttribute('aria-valuenow', '0');
         this.progressText.textContent = '0%';
-        this.progressStatus.textContent = window.safeT ? window.safeT('landing.progress.status') : 'Starting AI generation...';
+        this.progressStatus.textContent = window.safeT ? window.safeT('landing.progress.status') : 'Démarrage de la génération IA...';
     }
     
     startProgressAnimation() {
@@ -202,17 +202,17 @@ class LandingPageManager {
         let statusMessage = '';
         
         if (progressPercent < 20) {
-            statusMessage = window.safeT ? window.safeT('landing.progress.analyzing') : 'Analyzing your topic...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.analyzing') : 'Analyse de votre sujet...';
         } else if (progressPercent < 40) {
-            statusMessage = window.safeT ? window.safeT('landing.progress.creating') : 'AI is creating your personalized content...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.creating') : 'L\'IA crée votre contenu personnalisé...';
         } else if (progressPercent < 60) {
-            statusMessage = window.safeT ? window.safeT('landing.progress.generatingSlides') : 'Generating interactive slides...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.generatingSlides') : 'Génération des slides interactives...';
         } else if (progressPercent < 80) {
-            statusMessage = window.safeT ? window.safeT('landing.progress.preparing') : 'Preparing your learning experience...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.preparing') : 'Préparation de votre expérience d\'apprentissage...';
         } else if (progressPercent < 95) {
-            statusMessage = window.safeT ? window.safeT('landing.progress.finalizing') : 'Almost ready! Finalizing details...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.finalizing') : 'Presque prêt ! Finalisation des détails...';
         } else {
-            statusMessage = window.safeT ? window.safeT('landing.progress.ready') : 'Training ready! Redirecting...';
+            statusMessage = window.safeT ? window.safeT('landing.progress.ready') : 'Formation prête ! Redirection...';
         }
         
         this.progressStatus.textContent = statusMessage;

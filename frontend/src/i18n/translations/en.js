@@ -191,7 +191,7 @@ export const en = {
     'landing.title': 'What would you like to learn about?',
     'landing.placeholder': 'Example: Project management, Digital marketing...',
     'landing.startButton': 'Start My Training',
-    'landing.brandName': 'Dice3.ai',
+    'landing.brandName': 'Jerome IAvarone',
     'landing.progress.generating': 'Your AI trainer is creating your personalized training...',
     'landing.progress.status': 'Starting AI generation...',
     'landing.progress.analyzing': 'Analyzing your topic...',
@@ -200,6 +200,8 @@ export const en = {
     'landing.progress.preparing': 'Preparing your learning experience...',
     'landing.progress.finalizing': 'Almost ready! Finalizing details...',
     'landing.progress.ready': 'Training ready! Redirecting...',
+    'landing.error.minLength': 'Please enter at least 5 characters.',
+    'landing.error.creation': 'Error during creation. Please try again.',
     
     // Contextual actions
     'action.comment': 'Comment',
