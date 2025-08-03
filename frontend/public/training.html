@@ -47,16 +47,16 @@
             <div class="chat-actions">
                 <div class="btn-group w-100" role="group" aria-label="Chat actions">
                     <button type="button" class="btn btn-outline-primary btn-sm" id="comment-btn" data-i18n-title="tooltip.comment" title="Ask for comments or feedback on this slide">
-                        <i class="bi bi-chat-text me-1"></i>
+                        <i class="bi bi-chat-text me-1"></i><span data-i18n="chat.comment">Comment</span>
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="quiz-btn" data-i18n-title="tooltip.quiz" title="Generate a quiz to test your understanding">
-                        <i class="bi bi-question-circle me-1"></i>
+                        <i class="bi bi-question-circle me-1"></i><span data-i18n="chat.quiz">Quiz</span>
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="examples-btn" data-i18n-title="tooltip.examples" title="Get practical examples related to this content">
-                        <i class="bi bi-lightbulb me-1"></i>
+                        <i class="bi bi-lightbulb me-1"></i><span data-i18n="chat.examples">Examples</span>
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="key-points-btn" data-i18n-title="tooltip.keyPoints" title="Highlight the key points of this slide">
-                        <i class="bi bi-star me-1"></i>
+                        <i class="bi bi-star me-1"></i><span data-i18n="chat.keyPoints">Key Points</span>
                     </button>
                 </div>
             </div>
@@ -117,26 +117,26 @@
             
             <!-- Navigation Section (75% droite) -->
             <div class="footer-nav-section">
-                <button id="new-previous-btn" class="btn btn-primary" disabled>
+                <button id="new-previous-btn" class="btn btn-primary" disabled data-i18n-title="tooltip.previous" title="Go to previous slide">
                     <i class="bi bi-chevron-left me-1"></i><span data-i18n="learner.previous">Previous</span>
                 </button>
                 
                 <div class="interaction-buttons">
-                    <button id="new-simplify-btn" class="btn btn-outline-primary me-2">
+                    <button id="new-simplify-btn" class="btn btn-outline-primary me-2" data-i18n-title="tooltip.simplify" title="Simplify the content of this slide">
                         <i class="bi bi-arrows-collapse me-1"></i><span data-i18n="learner.simplify">Simplify</span>
                     </button>
-                    <button id="new-more-details-btn" class="btn btn-outline-primary me-2">
+                    <button id="new-more-details-btn" class="btn btn-outline-primary me-2" data-i18n-title="tooltip.deepen" title="Get more details about this content">
                         <i class="bi bi-arrows-expand me-1"></i><span data-i18n="learner.deepen">Deepen</span>
                     </button>
-                    <button id="generate-chart-btn" class="btn btn-outline-primary">
+                    <button id="generate-chart-btn" class="btn btn-outline-primary" data-i18n-title="tooltip.chart" title="Generate a chart to illustrate this content">
                         <i class="bi bi-graph-up me-1"></i><span data-i18n="learner.chart">Chart</span>
                     </button>
-                    <button id="generate-image-btn" class="btn btn-outline-primary me-2" style="visibility: hidden;">
+                    <button id="generate-image-btn" class="btn btn-outline-primary me-2" style="visibility: hidden;" data-i18n-title="tooltip.image" title="Generate an image to illustrate this content">
                         <i class="bi bi-image me-1"></i><span data-i18n="learner.image">Image</span>
                     </button>
                 </div>
                 
-                <button id="new-next-btn" class="btn btn-primary">
+                <button id="new-next-btn" class="btn btn-primary" data-i18n-title="tooltip.next" title="Go to next slide">
                     <span data-i18n="learner.next">Next</span><i class="bi bi-chevron-right ms-1"></i>
                 </button>
             </div>

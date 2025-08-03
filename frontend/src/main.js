@@ -81,6 +81,10 @@ export class FIATrainingApp {
             // Setup GeminiLiveAPI integration
             await this.setupGeminiLiveAPIIntegration();
             
+            // 🔥 FORCE REFRESH ALL i18n TRANSLATIONS (tooltips, placeholders, text)
+            this.refreshAllTranslations();
+            console.log('🔥 [FIA-APP] Forced i18n refresh completed');
+            
             console.log('✅ [FIA-APP] Application initialized successfully');
             
         } catch (error) {
@@ -335,6 +339,36 @@ export class FIATrainingApp {
         };
     }
     
+    /**
+     * 🔥 FORCE REFRESH ALL i18n TRANSLATIONS (tooltips, placeholders, text)
+     */
+    refreshAllTranslations() {
+        if (!window.t) {
+            console.warn('⚠️ [FIA-APP] Translation function not available');
+            return;
+        }
+        
+        // Update all text elements with data-i18n attributes
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            element.textContent = window.t(key);
+        });
+        
+        // 🔥 CORRECTION TOOLTIPS: Update all tooltips with data-i18n-title attributes
+        document.querySelectorAll('[data-i18n-title]').forEach(element => {
+            const key = element.getAttribute('data-i18n-title');
+            element.title = window.t(key);
+        });
+        
+        // 🔥 CORRECTION PLACEHOLDER: Update all placeholders with data-i18n-placeholder attributes
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            element.placeholder = window.t(key);
+        });
+        
+        console.log('🔥 [FIA-APP] All i18n translations refreshed');
+    }
+
     /**
      * Cleanup resources when the app is destroyed
      */

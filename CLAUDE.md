@@ -773,6 +773,95 @@ Testing is primarily manual through web interfaces:
 - Security testing via interface attempts
 - Mobile responsiveness validation
 
+## 🤖 Automated Testing with Kapture MCP
+
+### **Kapture MCP Integration for Claude 4**
+
+FIA v3.0 integrates with **Kapture MCP** for automated browser testing after code modifications. This allows Claude to autonomously test UI changes without human intervention.
+
+### **Key Kapture Capabilities**
+
+**Browser Control:**
+- `mcp__kapture__new_tab` - Open new browser tab
+- `mcp__kapture__navigate` - Navigate to specific URLs
+- `mcp__kapture__reload` - Reload page content
+- `mcp__kapture__close` - Close browser tabs
+
+**UI Interaction:**
+- `mcp__kapture__click` - Click elements by CSS selector/XPath
+- `mcp__kapture__fill` - Fill form inputs
+- `mcp__kapture__screenshot` - Capture visual state
+- `mcp__kapture__console_logs` - Check for JavaScript errors
+
+**Testing Workflows:**
+- `mcp__kapture__dom` - Inspect page structure
+- `mcp__kapture__elements` - Query multiple elements
+
+### **Recommended Testing Pattern for Claude 4**
+
+**After making frontend changes, Claude should:**
+
+1. **Open Test Session:**
+   ```
+   mcp__kapture__new_tab
+   mcp__kapture__navigate to http://localhost:8000/frontend/public/training.html?token=VALID_TOKEN
+   ```
+
+2. **Visual Validation:**
+   ```
+   mcp__kapture__screenshot (capture current state)
+   mcp__kapture__console_logs (check for errors)
+   ```
+
+3. **Functional Testing:**
+   ```
+   mcp__kapture__click (test UI interactions)
+   mcp__kapture__fill (test form inputs)
+   ```
+
+4. **Error Detection:**
+   ```
+   mcp__kapture__console_logs (validate no JavaScript errors)
+   ```
+
+5. **Cleanup:**
+   ```
+   mcp__kapture__close (close test tab)
+   ```
+
+### **Common Test Scenarios**
+
+**Profile Form Testing:**
+- Navigate to new session URL
+- Verify profile form displays
+- Test form validation and submission
+
+**Training Interface Testing:**
+- Navigate to existing session
+- Verify slide content loads
+- Test chat interface functionality
+
+**Error Handling Testing:**
+- Test with invalid tokens
+- Verify appropriate error messages
+- Check fallback behaviors
+
+### **Integration in Development Workflow**
+
+Claude should **automatically test after:**
+- Frontend component modifications
+- JavaScript/CSS changes
+- API endpoint updates affecting UI
+- i18n system changes
+- Form validation updates
+
+**Benefits:**
+- **Immediate Feedback** - Catch UI breaks immediately
+- **Regression Prevention** - Ensure changes don't break existing features  
+- **Visual Validation** - Screenshots confirm UI renders correctly
+- **Error Detection** - Console logs reveal JavaScript errors
+- **User Experience** - Test actual user workflows
+
 ## 🔧 Validation Hooks & Code Quality
 
 ### **Architecture Validation System**

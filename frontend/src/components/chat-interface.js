@@ -52,6 +52,7 @@ export class ChatInterface {
         this.currentButtonState = 'mic';
         this.resetSilenceTimeout = null;
         this.clearSilenceTimeout = null;
+        this.isProcessingVoiceAction = false;
         
         // Gemini Live API
         this.geminiLiveAPI = new GeminiLiveAPI();
@@ -348,14 +349,14 @@ export class ChatInterface {
      */
     setButtonState(state, button, icon) {
         // Remove all state classes
-        button.classList.remove('state-mic', 'state-recording', 'state-send');
+        button.classList.remove('state-mic', 'state-recording', 'state-send', 'state-processing');
         
         // Add new state class and update icon
         switch (state) {
             case 'mic':
                 button.classList.add('state-mic');
                 icon.className = 'bi bi-mic';
-                button.title = 'Click to start voice recording';
+                button.title = window.safeT ? window.safeT('tooltip.voice') : 'Click to start voice recording';
                 this.currentButtonState = 'mic';
                 break;
                 
@@ -371,6 +372,13 @@ export class ChatInterface {
                 icon.className = 'bi bi-send';
                 button.title = 'Send message';
                 this.currentButtonState = 'send';
+                break;
+                
+            case 'processing':
+                button.classList.add('state-processing');
+                icon.className = 'bi bi-hourglass-split';
+                button.title = 'Processing...';
+                // Don't change currentButtonState during processing
                 break;
         }
         
@@ -420,6 +428,12 @@ export class ChatInterface {
         const toggleRecording = async (e) => {
             e.preventDefault();
             
+            // 🔒 Debouncing: Ignore rapid clicks
+            if (this.isProcessingVoiceAction) {
+                console.log('🔒 [VOICE] Ignoring click - already processing voice action');
+                return;
+            }
+            
             console.log('🔍 [DEBUG] Button clicked! Current state:', this.currentButtonState);
             console.log('🔍 [DEBUG] Chat input value:', chatInput.value);
             console.log('🔍 [DEBUG] Input has text:', chatInput.value.trim().length > 0);
@@ -437,14 +451,31 @@ export class ChatInterface {
                 return;
             }
             
-            if (!isRecording) {
-                console.log('🎤 [DEBUG] Starting voice recording');
-                await this.startVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
-                isRecording = true;
-            } else {
-                console.log('🎤 [DEBUG] Stopping voice recording');
-                await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
-                isRecording = false;
+            // 🔒 Lock voice actions
+            this.isProcessingVoiceAction = true;
+            
+            // Show processing state
+            this.setButtonState('processing', voiceChatBtn, voiceBtnIcon);
+            
+            try {
+                if (!isRecording) {
+                    console.log('🎤 [DEBUG] Starting voice recording');
+                    await this.startVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                    isRecording = true;
+                } else {
+                    console.log('🎤 [DEBUG] Stopping voice recording');
+                    await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                    isRecording = false;
+                }
+            } catch (error) {
+                console.error('❌ [VOICE] Error in voice action:', error);
+                // Reset to mic state on error
+                this.setButtonState('mic', voiceChatBtn, voiceBtnIcon);
+            } finally {
+                // 🔓 Unlock voice actions after a small delay to prevent rapid clicking
+                setTimeout(() => {
+                    this.isProcessingVoiceAction = false;
+                }, 300); // 300ms debounce
             }
         };
         
@@ -458,8 +489,13 @@ export class ChatInterface {
             silenceTimeout = setTimeout(async () => {
                 if (isRecording) {
                     console.log('🎤 [VOICE] Auto-stopping after 10 seconds of silence');
-                    await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
-                    isRecording = false;
+                    this.isProcessingVoiceAction = true;
+                    try {
+                        await this.stopVoiceRecording(voiceChatBtn, voiceBtnIcon, chatInput);
+                        isRecording = false;
+                    } finally {
+                        this.isProcessingVoiceAction = false;
+                    }
                 }
             }, 10000);
         };
@@ -946,10 +982,10 @@ export class ChatInterface {
         let actionTypeBadge = '';
         if (metadata.action_type) {
             const badgeConfig = {
-                'comment': { class: 'border border-primary text-primary', icon: 'bi-chat-text', text: 'Comment' },
-                'quiz': { class: 'border border-primary text-primary', icon: 'bi-question-circle', text: 'Quiz' },
-                'examples': { class: 'border border-primary text-primary', icon: 'bi-lightbulb', text: 'Examples' },
-                'key-points': { class: 'border border-primary text-primary', icon: 'bi-star', text: 'Key Points' }
+                'comment': { class: 'border border-primary text-primary', icon: 'bi-chat-text', text: window.safeT ? window.safeT('chat.comment') : 'Comment' },
+                'quiz': { class: 'border border-primary text-primary', icon: 'bi-question-circle', text: window.safeT ? window.safeT('chat.quiz') : 'Quiz' },
+                'examples': { class: 'border border-primary text-primary', icon: 'bi-lightbulb', text: window.safeT ? window.safeT('chat.examples') : 'Examples' },
+                'key-points': { class: 'border border-primary text-primary', icon: 'bi-star', text: window.safeT ? window.safeT('chat.keyPoints') : 'Key Points' }
             };
             
             const config = badgeConfig[metadata.action_type];
@@ -1302,10 +1338,10 @@ export class ChatInterface {
                 if (enabled) {
                     button.disabled = false;
                     // Restore original content
-                    if (actionType === 'comment') button.innerHTML = '<i class="bi bi-chat-text me-1"></i>';
-                    else if (actionType === 'quiz') button.innerHTML = '<i class="bi bi-question-circle me-1"></i>';
-                    else if (actionType === 'examples') button.innerHTML = '<i class="bi bi-lightbulb me-1"></i>';
-                    else if (actionType === 'key-points') button.innerHTML = '<i class="bi bi-star me-1"></i>';
+                    if (actionType === 'comment') button.innerHTML = `<i class="bi bi-chat-text me-1"></i>${window.safeT ? window.safeT('chat.comment') : 'Comment'}`;
+                    else if (actionType === 'quiz') button.innerHTML = `<i class="bi bi-question-circle me-1"></i>${window.safeT ? window.safeT('chat.quiz') : 'Quiz'}`;
+                    else if (actionType === 'examples') button.innerHTML = `<i class="bi bi-lightbulb me-1"></i>${window.safeT ? window.safeT('chat.examples') : 'Examples'}`;
+                    else if (actionType === 'key-points') button.innerHTML = `<i class="bi bi-star me-1"></i>${window.safeT ? window.safeT('chat.keyPoints') : 'Key Points'}`;
                 } else {
                     if (actionType === activeActionType) {
                         button.disabled = true;

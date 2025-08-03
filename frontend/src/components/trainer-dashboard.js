@@ -241,7 +241,7 @@ class TrainerDashboard {
             
             // Make description required
             descriptionField.required = true;
-            descriptionField.placeholder = 'Describe the training topic in detail for AI generation...';
+            descriptionField.placeholder = window.safeT ? window.safeT('form.placeholder.aiDescription') : 'Describe the training topic in detail for AI generation...';
             
             // Update submit button
             submitBtn.innerHTML = `<i class="bi bi-robot me-2"></i>${window.safeT ? window.safeT('training.generateWithAI') : 'Generate with AI'}`;
@@ -649,15 +649,29 @@ class TrainerDashboard {
                 if (activities.length === 0) {
                     container.innerHTML = `<p class="text-muted">${window.safeT ? window.safeT('dashboard.noActivity') : 'No recent activity'}</p>`;
                 } else {
-                    const activityHtml = activities.map(activity => `
+                    const activityHtml = activities.map(activity => {
+                        // Gérer les nouvelles clés i18n avec paramètres ou fallback ancien format
+                        let titleText;
+                        if (activity.title_key && activity.title_params) {
+                            // Nouveau format avec clés i18n
+                            titleText = this.formatTranslationWithParams(activity.title_key, activity.title_params);
+                        } else if (activity.title) {
+                            // Ancien format - fallback
+                            titleText = activity.title;
+                        } else {
+                            titleText = 'Unknown activity';
+                        }
+
+                        return `
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-${activity.icon} me-3 text-primary"></i>
                             <div>
-                                <div class="fw-medium">${activity.title}</div>
+                                <div class="fw-medium">${titleText}</div>
                                 <small class="text-muted">${activity.timestamp}</small>
                             </div>
                         </div>
-                    `).join('');
+                        `;
+                    }).join('');
                     
                     container.innerHTML = activityHtml;
                 }
@@ -712,6 +726,39 @@ class TrainerDashboard {
         fileName.textContent = file.name;
         fileSize.textContent = this.formatFileSize(file.size);
         fileInfo.classList.remove('d-none');
+    }
+
+    // Helper pour formater les traductions avec paramètres
+    formatTranslationWithParams(key, params) {
+        console.log('🌐 [DEBUG] formatTranslationWithParams:', { key, params, safeT: !!window.safeT });
+        
+        if (!window.safeT) {
+            // Fallback si safeT n'est pas disponible
+            console.log('🌐 [DEBUG] safeT not available, using fallback');
+            return `${key} (${Object.values(params || {}).join(', ')})`;
+        }
+        
+        let translation = window.safeT(key);
+        console.log('🌐 [DEBUG] translation from safeT:', translation);
+        
+        // Vérifier si la traduction est valide
+        if (!translation || translation === key) {
+            console.log('🌐 [DEBUG] Translation not found, using fallback');
+            return `${key} (${Object.values(params || {}).join(', ')})`;
+        }
+        
+        // Remplacer les paramètres dans la traduction
+        if (params && typeof params === 'object') {
+            Object.keys(params).forEach(paramKey => {
+                const placeholder = `{${paramKey}}`;
+                const replacement = params[paramKey];
+                console.log('🌐 [DEBUG] Replacing:', placeholder, 'with:', replacement);
+                translation = translation.replace(placeholder, replacement);
+            });
+        }
+        
+        console.log('🌐 [DEBUG] Final translation:', translation);
+        return translation;
     }
 
     formatFileSize(bytes) {

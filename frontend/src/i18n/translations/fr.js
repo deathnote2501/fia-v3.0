@@ -44,8 +44,8 @@ export const fr = {
     'training.file': 'Matériel de formation',
     'training.fileSupport': 'Formats supportés : PDF, PPT, PPTX (Max : 50MB)',
     'training.aiGenerated': 'Générée avec IA',
-    'training.generateWithAI': 'Générer la formation avec IA',
-    'training.aiToggleHelp': 'Générer automatiquement le contenu de formation avec IA au lieu de télécharger un fichier',
+    'training.generateWithAI': 'Générer la formation avec par le formateur IA',
+    'training.aiToggleHelp': 'Générer automatiquement le contenu de formation avec le formateur au lieu de charger un support de formation',
     'training.myTrainings': 'Mes formations',
     'training.refresh': 'Actualiser',
     'training.loading': 'Chargement des formations...',
@@ -75,6 +75,14 @@ export const fr = {
     'session.status': 'Statut',
     'session.actions': 'Actions',
     'session.loadingSessions': 'Chargement des sessions...',
+    
+    // Activités récentes
+    'activity.createdTraining': 'Formation créée : {name}',
+    'activity.createdSession': 'Session créée : {name}',
+    'activity.newLearner': 'Nouvel apprenant : {email}',
+    
+    // Formulaires - Placeholders AI
+    'form.placeholder.aiDescription': 'Décrivez le sujet de formation en détail pour la génération IA...',
     
     // Profil
     'profile.title': 'Profil',
@@ -198,6 +206,12 @@ export const fr = {
     'action.quiz': 'Quiz',
     'action.examples': 'Exemples',
     'action.keyPoints': 'Points clés',
+
+    // Libellés des boutons du chat
+    'chat.comment': 'Commenter',
+    'chat.quiz': 'Quiz',
+    'chat.examples': 'Exemples',
+    'chat.keyPoints': 'Points clés',
     
     // Tooltips
     'tooltip.comment': 'Demander des commentaires ou avis sur cette diapositive',
@@ -206,6 +220,12 @@ export const fr = {
     'tooltip.keyPoints': 'Mettre en évidence les points clés de cette diapositive',
     'tooltip.vocal': 'Démarrer une conversation vocale en direct avec Gemini',
     'tooltip.voice': 'Cliquer pour commencer l\'enregistrement vocal',
+    'tooltip.previous': 'Aller à la diapositive précédente',
+    'tooltip.next': 'Aller à la diapositive suivante',
+    'tooltip.simplify': 'Simplifier le contenu de cette diapositive',
+    'tooltip.deepen': 'Obtenir plus de détails sur ce contenu',
+    'tooltip.chart': 'Générer un graphique pour illustrer ce contenu',
+    'tooltip.image': 'Générer une image pour illustrer ce contenu',
     
     // Messages d'erreur
     'error.generic': 'Une erreur est survenue',
@@ -255,6 +275,7 @@ export const fr = {
     
     // Nouvelles clés i18n ajoutées pour la Phase 1
     'status.simplifying': 'Simplification...',
+    'status.generating': 'Génération...',
     'status.addingDetails': 'Ajout de détails...',
     'status.creating': 'Création...',
     'status.connecting': 'Connexion...',

@@ -111,11 +111,11 @@ export class NavigationControls {
             } else if (position.has_next === false) {
                 newNextBtn.disabled = true;
                 newNextBtn.classList.add('opacity-50');
-                newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
+                newNextBtn.innerHTML = `<i class="bi bi-check-circle me-1"></i>${window.safeT ? window.safeT('learner.complete') : 'Complete'}`;
             } else {
                 newNextBtn.disabled = false;
                 newNextBtn.classList.remove('opacity-50');
-                newNextBtn.innerHTML = 'Next<i class="bi bi-chevron-right ms-1"></i>';
+                newNextBtn.innerHTML = `${window.safeT ? window.safeT('learner.next') : 'Next'}<i class="bi bi-chevron-right ms-1"></i>`;
                 console.log('🔄 [NAVIGATION-CONTROLS] Next button enabled');
             }
         }
@@ -200,7 +200,7 @@ export class NavigationControls {
         if (newNextBtn) {
             newNextBtn.disabled = true;
             newNextBtn.classList.add('opacity-50');
-            newNextBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Complete';
+            newNextBtn.innerHTML = `<i class="bi bi-check-circle me-1"></i>${window.safeT ? window.safeT('learner.complete') : 'Complete'}`;
             console.log('🔄 [NAVIGATION-CONTROLS] Next button set to complete state');
         }
     }
@@ -213,7 +213,7 @@ export class NavigationControls {
         if (newPreviousBtn) {
             newPreviousBtn.disabled = true;
             newPreviousBtn.classList.add('opacity-50');
-            newPreviousBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i>Beginning';
+            newPreviousBtn.innerHTML = `<i class="bi bi-stop-circle me-1"></i>${window.safeT ? window.safeT('learner.beginning') : 'Beginning'}`;
             console.log('🔄 [NAVIGATION-CONTROLS] Previous button set to beginning state');
         }
     }
@@ -228,13 +228,13 @@ export class NavigationControls {
         if (newPreviousBtn) {
             newPreviousBtn.disabled = false;
             newPreviousBtn.classList.remove('opacity-50');
-            newPreviousBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i>Previous';
+            newPreviousBtn.innerHTML = `<i class="bi bi-chevron-left me-1"></i>${window.safeT ? window.safeT('learner.previous') : 'Previous'}`;
         }
         
         if (newNextBtn) {
             newNextBtn.disabled = false;
             newNextBtn.classList.remove('opacity-50');
-            newNextBtn.innerHTML = 'Next<i class="bi bi-chevron-right ms-1"></i>';
+            newNextBtn.innerHTML = `${window.safeT ? window.safeT('learner.next') : 'Next'}<i class="bi bi-chevron-right ms-1"></i>`;
         }
         
         console.log('🔄 [NAVIGATION-CONTROLS] Navigation buttons reset to default state');

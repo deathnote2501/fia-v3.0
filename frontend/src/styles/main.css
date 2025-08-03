@@ -448,6 +448,23 @@ input:checked + .tts-slider:before {
     color: #dc3545 !important; /* Rouge pour pause */
 }
 
+/* Toggle AI Generation - Style agrandi avec fond vert Bootstrap */
+#ai-generated-toggle {
+    width: 3rem !important;
+    height: 1.5rem !important;
+    cursor: pointer;
+}
+
+#ai-generated-toggle:checked {
+    background-color: var(--bs-success) !important;
+    border-color: var(--bs-success) !important;
+}
+
+#ai-generated-toggle:focus {
+    border-color: var(--bs-success) !important;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25) !important;
+}
+
 .audio-toggle-btn.stopped {
     color: #198754 !important; /* Vert pour play */
 }

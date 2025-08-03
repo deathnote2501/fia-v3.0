@@ -198,6 +198,12 @@ export const en = {
     'action.quiz': 'Quiz',
     'action.examples': 'Examples',
     'action.keyPoints': 'Key Points',
+
+    // Chat button labels
+    'chat.comment': 'Comment',
+    'chat.quiz': 'Quiz',
+    'chat.examples': 'Examples',
+    'chat.keyPoints': 'Key Points',
     
     // Tooltips
     'tooltip.comment': 'Ask for comments or feedback on this slide',
@@ -206,6 +212,12 @@ export const en = {
     'tooltip.keyPoints': 'Highlight the key points of this slide',
     'tooltip.vocal': 'Start Live Voice Conversation with Gemini',
     'tooltip.voice': 'Click to start voice recording',
+    'tooltip.previous': 'Go to previous slide',
+    'tooltip.next': 'Go to next slide',
+    'tooltip.simplify': 'Simplify the content of this slide',
+    'tooltip.deepen': 'Get more details about this content',
+    'tooltip.chart': 'Generate a chart to illustrate this content',
+    'tooltip.image': 'Generate an image to illustrate this content',
     
     // Error messages
     'error.generic': 'An error occurred',
@@ -255,6 +267,7 @@ export const en = {
     
     // New i18n keys added for Phase 1
     'status.simplifying': 'Simplifying...',
+    'status.generating': 'Generating...',
     'status.addingDetails': 'Adding details...',
     'status.creating': 'Creating...',
     'status.connecting': 'Connecting...',

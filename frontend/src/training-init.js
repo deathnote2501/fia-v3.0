@@ -95,6 +95,9 @@ class UnifiedTrainingApp {
             console.warn('⚠️ [UNIFIED-APP] Failed to initialize i18n:', error);
             // Continue with fallback behavior
         }
+        
+        // 🔥 FORCE REFRESH TRANSLATIONS ALWAYS (even on error/fallback)
+        this.forceRefreshTranslations();
     }
     
     /**
@@ -109,10 +112,68 @@ class UnifiedTrainingApp {
             }
         });
         
+        // 🔥 CORRECTION TOOLTIPS: Update all tooltips with data-i18n-title attributes
+        document.querySelectorAll('[data-i18n-title]').forEach(element => {
+            const key = element.getAttribute('data-i18n-title');
+            if (window.t) {
+                element.title = window.t(key);
+            }
+        });
+        
+        // 🔥 CORRECTION PLACEHOLDER: Update all placeholders with data-i18n-placeholder attributes
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            if (window.t) {
+                element.placeholder = window.t(key);
+            }
+        });
+        
         // Re-render current state with proper translations
         if (this.currentState === APP_STATES.VALIDATING) {
             this.showValidatingState();
         }
+    }
+    
+    /**
+     * 🔥 FORCE REFRESH ALL TRANSLATIONS (tooltips, placeholders, text) - ALWAYS
+     */
+    forceRefreshTranslations() {
+        console.log('🔥 [UNIFIED-APP] Force refreshing all i18n translations...');
+        
+        // Wait a bit to ensure i18n is fully loaded
+        setTimeout(() => {
+            // Update all text elements with data-i18n attributes
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (window.t) {
+                    element.textContent = window.t(key);
+                } else if (window.safeT) {
+                    element.textContent = window.safeT(key);
+                }
+            });
+            
+            // 🔥 CORRECTION TOOLTIPS: Update all tooltips with data-i18n-title attributes
+            document.querySelectorAll('[data-i18n-title]').forEach(element => {
+                const key = element.getAttribute('data-i18n-title');
+                if (window.t) {
+                    element.title = window.t(key);
+                } else if (window.safeT) {
+                    element.title = window.safeT(key);
+                }
+            });
+            
+            // 🔥 CORRECTION PLACEHOLDER: Update all placeholders with data-i18n-placeholder attributes
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                if (window.t) {
+                    element.placeholder = window.t(key);
+                } else if (window.safeT) {
+                    element.placeholder = window.safeT(key);
+                }
+            });
+            
+            console.log('🔥 [UNIFIED-APP] All i18n translations force refreshed completed');
+        }, 200); // Small delay to ensure i18n is fully loaded
     }
     
     /**

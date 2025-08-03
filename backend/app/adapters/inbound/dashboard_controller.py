@@ -166,7 +166,8 @@ async def get_recent_activity(
         for training in recent_trainings.scalars():
             activities.append({
                 "icon": "file-earmark-plus",
-                "title": f"Created training: {training.name}",
+                "title_key": "activity.createdTraining",
+                "title_params": {"name": training.name},
                 "timestamp": training.created_at.strftime("%Y-%m-%d %H:%M")
             })
         
@@ -182,7 +183,8 @@ async def get_recent_activity(
         for session in recent_sessions.scalars():
             activities.append({
                 "icon": "calendar-plus",
-                "title": f"Created session: {session.name}",
+                "title_key": "activity.createdSession",
+                "title_params": {"name": session.name},
                 "timestamp": session.created_at.strftime("%Y-%m-%d %H:%M")
             })
         
@@ -199,7 +201,8 @@ async def get_recent_activity(
         for learner in recent_learners.scalars():
             activities.append({
                 "icon": "person-plus",
-                "title": f"New learner joined: {learner.email}",
+                "title_key": "activity.newLearner",
+                "title_params": {"email": learner.email},
                 "timestamp": learner.started_at.strftime("%Y-%m-%d %H:%M")
             })
         
