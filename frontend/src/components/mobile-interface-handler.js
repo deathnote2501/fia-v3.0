@@ -383,10 +383,11 @@ export class MobileInterfaceHandler {
             // Sync content desktop → mobile (for voice transcription)
             this.syncDesktopToMobileInput(desktopChatInput, mobileChatInput);
             
-            // Handle mobile Enter key
-            mobileChatInput.addEventListener('keydown', (e) => {
+            // Handle mobile Enter key (use keypress like desktop)
+            mobileChatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
+                    console.log('📱 [MOBILE-INTERFACE] Mobile Enter key pressed');
                     this.sendMobileMessage();
                 }
             });
@@ -399,13 +400,23 @@ export class MobileInterfaceHandler {
                 console.log('📱 [MOBILE-INTERFACE] Mobile voice chat button clicked');
                 
                 // Check if we should send text or start voice recording
-                const currentText = mobileChatInput.value.trim();
+                const currentText = mobileChatInput ? mobileChatInput.value.trim() : '';
+                const hasStateClass = mobileVoiceChatBtn.classList.contains('state-send');
                 
-                if (currentText && mobileVoiceChatBtn.classList.contains('state-send')) {
+                console.log('📱 [MOBILE-INTERFACE] Button state:', {
+                    currentText: currentText,
+                    hasStateClass: hasStateClass,
+                    buttonClasses: mobileVoiceChatBtn.className,
+                    inputExists: !!mobileChatInput
+                });
+                
+                if (currentText && hasStateClass) {
                     // Send text message
+                    console.log('📱 [MOBILE-INTERFACE] Sending message via mobile button...');
                     this.sendMobileMessage();
                 } else {
                     // Start voice recording - sync with desktop
+                    console.log('📱 [MOBILE-INTERFACE] Starting voice recording...');
                     desktopVoiceChatBtn.click();
                     
                     // Set mobile button to recording state
@@ -427,25 +438,54 @@ export class MobileInterfaceHandler {
         const mobileChatInput = document.getElementById('mobile-chat-input');
         const desktopChatInput = document.getElementById('chat-input');
         
+        console.log('📱 [MOBILE-INTERFACE] sendMobileMessage called', {
+            mobileInputExists: !!mobileChatInput,
+            desktopInputExists: !!desktopChatInput,
+            mobileValue: mobileChatInput ? mobileChatInput.value : 'N/A',
+            desktopValue: desktopChatInput ? desktopChatInput.value : 'N/A'
+        });
+        
         if (mobileChatInput && desktopChatInput && mobileChatInput.value.trim()) {
-            console.log('📱 [MOBILE-INTERFACE] Sending mobile message:', mobileChatInput.value);
+            const messageText = mobileChatInput.value.trim();
+            console.log('📱 [MOBILE-INTERFACE] Sending mobile message:', messageText);
             
-            // Copy to desktop input and trigger send
-            desktopChatInput.value = mobileChatInput.value;
+            // Method 1: Use ChatInterface sendChatMessage directly if available
+            if (window.fiaApp && window.fiaApp.chatInterface && typeof window.fiaApp.chatInterface.sendChatMessage === 'function') {
+                console.log('📱 [MOBILE-INTERFACE] Using ChatInterface.sendChatMessage directly');
+                window.fiaApp.chatInterface.sendChatMessage(messageText);
+            } else {
+                // Method 2: Copy to desktop input and trigger keypress (not keydown)
+                console.log('📱 [MOBILE-INTERFACE] Using desktop input simulation');
+                desktopChatInput.value = messageText;
+                desktopChatInput.focus();
+                
+                // Trigger keypress event (same as desktop)
+                const keypressEvent = new KeyboardEvent('keypress', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true,
+                    cancelable: true
+                });
+                
+                console.log('📱 [MOBILE-INTERFACE] Dispatching keypress Enter event...');
+                const result = desktopChatInput.dispatchEvent(keypressEvent);
+                console.log('📱 [MOBILE-INTERFACE] Keypress event result:', result);
+            }
             
-            // Trigger desktop send mechanism
-            const sendEvent = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true
-            });
-            desktopChatInput.dispatchEvent(sendEvent);
-            
-            // Clear mobile input
+            // Clear mobile input and update button state
             mobileChatInput.value = '';
             this.resetTextareaHeight(mobileChatInput);
+            this.updateMobileVoiceButtonState('');
+            
+            console.log('📱 [MOBILE-INTERFACE] Mobile input cleared and button state updated');
+        } else {
+            console.warn('📱 [MOBILE-INTERFACE] Cannot send message - missing elements or empty input:', {
+                mobileChatInput: !!mobileChatInput,
+                desktopChatInput: !!desktopChatInput,
+                hasText: mobileChatInput ? !!mobileChatInput.value.trim() : false
+            });
         }
     }
     

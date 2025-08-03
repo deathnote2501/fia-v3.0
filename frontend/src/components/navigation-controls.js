@@ -540,7 +540,7 @@ export class NavigationControls {
                                 </h6>
                                 <div class="input-group mb-3">
                                     <input type="text" id="access-code-input" class="form-control" 
-                                           placeholder="${window.safeT ? window.safeT('b2c.modal.accessCodePlaceholder') : 'Enter your code (ex: 2541)'}" 
+                                           placeholder="${window.safeT ? window.safeT('b2c.modal.accessCodePlaceholder') : 'Enter your code'}" 
                                            maxlength="4" style="text-align: center; font-size: 1.1em; font-weight: bold;">
                                     <button class="btn btn-success" id="validate-access-code-btn" type="button">
                                         <i class="bi bi-unlock me-1"></i>
@@ -644,7 +644,7 @@ export class NavigationControls {
         const validateBtn = document.getElementById('validate-access-code-btn');
         if (validateBtn) {
             validateBtn.disabled = true;
-            validateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Validating...';
+            validateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + (window.safeT ? window.safeT('b2c.modal.validating') : 'Validating...');
         }
         
         if (!inputCode || inputCode.length !== 4) {
@@ -792,7 +792,7 @@ export class NavigationControls {
             validateBtn.disabled = true;
             validateBtn.classList.remove('btn-success');
             validateBtn.classList.add('btn-success');
-            validateBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Unlocked!';
+            validateBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>' + (window.safeT ? window.safeT('b2c.modal.unlocked') : 'Unlocked!');
         }
         
         // Disable input field (already used)

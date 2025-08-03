@@ -228,6 +228,8 @@ export const fr = {
     'b2c.modal.codeLength': 'Veuillez entrer un code à 4 chiffres',
     'b2c.modal.codeSuccess': 'Accès débloqué ! Vous pouvez maintenant accéder à toutes les slides.',
     'b2c.modal.codeError': 'Code invalide. Veuillez vérifier votre code d\'accès.',
+    'b2c.modal.validating': 'Validation...',
+    'b2c.modal.unlocked': 'Débloqué !',
     
     // Actions contextuelles
     'action.comment': 'Commenter',

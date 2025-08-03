@@ -53,23 +53,30 @@ export function safeT(key, customFallback = null) {
         'error.loadingTrainings': 'Error loading trainings',
         'error.loadingSessions': 'Error loading sessions',
         'error.loadingData': 'Error loading data',
-        // B2C Modal fallbacks in French
-        'b2c.modal.title': 'Déverrouillez la Formation Complète',
-        'b2c.modal.limitReached': 'Vous avez atteint la limite de prévisualisation',
-        'b2c.modal.description': 'Ceci est un aperçu de notre système de formation alimenté par l\'IA. Pour accéder à l\'expérience de formation complète avec des slides illimitées et du contenu personnalisé, choisissez une option ci-dessous.',
-        'b2c.modal.continueTraining': 'Continuer ma formation',
-        'b2c.modal.monthlySubscription': 'Abonnement un mois',
-        'b2c.modal.annualSubscription': 'Abonnement annuel',
-        'b2c.modal.contactButton': 'Contacter pour Accès Complet',
-        'b2c.modal.browseContinue': 'Continuer la Navigation',
-        'b2c.modal.limitInfo': 'Aperçu limité à {{count}} slides',
+        // B2C Modal fallbacks in English (English First rule)
+        'b2c.modal.title': 'Unlock Full Training',
+        'b2c.modal.limitReached': 'Preview limit reached',
+        'b2c.modal.description': 'This is a preview of our AI-powered training system. To access the complete training experience with unlimited slides and personalized content, choose an option below.',
+        'b2c.modal.continueTraining': 'Continue my training',
+        'b2c.modal.monthlySubscription': 'Monthly subscription',
+        'b2c.modal.annualSubscription': 'Annual subscription',
+        'b2c.modal.contactButton': 'Contact for Full Access',
+        'b2c.modal.browseContinue': 'Continue Browsing',
+        'b2c.modal.limitInfo': 'Preview limited to {{count}} slides',
         // Access Code fallbacks
         'b2c.modal.accessCodeTitle': '💎 Do you have an access code?',
         'b2c.modal.accessCodePlaceholder': 'Enter your code',
         'b2c.modal.unlockButton': 'Unlock',
         'b2c.modal.codeLength': 'Please enter a 4-digit code',
         'b2c.modal.codeSuccess': 'Access unlocked! You can now access all slides.',
-        'b2c.modal.codeError': 'Invalid code. Please check your access code.'
+        'b2c.modal.codeError': 'Invalid code. Please check your access code.',
+        'b2c.modal.validating': 'Validating...',
+        'b2c.modal.unlocked': 'Unlocked!',
+        // Learner navigation fallbacks
+        'learner.complete': 'Complete',
+        'learner.beginning': 'Beginning',
+        'learner.next': 'Next',
+        'learner.previous': 'Previous'
     };
     
     return smartFallbacks[key] || 'Loading...';
