@@ -9,6 +9,15 @@ class LandingPageManager {
         this.topicInput = document.getElementById('training-topic');
         this.submitBtn = document.getElementById('start-training-btn');
         this.contentOverlay = document.querySelector('.content-overlay');
+        this.progressContainer = document.getElementById('training-progress-container');
+        this.progressBar = document.getElementById('training-progress-bar');
+        this.progressText = document.getElementById('progress-text');
+        this.progressStatus = document.getElementById('progress-status');
+        
+        // Progress tracking
+        this.progressInterval = null;
+        this.progressStartTime = null;
+        this.PROGRESS_DURATION_MS = 120000; // 2 minutes
         
         this.init();
     }
@@ -65,6 +74,10 @@ class LandingPageManager {
                 Creating Training...
             `;
             this.topicInput.disabled = true;
+            
+            // Show progress bar and start animation
+            this.showProgressBar();
+            this.startProgressAnimation();
         } else {
             this.submitBtn.disabled = false;
             this.contentOverlay.classList.remove('loading-state');
@@ -73,6 +86,10 @@ class LandingPageManager {
                 <i class="bi bi-chevron-right cta-icon"></i>
             `;
             this.topicInput.disabled = false;
+            
+            // Hide progress bar and stop animation
+            this.hideProgressBar();
+            this.stopProgressAnimation();
             
             // Re-apply translations if available
             if (window.i18n) {
@@ -127,6 +144,78 @@ class LandingPageManager {
         
         // Redirect to training page with token
         window.location.href = result.session_link;
+    }
+    
+    showProgressBar() {
+        this.progressContainer.style.display = 'block';
+        this.resetProgressBar();
+    }
+    
+    hideProgressBar() {
+        this.progressContainer.style.display = 'none';
+        this.resetProgressBar();
+    }
+    
+    resetProgressBar() {
+        this.progressBar.style.width = '0%';
+        this.progressBar.setAttribute('aria-valuenow', '0');
+        this.progressText.textContent = '0%';
+        this.progressStatus.textContent = window.safeT ? window.safeT('landing.progress.status') : 'Starting AI generation...';
+    }
+    
+    startProgressAnimation() {
+        this.progressStartTime = Date.now();
+        this.progressInterval = setInterval(() => {
+            this.updateProgress();
+        }, 100); // Update every 100ms for smooth animation
+    }
+    
+    stopProgressAnimation() {
+        if (this.progressInterval) {
+            clearInterval(this.progressInterval);
+            this.progressInterval = null;
+        }
+        this.progressStartTime = null;
+    }
+    
+    updateProgress() {
+        if (!this.progressStartTime) return;
+        
+        const elapsed = Date.now() - this.progressStartTime;
+        const progressPercent = Math.min((elapsed / this.PROGRESS_DURATION_MS) * 100, 100);
+        
+        // Update progress bar
+        this.progressBar.style.width = progressPercent + '%';
+        this.progressBar.setAttribute('aria-valuenow', progressPercent.toString());
+        this.progressText.textContent = Math.round(progressPercent) + '%';
+        
+        // Update status message based on progress
+        this.updateProgressStatus(progressPercent);
+        
+        // Stop at 100%
+        if (progressPercent >= 100) {
+            this.stopProgressAnimation();
+        }
+    }
+    
+    updateProgressStatus(progressPercent) {
+        let statusMessage = '';
+        
+        if (progressPercent < 20) {
+            statusMessage = window.safeT ? window.safeT('landing.progress.analyzing') : 'Analyzing your topic...';
+        } else if (progressPercent < 40) {
+            statusMessage = window.safeT ? window.safeT('landing.progress.creating') : 'AI is creating your personalized content...';
+        } else if (progressPercent < 60) {
+            statusMessage = window.safeT ? window.safeT('landing.progress.generatingSlides') : 'Generating interactive slides...';
+        } else if (progressPercent < 80) {
+            statusMessage = window.safeT ? window.safeT('landing.progress.preparing') : 'Preparing your learning experience...';
+        } else if (progressPercent < 95) {
+            statusMessage = window.safeT ? window.safeT('landing.progress.finalizing') : 'Almost ready! Finalizing details...';
+        } else {
+            statusMessage = window.safeT ? window.safeT('landing.progress.ready') : 'Training ready! Redirecting...';
+        }
+        
+        this.progressStatus.textContent = statusMessage;
     }
     
     

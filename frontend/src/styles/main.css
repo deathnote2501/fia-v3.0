@@ -1681,6 +1681,8 @@ body.landing-page {
 
 /* Hide mobile-specific elements by default (desktop view) */
 .mobile-toolbar,
+.mobile-chat-messages,
+.mobile-chat-controls,
 .mobile-chat-actions,
 .mobile-tts-controls,
 .mobile-input {
@@ -1703,12 +1705,12 @@ body.landing-page {
         /* Mobile Grid: Vertical layout with 5 zones */
         display: grid !important;
         grid-template-columns: 1fr !important;
-        grid-template-rows: auto 1fr auto auto auto !important;
+        grid-template-rows: auto 1fr 250px auto auto !important;
         grid-template-areas:
             "mobile-toolbar"
             "mobile-content" 
-            "mobile-chat-actions"
-            "mobile-tts-controls"
+            "mobile-chat-messages"
+            "mobile-chat-controls"
             "mobile-input" !important;
     }
     
@@ -1768,21 +1770,89 @@ body.landing-page {
         cursor: not-allowed !important;
     }
     
-    /* Mobile Chat Actions: Horizontal buttons row */
-    .mobile-chat-actions {
-        grid-area: mobile-chat-actions !important;
+    /* Mobile Navigation Buttons (Previous/Next) - Blue background */
+    .mobile-toolbar #mobile-previous-btn,
+    .mobile-toolbar #mobile-next-btn {
+        background: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+    }
+    
+    .mobile-toolbar #mobile-previous-btn:hover,
+    .mobile-toolbar #mobile-next-btn:hover {
+        background: #0b5ed7 !important;
+        color: white !important;
+        border-color: #0b5ed7 !important;
+    }
+    
+    .mobile-toolbar #mobile-previous-btn:disabled,
+    .mobile-toolbar #mobile-next-btn:disabled {
+        background: #6c757d !important;
+        color: white !important;
+        border-color: #6c757d !important;
+    }
+    
+    /* Mobile Toolbar Button Loading States */
+    .mobile-toolbar button.loading {
+        pointer-events: none !important;
+        opacity: 0.7 !important;
+    }
+    
+    .mobile-toolbar button.loading i {
+        display: none !important;
+    }
+    
+    .mobile-toolbar button.loading::after {
+        content: "" !important;
+        display: inline-block !important;
+        width: 16px !important;
+        height: 16px !important;
+        border: 2px solid transparent !important;
+        border-top: 2px solid currentColor !important;
+        border-radius: 50% !important;
+        animation: spin 1s linear infinite !important;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Mobile Chat Messages: Display conversation */
+    .mobile-chat-messages {
+        grid-area: mobile-chat-messages !important;
         display: flex !important;
-        justify-content: space-around !important;
+        flex-direction: column !important;
+        padding: 1rem !important;
+        background: white !important;
+        border-top: 1px solid #0d6efd !important;
+        border-bottom: 0px solid #dee2e6 !important;
+        overflow-y: auto !important;
+        height: 250px !important;
+    }
+    
+    /* Mobile Chat Controls: Actions + TTS combined */
+    .mobile-chat-controls {
+        grid-area: mobile-chat-controls !important;
+        display: flex !important;
+        justify-content: space-between !important;
         align-items: center !important;
         padding: 0.75rem 1rem !important;
         background: #f8f9fa !important;
-        border-top: 1px solid #dee2e6 !important;
-        border-bottom: 1px solid #dee2e6 !important;
+        border-bottom: 0px solid #dee2e6 !important;
+        gap: 1rem !important;
+    }
+    
+    /* Mobile Chat Actions: Part of chat controls */
+    .mobile-chat-actions {
+        display: flex !important;
+        gap: 0.5rem !important;
+        flex: 1 !important;
     }
     
     .mobile-chat-actions button {
-        min-width: 44px !important;
-        min-height: 44px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
         border-radius: 0.375rem !important;
         border: 1px solid #0d6efd !important;
         background: white !important;
@@ -1790,9 +1860,8 @@ body.landing-page {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 1.1rem !important;
-        flex: 1 !important;
-        margin: 0 0.25rem !important;
+        font-size: 1rem !important;
+        flex: none !important;
         transition: all 0.2s ease !important;
     }
     
@@ -1801,31 +1870,17 @@ body.landing-page {
         color: white !important;
     }
     
-    /* Mobile TTS Controls: Horizontal layout */
+    /* Mobile TTS Controls: Part of chat controls */
+    .mobile-chat-controls .mobile-tts-part {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        flex: none !important;
+    }
+    
+    /* Mobile TTS Controls: Simplified as they're now part of chat controls */
     .mobile-tts-controls {
-        grid-area: mobile-tts-controls !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding: 0.75rem 1rem !important;
-        background: white !important;
-        border-bottom: 1px solid #dee2e6 !important;
-    }
-    
-    .mobile-tts-controls .tts-toggle-container {
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-    }
-    
-    .mobile-tts-controls .live-api-button-container {
-        margin-left: auto !important;
-    }
-    
-    .mobile-tts-controls #live-api-btn {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        font-size: 0.9rem !important;
+        display: none !important; /* This zone is no longer used */
     }
     
     /* Mobile Input Zone: Text input + voice button */
@@ -1835,7 +1890,7 @@ body.landing-page {
         flex-direction: column !important;
         padding: 1rem !important;
         background: white !important;
-        border-top: 2px solid #0d6efd !important;
+        border-top: 1px solid #0d6efd !important;
     }
     
     .mobile-input .chat-input-wrapper {
@@ -1861,6 +1916,35 @@ body.landing-page {
         border-radius: 50% !important;
         font-size: 1.3rem !important;
         flex-shrink: 0 !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Mobile Voice Button States - matching desktop behavior */
+    .mobile-input .voice-chat-btn.state-mic {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+    }
+    
+    .mobile-input .voice-chat-btn.state-recording {
+        background-color: #dc3545 !important;
+        color: white !important;
+        border-color: #dc3545 !important;
+        animation: pulse-recording 1.5s infinite !important;
+    }
+    
+    .mobile-input .voice-chat-btn.state-send {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+    }
+    
+    .mobile-input .voice-chat-btn:disabled {
+        background-color: #6c757d !important;
+        color: white !important;
+        border-color: #6c757d !important;
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
     }
     
     .mobile-input .chat-status {

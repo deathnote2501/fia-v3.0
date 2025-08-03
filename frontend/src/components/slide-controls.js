@@ -3,11 +3,7 @@
  * Handles slide navigation (next/previous) and simplification functionality
  */
 
-// Phase 3: Configuration for slide limitation
-const SLIDE_LIMIT_CONFIG = {
-    MAX_FREE_SLIDES: 2,  // Change this number to modify the slide limit
-    CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
-};
+// Note: Slide limitation configuration moved to NavigationControls for B2C/B2B detection
 
 export class SlideControls {
     constructor() {
@@ -75,14 +71,8 @@ export class SlideControls {
             return;
         }
         
-        // Phase 3: Check slide limitation (configurable limit for free users)
-        const currentPosition = currentSlide.position?.current_position || 0;
-        
-        if (currentPosition >= SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES) {
-            console.log(`🚫 [SLIDE-CONTROLS] Slide limit reached: ${currentPosition}/${SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES}`);
-            this.showSlideLimitModal();
-            return;
-        }
+        // Note: Slide limitations are now handled by NavigationControls for B2C sessions
+        // This allows proper B2C/B2B detection via API
         
         try {
             console.log('🎯 [SLIDE-CONTROLS] Starting navigation to next slide');
@@ -905,38 +895,6 @@ export class SlideControls {
         console.log('🎯 [SLIDE-CONTROLS] updateCurrentSlideContent callback set');
     }
     
-    /**
-     * Phase 3: Show slide limitation modal (10 slides reached)
-     */
-    showSlideLimitModal() {
-        console.log('🚫 [SLIDE-CONTROLS] Showing slide limit modal');
-        
-        // Disable Next button and update its appearance
-        const newNextBtn = document.getElementById('new-next-btn');
-        if (newNextBtn) {
-            newNextBtn.disabled = true;
-            newNextBtn.classList.add('opacity-50');
-            newNextBtn.innerHTML = `<i class="bi bi-lock me-1"></i>${window.safeT ? window.safeT('learner.limitReached') : 'Limit Reached'}`;
-            console.log('🔒 [SLIDE-CONTROLS] Next button disabled - slide limit reached');
-        }
-        
-        // Show the Bootstrap modal
-        const slideLimitModal = document.getElementById('slideLimitModal');
-        if (slideLimitModal) {
-            const modal = new bootstrap.Modal(slideLimitModal, {
-                backdrop: 'static',  // Prevent closing by clicking outside
-                keyboard: false      // Prevent closing with ESC key
-            });
-            modal.show();
-            
-            // Update translations if i18n is available
-            if (window.updateLearnerInterface) {
-                window.updateLearnerInterface();
-            }
-            
-            console.log('📢 [SLIDE-CONTROLS] Slide limit modal displayed');
-        } else {
-            console.error('❌ [SLIDE-CONTROLS] Slide limit modal element not found');
-        }
-    }
+    // Note: showSlideLimitModal() removed - slide limitations now handled by NavigationControls
+    // This enables proper B2C/B2B session detection with Stripe payment integration
 }

@@ -200,6 +200,14 @@ export const fr = {
     'landing.placeholder': 'IA Générative, Linkedin, Marketing digital...',
     'landing.startButton': 'Démarrer ma formation',
     'landing.brandName': 'Dice3.ai',
+    'landing.progress.generating': 'Le formateur IA génère votre plan de formation personalisé',
+    'landing.progress.status': 'Lancement de la generation...',
+    'landing.progress.analyzing': 'Analyse de votre sujet...',
+    'landing.progress.creating': 'L\'IA crée votre contenu personnalisé...',
+    'landing.progress.generatingSlides': 'Génération des diapositives interactives...',
+    'landing.progress.preparing': 'Préparation de votre expérience d\'apprentissage...',
+    'landing.progress.finalizing': 'Presque prêt ! Finalisation des détails...',
+    'landing.progress.ready': 'Formation prête ! Redirection...',
     
     // B2C Upgrade Modal
     'b2c.modal.title': 'Déverrouillez la Formation Complète',

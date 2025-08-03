@@ -24,6 +24,7 @@ export class MobileInterfaceHandler {
         this.setupMobileChatActionEvents();
         this.setupMobileTTSEvents();
         this.setupMobileInputEvents();
+        this.setupMobileChatMessagesSync();
         
         console.log('📱 [MOBILE-INTERFACE] All mobile event handlers configured');
     }
@@ -41,7 +42,17 @@ export class MobileInterfaceHandler {
             mobilePreviousBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile previous button clicked');
+                
+                // Show loading spinner
+                this.showButtonLoading(mobilePreviousBtn);
+                
+                // Click desktop button
                 desktopPreviousBtn.click();
+                
+                // Hide loading after a delay (slide transition time)
+                setTimeout(() => {
+                    this.hideButtonLoading(mobilePreviousBtn);
+                }, 2000);
             });
         }
         
@@ -53,7 +64,17 @@ export class MobileInterfaceHandler {
             mobileNextBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile next button clicked');
+                
+                // Show loading spinner
+                this.showButtonLoading(mobileNextBtn);
+                
+                // Click desktop button
                 desktopNextBtn.click();
+                
+                // Hide loading after a delay (slide transition time)
+                setTimeout(() => {
+                    this.hideButtonLoading(mobileNextBtn);
+                }, 2000);
             });
         }
         
@@ -65,7 +86,17 @@ export class MobileInterfaceHandler {
             mobileSimplifyBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile simplify button clicked');
+                
+                // Show loading spinner
+                this.showButtonLoading(mobileSimplifyBtn);
+                
+                // Click desktop button
                 desktopSimplifyBtn.click();
+                
+                // Hide loading after content generation
+                setTimeout(() => {
+                    this.hideButtonLoading(mobileSimplifyBtn);
+                }, 3000);
             });
         }
         
@@ -77,7 +108,17 @@ export class MobileInterfaceHandler {
             mobileMoreDetailsBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile more details button clicked');
+                
+                // Show loading spinner
+                this.showButtonLoading(mobileMoreDetailsBtn);
+                
+                // Click desktop button
                 desktopMoreDetailsBtn.click();
+                
+                // Hide loading after content generation
+                setTimeout(() => {
+                    this.hideButtonLoading(mobileMoreDetailsBtn);
+                }, 3000);
             });
         }
         
@@ -89,7 +130,17 @@ export class MobileInterfaceHandler {
             mobileChartBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile chart button clicked');
+                
+                // Show loading spinner
+                this.showButtonLoading(mobileChartBtn);
+                
+                // Click desktop button
                 desktopChartBtn.click();
+                
+                // Hide loading after chart generation
+                setTimeout(() => {
+                    this.hideButtonLoading(mobileChartBtn);
+                }, 4000);
             });
         }
         
@@ -208,6 +259,9 @@ export class MobileInterfaceHandler {
             // Sync content between mobile and desktop inputs
             mobileChatInput.addEventListener('input', (e) => {
                 desktopChatInput.value = e.target.value;
+                
+                // Update mobile voice button state based on text content
+                this.updateMobileVoiceButtonState(e.target.value);
             });
             
             // Handle mobile Enter key
@@ -224,8 +278,24 @@ export class MobileInterfaceHandler {
             mobileVoiceChatBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('📱 [MOBILE-INTERFACE] Mobile voice chat button clicked');
-                desktopVoiceChatBtn.click();
+                
+                // Check if we should send text or start voice recording
+                const currentText = mobileChatInput.value.trim();
+                
+                if (currentText && mobileVoiceChatBtn.classList.contains('state-send')) {
+                    // Send text message
+                    this.sendMobileMessage();
+                } else {
+                    // Start voice recording - sync with desktop
+                    desktopVoiceChatBtn.click();
+                    
+                    // Set mobile button to recording state
+                    this.setMobileVoiceButtonState('recording');
+                }
             });
+            
+            // Sync button states from desktop to mobile
+            this.syncDesktopVoiceButtonStates(desktopVoiceChatBtn, mobileVoiceChatBtn);
         }
         
         console.log('📱 [MOBILE-INTERFACE] Mobile input events configured');
@@ -333,6 +403,162 @@ export class MobileInterfaceHandler {
             } else {
                 mobileBtn.classList.remove('opacity-50');
             }
+        }
+    }
+    
+    /**
+     * Setup mobile chat messages synchronization
+     * Syncs messages between desktop chat panel and mobile chat messages zone
+     */
+    setupMobileChatMessagesSync() {
+        const mobileChatMessages = document.getElementById('mobile-chat-messages');
+        const desktopChatMessages = document.getElementById('chat-messages');
+        
+        if (!mobileChatMessages || !desktopChatMessages) {
+            console.warn('📱 [MOBILE-INTERFACE] Chat messages containers not found');
+            return;
+        }
+        
+        // Function to sync messages from desktop to mobile
+        const syncMessages = () => {
+            if (this.isMobileViewport()) {
+                // Copy all messages from desktop to mobile
+                mobileChatMessages.innerHTML = desktopChatMessages.innerHTML;
+                
+                // Scroll to bottom of mobile messages
+                mobileChatMessages.scrollTop = mobileChatMessages.scrollHeight;
+            }
+        };
+        
+        // Initial sync
+        syncMessages();
+        
+        // Set up MutationObserver to watch for new messages in desktop chat
+        const observer = new MutationObserver(() => {
+            syncMessages();
+        });
+        
+        // Observe changes in desktop chat messages
+        observer.observe(desktopChatMessages, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Sync on viewport resize (desktop ↔ mobile switching)
+        window.addEventListener('resize', () => {
+            setTimeout(syncMessages, 100); // Small delay to ensure layout is updated
+        });
+        
+        console.log('📱 [MOBILE-INTERFACE] Mobile chat messages sync configured');
+    }
+    
+    /**
+     * Update mobile voice button state based on text content
+     * @param {string} textValue - Current text input value
+     */
+    updateMobileVoiceButtonState(textValue) {
+        const mobileVoiceBtn = document.getElementById('mobile-voice-chat-btn');
+        const mobileVoiceBtnIcon = document.getElementById('mobile-voice-btn-icon');
+        
+        if (!mobileVoiceBtn || !mobileVoiceBtnIcon) return;
+        
+        if (textValue.trim()) {
+            // Switch to send mode
+            this.setMobileVoiceButtonState('send');
+        } else {
+            // Switch back to mic mode
+            this.setMobileVoiceButtonState('mic');
+        }
+    }
+    
+    /**
+     * Set mobile voice button state
+     * @param {string} state - Button state: 'mic', 'recording', 'send'
+     */
+    setMobileVoiceButtonState(state) {
+        const mobileVoiceBtn = document.getElementById('mobile-voice-chat-btn');
+        const mobileVoiceBtnIcon = document.getElementById('mobile-voice-btn-icon');
+        
+        if (!mobileVoiceBtn || !mobileVoiceBtnIcon) return;
+        
+        // Remove all state classes
+        mobileVoiceBtn.classList.remove('state-mic', 'state-recording', 'state-send');
+        
+        // Add new state class
+        mobileVoiceBtn.classList.add(`state-${state}`);
+        
+        // Update icon
+        switch (state) {
+            case 'mic':
+                mobileVoiceBtnIcon.className = 'bi bi-mic';
+                break;
+            case 'recording':
+                mobileVoiceBtnIcon.className = 'bi bi-stop-fill';
+                break;
+            case 'send':
+                mobileVoiceBtnIcon.className = 'bi bi-send';
+                break;
+        }
+        
+        console.log(`📱 [MOBILE-INTERFACE] Mobile voice button state set to: ${state}`);
+    }
+    
+    /**
+     * Sync desktop voice button states to mobile
+     * @param {HTMLButtonElement} desktopBtn - Desktop voice button
+     * @param {HTMLButtonElement} mobileBtn - Mobile voice button
+     */
+    syncDesktopVoiceButtonStates(desktopBtn, mobileBtn) {
+        if (!desktopBtn || !mobileBtn) return;
+        
+        // Watch for class changes on desktop button
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const desktopClasses = desktopBtn.className;
+                    
+                    if (desktopClasses.includes('state-recording')) {
+                        this.setMobileVoiceButtonState('recording');
+                    } else if (desktopClasses.includes('state-send')) {
+                        this.setMobileVoiceButtonState('send');
+                    } else {
+                        // Check if there's text in input
+                        const mobileInput = document.getElementById('mobile-chat-input');
+                        if (mobileInput && mobileInput.value.trim()) {
+                            this.setMobileVoiceButtonState('send');
+                        } else {
+                            this.setMobileVoiceButtonState('mic');
+                        }
+                    }
+                }
+            });
+        });
+        
+        observer.observe(desktopBtn, { attributes: true });
+        console.log('📱 [MOBILE-INTERFACE] Desktop voice button state sync configured');
+    }
+    
+    /**
+     * Show loading spinner on button
+     * @param {HTMLButtonElement} button - Button to show loading state
+     */
+    showButtonLoading(button) {
+        if (button) {
+            button.classList.add('loading');
+            button.disabled = true;
+            console.log('📱 [MOBILE-INTERFACE] Button loading state enabled');
+        }
+    }
+    
+    /**
+     * Hide loading spinner on button
+     * @param {HTMLButtonElement} button - Button to hide loading state
+     */
+    hideButtonLoading(button) {
+        if (button) {
+            button.classList.remove('loading');
+            button.disabled = false;
+            console.log('📱 [MOBILE-INTERFACE] Button loading state disabled');
         }
     }
     

@@ -150,11 +150,15 @@ class SessionNotificationService:
     def _normalize_frontend_url(self, frontend_url: str) -> str:
         """Normalize frontend URL to ensure it has proper protocol"""
         if not frontend_url:
-            return "https://localhost:8000"
+            return "http://localhost:8000"
         
         # If already has protocol, return as-is
         if frontend_url.startswith(('http://', 'https://')):
             return frontend_url
+        
+        # For localhost with port, preserve http://
+        if frontend_url.startswith('localhost:'):
+            return f"http://{frontend_url}"
         
         # Add https:// protocol for production domains
         return f"https://{frontend_url}"

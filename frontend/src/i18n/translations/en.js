@@ -192,6 +192,14 @@ export const en = {
     'landing.placeholder': 'Example: Project management, Digital marketing...',
     'landing.startButton': 'Start My Training',
     'landing.brandName': 'Dice3.ai',
+    'landing.progress.generating': 'Your AI trainer is creating your personalized training...',
+    'landing.progress.status': 'Starting AI generation...',
+    'landing.progress.analyzing': 'Analyzing your topic...',
+    'landing.progress.creating': 'AI is creating your personalized content...',
+    'landing.progress.generatingSlides': 'Generating interactive slides...',
+    'landing.progress.preparing': 'Preparing your learning experience...',
+    'landing.progress.finalizing': 'Almost ready! Finalizing details...',
+    'landing.progress.ready': 'Training ready! Redirecting...',
     
     // Contextual actions
     'action.comment': 'Comment',
