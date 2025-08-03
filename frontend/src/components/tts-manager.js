@@ -82,7 +82,61 @@ export class TTSManager {
     }
     
     /**
+     * Generate audio for the last assistant message only
+     * Used when a new message is received and TTS is enabled
+     */
+    async generateAudioForLastMessage() {
+        if (!this.enabled) {
+            console.log('🔊 TTS [MANAGER] TTS disabled - not generating audio for last message');
+            return;
+        }
+        
+        console.log('🔊 TTS [MANAGER] Generating audio for last assistant message...');
+        
+        const assistantMessages = document.querySelectorAll('.message.assistant');
+        if (assistantMessages.length === 0) {
+            console.log('🔊 TTS [MANAGER] No assistant messages found');
+            return;
+        }
+        
+        // Get the last assistant message
+        const lastMessage = assistantMessages[assistantMessages.length - 1];
+        
+        // Skip if audio already exists
+        if (lastMessage.ttsAudio) {
+            console.log('🔊 TTS [MANAGER] Last message already has audio - skipping');
+            return;
+        }
+        
+        try {
+            // Extract text content from the message
+            const contentElement = lastMessage.querySelector('.message-content p');
+            if (!contentElement) {
+                console.log('🔊 TTS [MANAGER] No content element found in last message');
+                return;  
+            }
+            
+            const textContent = contentElement.textContent || contentElement.innerText;
+            if (!textContent || textContent.trim().length === 0) {
+                console.log('🔊 TTS [MANAGER] Last message has empty text content');
+                return;
+            }
+            
+            console.log(`🔊 TTS [MANAGER] Processing last message: ${textContent.substring(0, 50)}...`);
+            
+            // Generate audio with auto-playing for the new message
+            await this.generateAndPlaySpeech(textContent, lastMessage, true);
+            
+            console.log('✅ TTS [MANAGER] Last message audio generated successfully');
+            
+        } catch (error) {
+            console.error('🔊 TTS [MANAGER] Failed to generate audio for last message:', error);
+        }
+    }
+    
+    /**
      * Generate audio for existing assistant messages when TTS is enabled
+     * Used only when manually enabling TTS toggle
      */
     async generateAudioForExistingMessages() {
         console.log('🔊 TTS [MANAGER] Generating audio for existing assistant messages...');
@@ -428,8 +482,15 @@ export class TTSManager {
     
     /**
      * Show global TTS spinner next to Enable Audio labels
+     * Only shows if TTS is actually enabled
      */
     showGlobalTTSSpinner() {
+        // Only show spinner if TTS is enabled
+        if (!this.enabled) {
+            console.log('🔊 TTS [MANAGER] TTS disabled - not showing spinner');
+            return;
+        }
+        
         const spinner = document.querySelector('.tts-spinner');
         const mobileSpinner = document.querySelector('.mobile-tts-spinner');
         
@@ -440,7 +501,7 @@ export class TTSManager {
             mobileSpinner.classList.remove('d-none');
         }
         
-        console.log('🔊 TTS [MANAGER] Global TTS spinner shown');
+        console.log('🔊 TTS [MANAGER] Global TTS spinner shown (TTS enabled)');
     }
     
     /**

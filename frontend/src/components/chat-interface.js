@@ -1049,14 +1049,12 @@ export class ChatInterface {
         chatMessages.insertAdjacentHTML('beforeend', messageHtml);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        // Always generate TTS for assistant messages (for manual buttons)
-        if (!isUser && !metadata.error) {
-            const messageElement = chatMessages.querySelector(`[data-message-id="${messageId}"]`);
-            if (messageElement) {
-                // Generate audio, auto-play only if TTS enabled
-                const autoPlay = this.ttsManager.enabled;
-                this.ttsManager.generateAndPlaySpeech(content, messageElement, autoPlay);
-            }
+        // Generate TTS for assistant messages only if TTS is enabled
+        if (!isUser && !metadata.error && this.ttsManager.enabled) {
+            // Use the new method that only processes the last message
+            setTimeout(() => {
+                this.ttsManager.generateAudioForLastMessage();
+            }, 100); // Small delay to ensure DOM is updated
         }
         
         console.log('💬 [CHAT] Message added:', { role, content: content.substring(0, 50) + '...', metadata });
