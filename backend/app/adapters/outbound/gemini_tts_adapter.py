@@ -182,123 +182,130 @@ class GeminiTTSAdapter(TTSServicePort):
                 validated_voice
             )
             
-            # Extract audio data from Gemini TTS response with detailed debugging
+            # Extract audio data from Gemini TTS response
             try:
                 logger.info(f"🔍 GEMINI TTS [DEBUG] Response type: {type(response)}")
                 logger.info(f"🔍 GEMINI TTS [DEBUG] Response attributes: {dir(response)}")
                 
-                if hasattr(response, 'candidates') and response.candidates:
-                    candidate = response.candidates[0]
-                    logger.info(f"🔍 GEMINI TTS [DEBUG] Candidate type: {type(candidate)}")
-                    logger.info(f"🔍 GEMINI TTS [DEBUG] Candidate attributes: {dir(candidate)}")
-                    
-                    if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
-                        part = candidate.content.parts[0]
-                        logger.info(f"🔍 GEMINI TTS [DEBUG] Part type: {type(part)}")
-                        logger.info(f"🔍 GEMINI TTS [DEBUG] Part attributes: {dir(part)}")
-                        
-                        if hasattr(part, 'inline_data'):
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] inline_data type: {type(part.inline_data)}")
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] inline_data attributes: {dir(part.inline_data)}")
-                            
-                            # Get MIME type and data from inline_data
-                            inline_data = part.inline_data
-                            mime_type_from_response = getattr(inline_data, 'mime_type', 'audio/wav')
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] MIME type from response: {mime_type_from_response}")
-                            
-                            # Check if it's already base64 encoded or raw bytes
-                            raw_data = inline_data.data
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] Raw data type: {type(raw_data)}")
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] Raw data length: {len(raw_data)}")
-                            logger.info(f"🔍 GEMINI TTS [DEBUG] First 50 chars: {str(raw_data)[:50]}")
-                            
-                            import base64
-                            
-                            # Handle both bytes and string data from Gemini
-                            if isinstance(raw_data, bytes):
-                                # Check audio header to determine actual format
-                                if raw_data.startswith(b'ID3') or (len(raw_data) > 8 and raw_data[4:8] == b'ftyp'):
-                                    actual_format = "mp3"
-                                    processed_data = raw_data
-                                elif raw_data.startswith(b'RIFF'):
-                                    actual_format = "wav"
-                                    processed_data = raw_data
-                                elif raw_data.startswith(b'OggS'):
-                                    actual_format = "ogg"
-                                    processed_data = raw_data
-                                else:
-                                    # Check if it's PCM based on MIME type
-                                    if "L16" in mime_type_from_response or "pcm" in mime_type_from_response.lower():
-                                        logger.info(f"🎵 GEMINI TTS [PCM] Converting raw PCM to WAV - {len(raw_data)} bytes")
-                                        processed_data = pcm_to_wav(raw_data, sample_rate=24000, channels=1, bits_per_sample=16)
-                                        actual_format = "wav"
-                                        logger.info(f"✅ GEMINI TTS [PCM] Converted to WAV - {len(processed_data)} bytes")
-                                    else:
-                                        actual_format = "unknown"
-                                        processed_data = raw_data
-                                        logger.warning(f"⚠️ GEMINI TTS [FORMAT] Unknown audio format - first 20 bytes: {raw_data[:20]}")
-                                
-                                audio_data = base64.b64encode(processed_data).decode('utf-8')
-                                logger.info(f"🔊 GEMINI TTS [CONVERT] Processed {actual_format} to base64 - {len(processed_data)} bytes -> {len(audio_data)} chars")
-                                
-                            elif isinstance(raw_data, str):
-                                # Check if it's valid base64
-                                try:
-                                    # Test if it's valid base64 and decode
-                                    decoded_test = base64.b64decode(raw_data)
-                                    logger.info(f"🔊 GEMINI TTS [EXTRACT] Valid base64 string - {len(raw_data)} chars -> {len(decoded_test)} bytes")
-                                    
-                                    # Check audio header to determine actual format
-                                    if decoded_test.startswith(b'ID3') or (len(decoded_test) > 8 and decoded_test[4:8] == b'ftyp'):
-                                        actual_format = "mp3"
-                                        processed_data = decoded_test
-                                    elif decoded_test.startswith(b'RIFF'):
-                                        actual_format = "wav"
-                                        processed_data = decoded_test
-                                    elif decoded_test.startswith(b'OggS'):
-                                        actual_format = "ogg"
-                                        processed_data = decoded_test
-                                    else:
-                                        # Check if it's PCM based on MIME type
-                                        if "L16" in mime_type_from_response or "pcm" in mime_type_from_response.lower():
-                                            logger.info(f"🎵 GEMINI TTS [PCM] Converting decoded PCM to WAV - {len(decoded_test)} bytes")
-                                            processed_data = pcm_to_wav(decoded_test, sample_rate=24000, channels=1, bits_per_sample=16)
-                                            actual_format = "wav"
-                                            logger.info(f"✅ GEMINI TTS [PCM] Converted to WAV - {len(processed_data)} bytes")
-                                        else:
-                                            actual_format = "unknown"
-                                            processed_data = decoded_test
-                                            logger.warning(f"⚠️ GEMINI TTS [FORMAT] Unknown audio format - first 20 bytes: {decoded_test[:20]}")
-                                    
-                                    # Re-encode to base64
-                                    audio_data = base64.b64encode(processed_data).decode('utf-8')
-                                    logger.info(f"🎵 GEMINI TTS [FORMAT] Processed {actual_format} - final size: {len(audio_data)} chars")
-                                    
-                                except Exception as b64_error:
-                                    # Not valid base64, treat as text and encode
-                                    audio_data = base64.b64encode(raw_data.encode('utf-8')).decode('utf-8')
-                                    actual_format = "unknown"
-                                    logger.warning(f"🔊 GEMINI TTS [CONVERT] Invalid base64, encoded text: {b64_error}")
-                            else:
-                                # Handle other data types (e.g., buffer objects)
-                                try:
-                                    # Try to convert to bytes first
-                                    audio_bytes = bytes(raw_data)
-                                    audio_data = base64.b64encode(audio_bytes).decode('utf-8')
-                                    actual_format = "unknown"
-                                    logger.info(f"🔊 GEMINI TTS [CONVERT] Converted {type(raw_data)} to base64 - {len(audio_data)} chars")
-                                except Exception as convert_error:
-                                    logger.error(f"❌ GEMINI TTS [CONVERT] Failed to convert {type(raw_data)} to bytes: {convert_error}")
-                                    raise GeminiTTSError(f"Unsupported audio data type: {type(raw_data)}", convert_error)
-                                
-                        elif hasattr(part, 'data'):
-                            audio_data = part.data
-                        else:
-                            raise GeminiTTSError("No audio data found in response part")
-                    else:
-                        raise GeminiTTSError("No content.parts found in response candidate")
-                else:
+                # Check for candidates in response
+                if not hasattr(response, 'candidates') or not response.candidates:
                     raise GeminiTTSError("No candidates found in response")
+                
+                candidate = response.candidates[0]
+                logger.info(f"🔍 GEMINI TTS [DEBUG] Candidate type: {type(candidate)}")
+                logger.info(f"🔍 GEMINI TTS [DEBUG] Candidate attributes: {dir(candidate)}")
+                
+                # For TTS with AUDIO modality, check if audio data is directly on candidate
+                if hasattr(candidate, 'audio') and candidate.audio:
+                    logger.info("🔍 GEMINI TTS [DEBUG] Found audio data directly on candidate")
+                    audio_data_source = candidate.audio
+                    mime_type_from_response = getattr(audio_data_source, 'mime_type', 'audio/wav')
+                    raw_data = audio_data_source.data
+                    
+                # Fallback: check content.parts structure
+                elif hasattr(candidate, 'content') and hasattr(candidate.content, 'parts') and candidate.content.parts:
+                    logger.info("🔍 GEMINI TTS [DEBUG] Found audio data in content.parts")
+                    part = candidate.content.parts[0]
+                    logger.info(f"🔍 GEMINI TTS [DEBUG] Part type: {type(part)}")
+                    logger.info(f"🔍 GEMINI TTS [DEBUG] Part attributes: {dir(part)}")
+                    
+                    if hasattr(part, 'inline_data') and part.inline_data:
+                        inline_data = part.inline_data
+                        mime_type_from_response = getattr(inline_data, 'mime_type', 'audio/wav')
+                        raw_data = inline_data.data
+                    elif hasattr(part, 'data'):
+                        raw_data = part.data
+                        mime_type_from_response = 'audio/wav'
+                    else:
+                        raise GeminiTTSError("No audio data found in response part")
+                
+                else:
+                    raise GeminiTTSError("No audio data found in response candidate")
+                
+                logger.info(f"🔍 GEMINI TTS [DEBUG] MIME type from response: {mime_type_from_response}")
+                logger.info(f"🔍 GEMINI TTS [DEBUG] Raw data type: {type(raw_data)}")
+                logger.info(f"🔍 GEMINI TTS [DEBUG] Raw data length: {len(raw_data)}")
+                logger.info(f"🔍 GEMINI TTS [DEBUG] First 50 chars: {str(raw_data)[:50]}")
+                
+                import base64
+                
+                # Handle both bytes and string data from Gemini
+                if isinstance(raw_data, bytes):
+                    # Check audio header to determine actual format
+                    if raw_data.startswith(b'ID3') or (len(raw_data) > 8 and raw_data[4:8] == b'ftyp'):
+                        actual_format = "mp3"
+                        processed_data = raw_data
+                    elif raw_data.startswith(b'RIFF'):
+                        actual_format = "wav"
+                        processed_data = raw_data
+                    elif raw_data.startswith(b'OggS'):
+                        actual_format = "ogg"
+                        processed_data = raw_data
+                    else:
+                        # Check if it's PCM based on MIME type
+                        if "L16" in mime_type_from_response or "pcm" in mime_type_from_response.lower():
+                            logger.info(f"🎵 GEMINI TTS [PCM] Converting raw PCM to WAV - {len(raw_data)} bytes")
+                            processed_data = pcm_to_wav(raw_data, sample_rate=24000, channels=1, bits_per_sample=16)
+                            actual_format = "wav"
+                            logger.info(f"✅ GEMINI TTS [PCM] Converted to WAV - {len(processed_data)} bytes")
+                        else:
+                            actual_format = "unknown"
+                            processed_data = raw_data
+                            logger.warning(f"⚠️ GEMINI TTS [FORMAT] Unknown audio format - first 20 bytes: {raw_data[:20]}")
+                    
+                    audio_data = base64.b64encode(processed_data).decode('utf-8')
+                    logger.info(f"🔊 GEMINI TTS [CONVERT] Processed {actual_format} to base64 - {len(processed_data)} bytes -> {len(audio_data)} chars")
+                    
+                elif isinstance(raw_data, str):
+                    # Check if it's valid base64
+                    try:
+                        # Test if it's valid base64 and decode
+                        decoded_test = base64.b64decode(raw_data)
+                        logger.info(f"🔊 GEMINI TTS [EXTRACT] Valid base64 string - {len(raw_data)} chars -> {len(decoded_test)} bytes")
+                        
+                        # Check audio header to determine actual format
+                        if decoded_test.startswith(b'ID3') or (len(decoded_test) > 8 and decoded_test[4:8] == b'ftyp'):
+                            actual_format = "mp3"
+                            processed_data = decoded_test
+                        elif decoded_test.startswith(b'RIFF'):
+                            actual_format = "wav"
+                            processed_data = decoded_test
+                        elif decoded_test.startswith(b'OggS'):
+                            actual_format = "ogg"
+                            processed_data = decoded_test
+                        else:
+                            # Check if it's PCM based on MIME type
+                            if "L16" in mime_type_from_response or "pcm" in mime_type_from_response.lower():
+                                logger.info(f"🎵 GEMINI TTS [PCM] Converting decoded PCM to WAV - {len(decoded_test)} bytes")
+                                processed_data = pcm_to_wav(decoded_test, sample_rate=24000, channels=1, bits_per_sample=16)
+                                actual_format = "wav"
+                                logger.info(f"✅ GEMINI TTS [PCM] Converted to WAV - {len(processed_data)} bytes")
+                            else:
+                                actual_format = "unknown"
+                                processed_data = decoded_test
+                                logger.warning(f"⚠️ GEMINI TTS [FORMAT] Unknown audio format - first 20 bytes: {decoded_test[:20]}")
+                        
+                        # Re-encode to base64
+                        audio_data = base64.b64encode(processed_data).decode('utf-8')
+                        logger.info(f"🎵 GEMINI TTS [FORMAT] Processed {actual_format} - final size: {len(audio_data)} chars")
+                        
+                    except Exception as b64_error:
+                        # Not valid base64, treat as text and encode
+                        audio_data = base64.b64encode(raw_data.encode('utf-8')).decode('utf-8')
+                        actual_format = "unknown"
+                        logger.warning(f"🔊 GEMINI TTS [CONVERT] Invalid base64, encoded text: {b64_error}")
+                        
+                else:
+                    # Handle other data types (e.g., buffer objects)
+                    try:
+                        # Try to convert to bytes first
+                        audio_bytes = bytes(raw_data)
+                        audio_data = base64.b64encode(audio_bytes).decode('utf-8')
+                        actual_format = "unknown"
+                        logger.info(f"🔊 GEMINI TTS [CONVERT] Converted {type(raw_data)} to base64 - {len(audio_data)} chars")
+                    except Exception as convert_error:
+                        logger.error(f"❌ GEMINI TTS [CONVERT] Failed to convert {type(raw_data)} to bytes: {convert_error}")
+                        raise GeminiTTSError(f"Unsupported audio data type: {type(raw_data)}", convert_error)
                     
                 logger.info(f"🔊 GEMINI TTS [EXTRACT] Final audio data length: {len(audio_data)}")
                 

@@ -120,6 +120,9 @@
                         <span class="tts-slider"></span>
                     </label>
                     <label for="mobile-tts-toggle" class="tts-label" data-i18n="learner.enableAudio">Audio</label>
+                    <span class="mobile-tts-spinner d-none">
+                        <span class="spinner-border spinner-border-sm text-success" role="status" aria-hidden="true"></span>
+                    </span>
                 </div>
                 <button type="button" class="btn btn-success btn-sm" id="mobile-live-api-btn" data-i18n-title="tooltip.vocal" title="Start Live Voice Conversation with Gemini">
                     <i class="bi bi-soundwave me-1" id="mobile-live-api-icon"></i>
@@ -159,6 +162,9 @@
                             <span class="tts-slider"></span>
                         </label>
                         <label for="tts-toggle" class="tts-label" data-i18n="learner.enableAudio">Enable Audio</label>
+                    <span class="tts-spinner d-none">
+                        <span class="spinner-border spinner-border-sm text-success" role="status" aria-hidden="true"></span>
+                    </span>
                     </div>
                     <div class="live-api-button-container">
                     <button type="button" class="btn btn-success" id="live-api-btn" data-i18n-title="tooltip.vocal" title="Start Live Voice Conversation with Gemini">
@@ -232,7 +238,107 @@
     <!-- Chart.js for chart generation -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     
+    <!-- EMERGENCY MOBILE FIX - Direct Script (No ES6) -->
+    <script src="../src/utils/mobile-direct-debug.js"></script>
+    
+    <!-- ULTRA EMERGENCY - Inline Mobile Fix -->
+    <script>
+    console.log('🚨 [INLINE-EMERGENCY] Loading ultra emergency mobile fix...');
+    
+    // Ultra minimal mobile fix - inline to guarantee loading
+    function ultraEmergencyMobileFix() {
+        if (window.innerWidth <= 768) {
+            console.log('🚨 [INLINE-EMERGENCY] Ultra emergency mobile fix starting...');
+            
+            // Previous button
+            var mobilePrev = document.getElementById('mobile-previous-btn');
+            var desktopPrev = document.getElementById('new-previous-btn');
+            if (mobilePrev && desktopPrev) {
+                mobilePrev.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('🚨 [INLINE-EMERGENCY] Previous button clicked');
+                    desktopPrev.click();
+                };
+                console.log('✅ [INLINE-EMERGENCY] Previous button mapped');
+            }
+            
+            // Next button
+            var mobileNext = document.getElementById('mobile-next-btn');
+            var desktopNext = document.getElementById('new-next-btn');
+            if (mobileNext && desktopNext) {
+                mobileNext.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('🚨 [INLINE-EMERGENCY] Next button clicked');
+                    desktopNext.click();
+                };
+                console.log('✅ [INLINE-EMERGENCY] Next button mapped');
+            }
+            
+            // Simplify button
+            var mobileSimplify = document.getElementById('mobile-simplify-btn');
+            var desktopSimplify = document.getElementById('new-simplify-btn');
+            if (mobileSimplify && desktopSimplify) {
+                mobileSimplify.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('🚨 [INLINE-EMERGENCY] Simplify button clicked');
+                    desktopSimplify.click();
+                };
+                console.log('✅ [INLINE-EMERGENCY] Simplify button mapped');
+            }
+            
+            // More details button
+            var mobileDetails = document.getElementById('mobile-more-details-btn');
+            var desktopDetails = document.getElementById('new-more-details-btn');
+            if (mobileDetails && desktopDetails) {
+                mobileDetails.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('🚨 [INLINE-EMERGENCY] More details button clicked');
+                    desktopDetails.click();
+                };
+                console.log('✅ [INLINE-EMERGENCY] More details button mapped');
+            }
+            
+            // Chart button
+            var mobileChart = document.getElementById('mobile-chart-btn');
+            var desktopChart = document.getElementById('generate-chart-btn');
+            if (mobileChart && desktopChart) {
+                mobileChart.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('🚨 [INLINE-EMERGENCY] Chart button clicked');
+                    desktopChart.click();
+                };
+                console.log('✅ [INLINE-EMERGENCY] Chart button mapped');
+            }
+            
+            console.log('✅ [INLINE-EMERGENCY] Ultra emergency mobile fix completed');
+            window.ultraEmergencyMobileReady = true;
+        }
+    }
+    
+    // Run immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ultraEmergencyMobileFix);
+    } else {
+        ultraEmergencyMobileFix();
+    }
+    
+    // Also run after a delay
+    setTimeout(ultraEmergencyMobileFix, 1000);
+    setTimeout(ultraEmergencyMobileFix, 3000);
+    
+    // Make function globally available for manual testing
+    window.ultraEmergencyMobileFix = ultraEmergencyMobileFix;
+    
+    console.log('🚨 [INLINE-EMERGENCY] Ultra emergency system loaded');
+    </script>
+    
     <!-- i18n Service for Learners -->
+    <!-- Mobile Debug Helper (Production Diagnostics) -->
+    <script type="module" src="../src/utils/mobile-debug-helper.js"></script>
+    
+    <!-- Mobile Fallback Initialization (Production Safety) -->
+    <script type="module" src="../src/utils/mobile-fallback-init.js"></script>
+    
     <!-- Training Page Initialization -->
     <script type="module" src="../src/training-init.js"></script>
     

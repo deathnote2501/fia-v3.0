@@ -9,10 +9,64 @@ export class MobileInterfaceHandler {
         this.slideControls = slideControls;
         this.chatInterface = chatInterface;
         this.navigationControls = navigationControls;
+        this.retryCount = 0;
+        this.maxRetries = 10;
         
         console.log('📱 [MOBILE-INTERFACE] Mobile Interface Handler initialized');
         
-        this.setupMobileEventHandlers();
+        // Delay initialization to ensure all DOM elements are ready (especially in production)
+        this.initializeWithRetry();
+    }
+    
+    /**
+     * Initialize mobile handlers with retry mechanism for production environments
+     */
+    initializeWithRetry() {
+        const attemptInit = () => {
+            try {
+                // Check if all required mobile elements exist
+                const requiredElements = [
+                    'mobile-previous-btn', 'mobile-next-btn', 'mobile-simplify-btn', 
+                    'mobile-more-details-btn', 'mobile-chart-btn', 'mobile-comment-btn',
+                    'mobile-quiz-btn', 'mobile-examples-btn', 'mobile-key-points-btn',
+                    'mobile-tts-toggle', 'mobile-live-api-btn', 'mobile-chat-input',
+                    'mobile-voice-chat-btn', 'mobile-chat-messages'
+                ];
+                
+                const missingElements = requiredElements.filter(id => !document.getElementById(id));
+                
+                if (missingElements.length > 0) {
+                    console.warn(`📱 [MOBILE-INTERFACE] Missing elements: ${missingElements.join(', ')}`);
+                    
+                    if (this.retryCount < this.maxRetries) {
+                        this.retryCount++;
+                        console.log(`📱 [MOBILE-INTERFACE] Retry ${this.retryCount}/${this.maxRetries} in 500ms...`);
+                        setTimeout(attemptInit, 500);
+                        return;
+                    } else {
+                        console.error('📱 [MOBILE-INTERFACE] Max retries reached, some mobile elements missing');
+                    }
+                }
+                
+                // Setup event handlers
+                this.setupMobileEventHandlers();
+                console.log('✅ [MOBILE-INTERFACE] Mobile interface fully initialized');
+                
+            } catch (error) {
+                console.error('📱 [MOBILE-INTERFACE] Initialization error:', error);
+                
+                if (this.retryCount < this.maxRetries) {
+                    this.retryCount++;
+                    console.log(`📱 [MOBILE-INTERFACE] Error retry ${this.retryCount}/${this.maxRetries} in 1000ms...`);
+                    setTimeout(attemptInit, 1000);
+                } else {
+                    console.error('📱 [MOBILE-INTERFACE] Max retries reached, mobile interface may not work properly');
+                }
+            }
+        };
+        
+        // Start first attempt after a small delay to ensure DOM is ready
+        setTimeout(attemptInit, 100);
     }
     
     /**
@@ -20,13 +74,42 @@ export class MobileInterfaceHandler {
      * Connects mobile UI elements to existing desktop functionality
      */
     setupMobileEventHandlers() {
-        this.setupMobileToolbarEvents();
-        this.setupMobileChatActionEvents();
-        this.setupMobileTTSEvents();
-        this.setupMobileInputEvents();
-        this.setupMobileChatMessagesSync();
-        
-        console.log('📱 [MOBILE-INTERFACE] All mobile event handlers configured');
+        try {
+            console.log('📱 [MOBILE-INTERFACE] Setting up mobile event handlers...');
+            
+            // Setup each handler with individual error protection
+            this.safeSetup('setupMobileToolbarEvents');
+            this.safeSetup('setupMobileChatActionEvents');
+            this.safeSetup('setupMobileTTSEvents');
+            this.safeSetup('setupMobileInputEvents');
+            this.safeSetup('setupMobileChatMessagesSync');
+            
+            console.log('✅ [MOBILE-INTERFACE] All mobile event handlers setup completed');
+            
+            // Add a global flag to indicate mobile interface is ready
+            window.mobileInterfaceReady = true;
+            
+        } catch (error) {
+            console.error('❌ [MOBILE-INTERFACE] Error setting up event handlers:', error);
+            // Don't throw - allow partial functionality
+        }
+    }
+    
+    /**
+     * Safe execution wrapper for setup methods
+     */
+    safeSetup(methodName) {
+        try {
+            if (typeof this[methodName] === 'function') {
+                this[methodName]();
+                console.log(`✅ [MOBILE-INTERFACE] ${methodName} completed successfully`);
+            } else {
+                console.warn(`⚠️ [MOBILE-INTERFACE] Method ${methodName} not found`);
+            }
+        } catch (error) {
+            console.error(`❌ [MOBILE-INTERFACE] Error in ${methodName}:`, error);
+            // Continue with other setup methods instead of failing completely
+        }
     }
     
     /**

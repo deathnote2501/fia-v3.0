@@ -158,8 +158,9 @@ export class TTSManager {
         try {
             console.log(`🔊 TTS [MANAGER] Generating speech for text: ${text.substring(0, 100)}...`);
             
-            // Show loading state
+            // Show loading state on message and global TTS spinners
             this.showLoadingState(messageElement);
+            this.showGlobalTTSSpinner();
             
             // Send raw text to backend for consistent cleaning
             const cleanText = text;
@@ -207,18 +208,17 @@ export class TTSManager {
             // Hide loading state
             this.hideLoadingState(messageElement);
             
-            // Auto-play if requested - wait for audio to be ready
+            // Auto-play if requested - KISS approach: direct play after generation
             if (autoPlay) {
-                audio.addEventListener('canplay', () => {
-                    this.playAudio(messageElement);
-                }, { once: true });
-                
-                // Fallback timeout
+                console.log('🔊 TTS [MANAGER] Auto-play enabled - triggering immediate playback');
+                // Use a small delay to ensure audio element is properly set up
                 setTimeout(() => {
-                    if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
-                        this.playAudio(messageElement);
-                    }
-                }, 500);
+                    this.playAudio(messageElement);
+                    this.hideGlobalTTSSpinner(); // Hide spinner when audio starts playing
+                }, 100);
+            } else {
+                // Hide spinner immediately if no auto-play
+                this.hideGlobalTTSSpinner();
             }
             
             console.log(`✅ TTS [MANAGER] Speech generated successfully - Duration: ${ttsData.duration}s`);
@@ -226,6 +226,7 @@ export class TTSManager {
         } catch (error) {
             console.error('❌ TTS [MANAGER] Speech generation failed:', error);
             this.hideLoadingState(messageElement);
+            this.hideGlobalTTSSpinner(); // Hide spinner on error
             this.showError(messageElement, 'Speech generation failed');
         }
     }
@@ -423,5 +424,39 @@ export class TTSManager {
     setVoice(voice) {
         this.defaultVoice = voice;
         console.log(`🔊 TTS [MANAGER] Voice set to: ${voice}`);
+    }
+    
+    /**
+     * Show global TTS spinner next to Enable Audio labels
+     */
+    showGlobalTTSSpinner() {
+        const spinner = document.querySelector('.tts-spinner');
+        const mobileSpinner = document.querySelector('.mobile-tts-spinner');
+        
+        if (spinner) {
+            spinner.classList.remove('d-none');
+        }
+        if (mobileSpinner) {
+            mobileSpinner.classList.remove('d-none');
+        }
+        
+        console.log('🔊 TTS [MANAGER] Global TTS spinner shown');
+    }
+    
+    /**
+     * Hide global TTS spinner next to Enable Audio labels
+     */
+    hideGlobalTTSSpinner() {
+        const spinner = document.querySelector('.tts-spinner');
+        const mobileSpinner = document.querySelector('.mobile-tts-spinner');
+        
+        if (spinner) {
+            spinner.classList.add('d-none');
+        }
+        if (mobileSpinner) {
+            mobileSpinner.classList.add('d-none');
+        }
+        
+        console.log('🔊 TTS [MANAGER] Global TTS spinner hidden');
     }
 }

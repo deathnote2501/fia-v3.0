@@ -359,6 +359,18 @@
     gap: 0.5rem;
 }
 
+/* TTS Spinner styling */
+.tts-spinner, .mobile-tts-spinner {
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tts-spinner .spinner-border-sm, .mobile-tts-spinner .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
 /* Live API Button Container - aligné à droite */
 .live-api-button-container {
     margin-left: auto;

@@ -78,14 +78,23 @@ export class FIATrainingApp {
             this.chatInterface.initialize();
             
             // Initialize Mobile Interface Handler (after all core components are ready)
-            this.mobileInterfaceHandler = new MobileInterfaceHandler({
-                slideControls: this.slideControls,
-                chatInterface: this.chatInterface,
-                navigationControls: this.navigationControls
-            });
-            
-            // Set mobile handler in navigation controls for button state synchronization
-            this.navigationControls.setMobileHandler(this.mobileInterfaceHandler);
+            try {
+                console.log('📱 [FIA-APP] Initializing Mobile Interface Handler...');
+                this.mobileInterfaceHandler = new MobileInterfaceHandler({
+                    slideControls: this.slideControls,
+                    chatInterface: this.chatInterface,
+                    navigationControls: this.navigationControls
+                });
+                
+                // Set mobile handler in navigation controls for button state synchronization
+                this.navigationControls.setMobileHandler(this.mobileInterfaceHandler);
+                
+                console.log('✅ [FIA-APP] Mobile Interface Handler initialized successfully');
+            } catch (error) {
+                console.error('❌ [FIA-APP] Failed to initialize Mobile Interface Handler:', error);
+                // Continue without mobile interface rather than breaking the app
+                this.mobileInterfaceHandler = null;
+            }
             
             // Setup navigation buttons
             this.slideControls.setupNavigationButtons();

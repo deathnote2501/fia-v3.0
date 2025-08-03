@@ -380,6 +380,15 @@ export class NavigationControls {
      */
     showB2CUpgradeModal(sessionLimits) {
         console.log('💬 [NAVIGATION-CONTROLS] Showing B2C upgrade modal');
+        console.log('🔍 [NAVIGATION-CONTROLS] window.safeT available:', typeof window.safeT);
+        console.log('🔍 [NAVIGATION-CONTROLS] window.i18n available:', typeof window.i18n);
+        
+        // Test translation functions
+        if (window.safeT) {
+            console.log('🔍 [NAVIGATION-CONTROLS] Test translations:');
+            console.log('   b2c.modal.title:', window.safeT('b2c.modal.title'));
+            console.log('   b2c.modal.continueTraining:', window.safeT('b2c.modal.continueTraining'));
+        }
         
         // Check if modal already exists to avoid duplicates
         let modal = document.getElementById('b2c-upgrade-modal');
@@ -442,7 +451,7 @@ export class NavigationControls {
                                     <a href="https://buy.stripe.com/4gM5kD32KeuJ3RkeTUgnK0c" 
                                        class="btn btn-primary btn-lg w-100 d-flex justify-content-between align-items-center">
                                         <span>
-                                            <i class="bi bi-calendar-year me-2"></i>
+                                            <i class="bi bi-calendar-month me-2"></i>
                                             ${window.safeT ? window.safeT('b2c.modal.annualSubscription') : 'Abonnement annuel'}
                                         </span>
                                         <strong>49.90€</strong>
@@ -465,7 +474,10 @@ export class NavigationControls {
                         <div class="modal-footer bg-light">
                             <small class="text-muted mx-auto">
                                 <i class="bi bi-info-circle me-1"></i>
-                                ${window.safeT ? window.safeT('b2c.modal.limitInfo').replace('{{count}}', sessionLimits.max_slides) : `Aperçu limité à ${sessionLimits.max_slides} slides`}
+                                ${(() => {
+                                    const limitText = window.safeT ? window.safeT('b2c.modal.limitInfo') : 'Aperçu limité à {{count}} slides';
+                                    return limitText.replace('{{count}}', sessionLimits.max_slides);
+                                })()}
                             </small>
                         </div>
                     </div>
