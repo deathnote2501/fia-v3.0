@@ -143,4 +143,18 @@ class SessionNotificationService:
             Complete session URL
         """
         frontend_base_url = self.settings.get_frontend_url()
-        return f"{frontend_base_url}/frontend/public/training.html?token={session_token}"
+        # Normalize URL to ensure proper protocol
+        normalized_url = self._normalize_frontend_url(frontend_base_url)
+        return f"{normalized_url}/frontend/public/training.html?token={session_token}"
+    
+    def _normalize_frontend_url(self, frontend_url: str) -> str:
+        """Normalize frontend URL to ensure it has proper protocol"""
+        if not frontend_url:
+            return "https://localhost:8000"
+        
+        # If already has protocol, return as-is
+        if frontend_url.startswith(('http://', 'https://')):
+            return frontend_url
+        
+        # Add https:// protocol for production domains
+        return f"https://{frontend_url}"

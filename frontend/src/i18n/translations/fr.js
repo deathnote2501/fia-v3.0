@@ -201,6 +201,17 @@ export const fr = {
     'landing.startButton': 'Démarrer ma formation',
     'landing.brandName': 'Dice3.ai',
     
+    // B2C Upgrade Modal
+    'b2c.modal.title': 'Déverrouillez la Formation Complète',
+    'b2c.modal.limitReached': 'Vous avez atteint la limite de prévisualisation',
+    'b2c.modal.description': 'Ceci est un aperçu de notre système de formation alimenté par l\'IA. Pour accéder à l\'expérience de formation complète avec des slides illimitées et du contenu personnalisé, choisissez une option ci-dessous.',
+    'b2c.modal.continueTraining': 'Continuer ma formation',
+    'b2c.modal.monthlySubscription': 'Abonnement un mois',
+    'b2c.modal.annualSubscription': 'Abonnement annuel',
+    'b2c.modal.contactButton': 'Contacter pour Accès Complet',
+    'b2c.modal.browseContinue': 'Continuer la Navigation',
+    'b2c.modal.limitInfo': 'Aperçu limité à {{count}} slides',
+    
     // Actions contextuelles
     'action.comment': 'Commenter',
     'action.quiz': 'Quiz',

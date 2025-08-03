@@ -12,6 +12,27 @@ from datetime import datetime, timedelta
 
 from app.infrastructure.database import get_database_session
 from app.infrastructure.settings import settings
+
+
+def normalize_frontend_url(frontend_url: str) -> str:
+    """
+    Normalize frontend URL to ensure it has proper protocol
+    
+    Args:
+        frontend_url: Raw frontend URL from settings
+        
+    Returns:
+        Normalized URL with https:// protocol
+    """
+    if not frontend_url:
+        return "https://localhost:8000"
+    
+    # If already has protocol, return as-is
+    if frontend_url.startswith(('http://', 'https://')):
+        return frontend_url
+    
+    # Add https:// protocol for production domains
+    return f"https://{frontend_url}"
 from app.domain.entities.training import Training, FileType
 from app.domain.entities.training_session import TrainingSession
 from app.domain.schemas.training import TrainingResponse
@@ -229,8 +250,9 @@ Cette formation vous donnera les bases nécessaires pour maîtriser {request.top
                 detail="Échec de la création de session. Veuillez réessayer."
             )
         
-        # Step 8: Generate session link
-        session_link = f"{settings.frontend_url}/frontend/public/training.html?token={session_token}&profile=required"
+        # Step 8: Generate session link with normalized URL
+        normalized_url = normalize_frontend_url(settings.frontend_url)
+        session_link = f"{normalized_url}/frontend/public/training.html?token={session_token}&profile=required"
         
         logger.info(f"✅ PUBLIC_QUICK_START [SUCCESS] Workflow completed for topic: '{request.topic}'")
         

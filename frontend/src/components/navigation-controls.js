@@ -5,13 +5,15 @@
 
 // Phase 3: Configuration for slide limitation (shared config)
 const SLIDE_LIMIT_CONFIG = {
-    MAX_FREE_SLIDES: 2,  // Change this number to modify the slide limit
+    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
     CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
 };
 
 export class NavigationControls {
     constructor() {
         console.log('🧭 [NAVIGATION-CONTROLS] NavigationControls initialized');
+        this.sessionLimits = null; // Cache for session limits
+        this.currentToken = this.extractTokenFromURL();
     }
     
     /**
@@ -73,7 +75,7 @@ export class NavigationControls {
      * Update navigation button states based on current position
      * @param {Object} currentSlide - Current slide data with position information
      */
-    updateNavigationButtonStates(currentSlide) {
+    async updateNavigationButtonStates(currentSlide) {
         const newPreviousBtn = document.getElementById('new-previous-btn');
         const newNextBtn = document.getElementById('new-next-btn');
         
@@ -98,16 +100,23 @@ export class NavigationControls {
             }
         }
         
-        // Update Next button
+        // Update Next button with B2C/B2B detection
         if (newNextBtn) {
-            // Phase 3: Check slide limitation (configurable limit for free users)
             const currentPosition = position.current_position || 0;
             
-            if (currentPosition >= SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES) {
+            // Get session limits (B2C/B2B detection)
+            const sessionLimits = await this.getSessionLimits();
+            
+            // Check B2C slide limitation
+            if (sessionLimits.has_slide_limit && currentPosition >= sessionLimits.max_slides) {
                 newNextBtn.disabled = true;
                 newNextBtn.classList.add('opacity-50');
-                newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Limit Reached';
-                console.log(`🚫 [NAVIGATION-CONTROLS] Next button disabled - slide limit reached (${currentPosition}/${SLIDE_LIMIT_CONFIG.MAX_FREE_SLIDES})`);
+                newNextBtn.innerHTML = '<i class="bi bi-lock me-1"></i>Upgrade Required';
+                console.log(`🚫 [NAVIGATION-CONTROLS] Next button disabled - B2C slide limit reached (${currentPosition}/${sessionLimits.max_slides})`);
+                
+                // Show B2C upgrade modal
+                this.showB2CUpgradeModal(sessionLimits);
+                
             } else if (position.has_next === false) {
                 newNextBtn.disabled = true;
                 newNextBtn.classList.add('opacity-50');
@@ -286,5 +295,180 @@ export class NavigationControls {
         }
         
         console.log('✅ [NAVIGATION-CONTROLS] Complete navigation update finished');
+    }
+    
+    /**
+     * Extract session token from current URL
+     * @returns {string|null} Token if found, null otherwise
+     */
+    extractTokenFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('token');
+    }
+    
+    /**
+     * Get session limits from API with caching
+     * @returns {Object} Session limits object
+     */
+    async getSessionLimits() {
+        // Use cached limits if available
+        if (this.sessionLimits) {
+            return this.sessionLimits;
+        }
+        
+        const token = this.currentToken;
+        if (!token) {
+            console.warn('⚠️ [NAVIGATION-CONTROLS] No token found, defaulting to B2B limits');
+            return this.getDefaultB2BLimits();
+        }
+        
+        try {
+            console.log('🔍 [NAVIGATION-CONTROLS] Fetching session limits from API...');
+            
+            const response = await fetch(`/api/session/${token}/limits`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const limits = await response.json();
+            
+            // Cache the limits
+            this.sessionLimits = limits;
+            
+            console.log(`✅ [NAVIGATION-CONTROLS] Session limits retrieved: ${limits.session_type}`, limits);
+            return limits;
+            
+        } catch (error) {
+            console.warn('⚠️ [NAVIGATION-CONTROLS] Failed to fetch session limits, using B2B defaults:', error);
+            return this.getDefaultB2BLimits();
+        }
+    }
+    
+    /**
+     * Get default B2B limits (safe fallback)
+     * @returns {Object} B2B session limits
+     */
+    getDefaultB2BLimits() {
+        return {
+            session_type: 'B2B',
+            max_slides: null,
+            has_slide_limit: false,
+            upgrade_required: false,
+            contact_email: null,
+            fallback: true
+        };
+    }
+    
+    /**
+     * Show B2C upgrade modal when slide limit is reached
+     * @param {Object} sessionLimits - Session limits with contact info
+     */
+    showB2CUpgradeModal(sessionLimits) {
+        console.log('💬 [NAVIGATION-CONTROLS] Showing B2C upgrade modal');
+        
+        // Check if modal already exists to avoid duplicates
+        let modal = document.getElementById('b2c-upgrade-modal');
+        if (modal) {
+            // Modal already exists, just show it
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+            return;
+        }
+        
+        // Create modal HTML with i18n and Stripe payment buttons
+        const modalHtml = `
+            <div class="modal fade" id="b2c-upgrade-modal" tabindex="-1" aria-labelledby="b2c-upgrade-title" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="b2c-upgrade-title">
+                                <i class="bi bi-stars me-2"></i>
+                                ${window.safeT ? window.safeT('b2c.modal.title') : 'Déverrouillez la Formation Complète'}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <div class="mb-4">
+                                <i class="bi bi-lock-fill text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <h6 class="mb-3">${window.safeT ? window.safeT('b2c.modal.limitReached') : 'Vous avez atteint la limite de prévisualisation'}</h6>
+                            <p class="text-muted mb-4">
+                                ${window.safeT ? window.safeT('b2c.modal.description') : 'Ceci est un aperçu de notre système de formation alimenté par l\'IA. Pour accéder à l\'expérience de formation complète avec des slides illimitées et du contenu personnalisé, choisissez une option ci-dessous.'}
+                            </p>
+                            
+                            <!-- Stripe Payment Options -->
+                            <div class="row g-3 mb-4">
+                                <!-- Option 1: Continue Training - 6.90€ (Outline Blue) -->
+                                <div class="col-12">
+                                    <a href="https://buy.stripe.com/00w8wPfPwdqF4Vo7rsgnK0a" 
+                                       class="btn btn-outline-primary btn-lg w-100 d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="bi bi-play-circle me-2"></i>
+                                            ${window.safeT ? window.safeT('b2c.modal.continueTraining') : 'Continuer ma formation'}
+                                        </span>
+                                        <strong>6.90€</strong>
+                                    </a>
+                                </div>
+                                
+                                <!-- Option 2: Monthly Subscription - 14.90€ (Blue Background) -->
+                                <div class="col-12">
+                                    <a href="https://buy.stripe.com/8x214ndHo72hdrU6nognK0b" 
+                                       class="btn btn-primary btn-lg w-100 d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="bi bi-calendar-month me-2"></i>
+                                            ${window.safeT ? window.safeT('b2c.modal.monthlySubscription') : 'Abonnement un mois'}
+                                        </span>
+                                        <strong>14.90€</strong>
+                                    </a>
+                                </div>
+                                
+                                <!-- Option 3: Annual Subscription - 49.90€ (Blue Background) -->
+                                <div class="col-12">
+                                    <a href="https://buy.stripe.com/4gM5kD32KeuJ3RkeTUgnK0c" 
+                                       class="btn btn-primary btn-lg w-100 d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <i class="bi bi-calendar-year me-2"></i>
+                                            ${window.safeT ? window.safeT('b2c.modal.annualSubscription') : 'Abonnement annuel'}
+                                        </span>
+                                        <strong>49.90€</strong>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact Email Button -->
+                            <div class="d-grid gap-2">
+                                <a href="mailto:${sessionLimits.contact_email}?subject=Demande%20Accès%20Complet%20-%20Formation%20IA" 
+                                   class="btn btn-outline-dark">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    ${window.safeT ? window.safeT('b2c.modal.contactButton') : 'Contacter pour Accès Complet'}
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                    ${window.safeT ? window.safeT('b2c.modal.browseContinue') : 'Continuer la Navigation'}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <small class="text-muted mx-auto">
+                                <i class="bi bi-info-circle me-1"></i>
+                                ${window.safeT ? window.safeT('b2c.modal.limitInfo').replace('{{count}}', sessionLimits.max_slides) : `Aperçu limité à ${sessionLimits.max_slides} slides`}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show the modal
+        modal = document.getElementById('b2c-upgrade-modal');
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Remove modal from DOM when hidden
+        modal.addEventListener('hidden.bs.modal', function () {
+            modal.remove();
+        });
     }
 }

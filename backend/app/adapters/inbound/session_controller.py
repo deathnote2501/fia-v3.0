@@ -14,6 +14,27 @@ from datetime import datetime, timedelta
 from app.infrastructure.database import get_database_session
 from app.infrastructure.auth import get_current_trainer
 from app.infrastructure.settings import settings
+
+
+def normalize_frontend_url(frontend_url: str) -> str:
+    """
+    Normalize frontend URL to ensure it has proper protocol
+    
+    Args:
+        frontend_url: Raw frontend URL from settings
+        
+    Returns:
+        Normalized URL with https:// protocol
+    """
+    if not frontend_url:
+        return "https://localhost:8000"
+    
+    # If already has protocol, return as-is
+    if frontend_url.startswith(('http://', 'https://')):
+        return frontend_url
+    
+    # Add https:// protocol for production domains
+    return f"https://{frontend_url}"
 from app.domain.entities.trainer import Trainer
 from app.domain.entities.training_session import TrainingSession
 from app.domain.entities.learner_session import LearnerSession
@@ -31,8 +52,10 @@ from app.domain.schemas.learner_session import (
 from app.adapters.repositories.training_session_repository import TrainingSessionRepository
 from app.adapters.repositories.learner_session_repository import LearnerSessionRepository
 from app.adapters.repositories.training_repository import TrainingRepository
+from app.adapters.repositories.trainer_repository import TrainerRepository
 from app.domain.services.plan_generation_service_v2 import PlanGenerationService
 from app.domain.services.session_notification_service import SessionNotificationService
+from app.domain.services.session_type_detection_service import SessionTypeDetectionService
 from app.adapters.outbound.email_adapter import EmailAdapter
 from app.adapters.outbound.settings_adapter import SettingsAdapter
 # from app.domain.services.plan_parser_service import PlanParserService
@@ -96,8 +119,9 @@ async def create_training_session(
         session_repo = TrainingSessionRepository(db)
         created_session = await session_repo.create(training_session)
         
-        # Generate session link
-        session_link = f"{settings.frontend_url}/frontend/public/training.html?token={session_token}"
+        # Generate session link with normalized URL
+        normalized_url = normalize_frontend_url(settings.frontend_url)
+        session_link = f"{normalized_url}/frontend/public/training.html?token={session_token}"
         
         # Build response with link
         response_data = TrainingSessionResponse.model_validate(created_session)
@@ -580,3 +604,111 @@ async def save_learner_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Profile creation failed"
         )
+
+
+# ============================================================================
+# DEPENDENCY INJECTION FUNCTIONS
+# ============================================================================
+
+async def get_session_type_detection_service(
+    db: AsyncSession = Depends(get_database_session)
+) -> SessionTypeDetectionService:
+    """Get session type detection service with proper dependency injection"""
+    training_session_repo = TrainingSessionRepository(db)
+    training_repo = TrainingRepository(db) 
+    trainer_repo = TrainerRepository(db)
+    
+    return SessionTypeDetectionService(
+        training_session_repository=training_session_repo,
+        training_repository=training_repo,
+        trainer_repository=trainer_repo
+    )
+
+
+# ============================================================================
+# SESSION TYPE DETECTION ENDPOINTS (public)
+# ============================================================================
+
+@router.get("/api/session/{token}/type")
+async def get_session_type(
+    token: str,
+    service: SessionTypeDetectionService = Depends(get_session_type_detection_service)
+):
+    """
+    Detect session type (B2C/B2B) for frontend slide limitation logic
+    
+    Public endpoint that analyzes session token to determine if it's:
+    - B2C: Created from landing page (anonymous trainer) - has slide limits
+    - B2B: Created by authenticated trainer - no limits
+    
+    Used by frontend to apply appropriate slide navigation restrictions.
+    """
+    
+    try:
+        logger.info(f"🔍 SESSION_TYPE [START] Detecting type for token: {token[:8]}...")
+        
+        session_type = await service.detect_session_type(token)
+        
+        logger.info(f"✅ SESSION_TYPE [SUCCESS] Detected type: {session_type}")
+        
+        return {
+            "session_type": session_type,
+            "token": token[:8] + "...",  # Partial token for logging
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except ValueError as e:
+        logger.warning(f"⚠️ SESSION_TYPE [WARNING] {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"❌ SESSION_TYPE [ERROR] Unexpected error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Session type detection failed"
+        )
+
+
+@router.get("/api/session/{token}/limits")
+async def get_session_limits(
+    token: str,
+    service: SessionTypeDetectionService = Depends(get_session_type_detection_service)
+):
+    """
+    Get session limits and metadata based on session type
+    
+    Returns comprehensive information about session restrictions:
+    - B2C: max_slides=2, upgrade_required=True, contact info
+    - B2B: max_slides=None, upgrade_required=False
+    
+    Used by frontend for complete session limit configuration.
+    """
+    
+    try:
+        logger.info(f"📊 SESSION_LIMITS [START] Getting limits for token: {token[:8]}...")
+        
+        limits = await service.get_session_limits(token)
+        
+        logger.info(f"✅ SESSION_LIMITS [SUCCESS] Type: {limits['session_type']}, Max slides: {limits['max_slides']}")
+        
+        return {
+            **limits,
+            "token": token[:8] + "...",  # Partial token for logging
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ SESSION_LIMITS [ERROR] {str(e)}")
+        # Return safe defaults for B2B
+        return {
+            "session_type": "B2B",
+            "max_slides": None,
+            "has_slide_limit": False,
+            "upgrade_required": False,
+            "contact_email": None,
+            "token": token[:8] + "...",
+            "timestamp": datetime.utcnow().isoformat(),
+            "fallback": True
+        }
