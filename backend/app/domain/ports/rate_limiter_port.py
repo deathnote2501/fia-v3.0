@@ -11,6 +11,23 @@ class RateLimiterPort(ABC):
     """Port for rate limiting operations from domain layer"""
     
     @abstractmethod
+    async def acquire(self, wait: bool = True, max_wait_seconds: int = 60) -> bool:
+        """
+        Acquire a rate limit slot
+        
+        Args:
+            wait: Whether to wait if rate limit is exceeded
+            max_wait_seconds: Maximum time to wait in seconds
+            
+        Returns:
+            True if slot acquired successfully
+            
+        Raises:
+            RateLimitExceededException: If rate limit exceeded and wait=False
+        """
+        pass
+    
+    @abstractmethod
     async def check_rate_limit(self, key: str, limit_per_minute: int) -> bool:
         """Check if operation is within rate limit"""
         pass

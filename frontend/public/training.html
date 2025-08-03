@@ -21,6 +21,25 @@
     <!-- Container 16:9 centré avec cadre gris -->
     <div class="slide-container-16-9">
         
+        <!-- MOBILE TOOLBAR: Barre d'outils supérieure (visible uniquement en mobile) -->
+        <div class="mobile-toolbar">
+            <button type="button" id="mobile-previous-btn" data-i18n-title="tooltip.previous" title="Go to previous slide">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button type="button" id="mobile-simplify-btn" data-i18n-title="tooltip.simplify" title="Simplify the content of this slide">
+                <i class="bi bi-arrows-collapse"></i>
+            </button>
+            <button type="button" id="mobile-more-details-btn" data-i18n-title="tooltip.deepen" title="Get more details about this content">
+                <i class="bi bi-arrows-expand"></i>
+            </button>
+            <button type="button" id="mobile-chart-btn" data-i18n-title="tooltip.chart" title="Generate a chart to illustrate this content">
+                <i class="bi bi-graph-up"></i>
+            </button>
+            <button type="button" id="mobile-next-btn" data-i18n-title="tooltip.next" title="Go to next slide">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+        
         <!-- 1. HEADER: Progress Bar (toute la largeur) -->
         <div class="slide-header">
             <div id="progress-breadcrumb" class="progress-breadcrumb">
@@ -70,6 +89,57 @@
             </div>
         </div>
         
+        <!-- MOBILE CHAT ACTIONS: Actions chat horizontales (visible uniquement en mobile) -->
+        <div class="mobile-chat-actions">
+            <button type="button" id="mobile-comment-btn" data-i18n-title="tooltip.comment" title="Ask for comments or feedback on this slide">
+                <i class="bi bi-chat-text"></i>
+            </button>
+            <button type="button" id="mobile-quiz-btn" data-i18n-title="tooltip.quiz" title="Generate a quiz to test your understanding">
+                <i class="bi bi-question-circle"></i>
+            </button>
+            <button type="button" id="mobile-examples-btn" data-i18n-title="tooltip.examples" title="Get practical examples related to this content">
+                <i class="bi bi-lightbulb"></i>
+            </button>
+            <button type="button" id="mobile-key-points-btn" data-i18n-title="tooltip.keyPoints" title="Highlight the key points of this slide">
+                <i class="bi bi-star"></i>
+            </button>
+        </div>
+        
+        <!-- MOBILE TTS CONTROLS: Contrôles TTS horizontaux (visible uniquement en mobile) -->
+        <div class="mobile-tts-controls">
+            <div class="tts-toggle-container">
+                <label class="tts-switch">
+                    <input type="checkbox" id="mobile-tts-toggle">
+                    <span class="tts-slider"></span>
+                </label>
+                <label for="mobile-tts-toggle" class="tts-label" data-i18n="learner.enableAudio">Enable Audio</label>
+            </div>
+            <div class="live-api-button-container">
+                <button type="button" class="btn btn-success" id="mobile-live-api-btn" data-i18n-title="tooltip.vocal" title="Start Live Voice Conversation with Gemini">
+                    <i class="bi bi-soundwave me-1"></i>
+                    <span data-i18n="learner.vocal">Vocal</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- MOBILE INPUT: Zone de saisie mobile (visible uniquement en mobile) -->
+        <div class="mobile-input">
+            <div class="chat-input-wrapper">
+                <textarea class="form-control" id="mobile-chat-input" 
+                          data-i18n-placeholder="learner.askTrainer" placeholder="Ask your AI trainer..." maxlength="500"
+                          rows="1" style="resize: none; overflow: hidden;"></textarea>
+                
+                <!-- Voice Chat Button (adaptive) -->
+                <button class="btn voice-chat-btn state-mic" type="button" id="mobile-voice-chat-btn" 
+                        data-i18n-title="tooltip.voice" title="Click to start voice recording">
+                    <i class="bi bi-mic" id="mobile-voice-btn-icon"></i>
+                </button>
+            </div>
+            
+            <!-- Voice status indicator -->
+            <div class="chat-status" id="mobile-voice-status"></div>
+        </div>
+
         <!-- 4. FOOTER: Barre unifiée (chat input 25% + navigation 75%) -->
         <div class="slide-footer">
             <!-- Chat Input Section (25% gauche) -->

@@ -5,7 +5,7 @@
 
 // Phase 3: Configuration for slide limitation (shared config)
 const SLIDE_LIMIT_CONFIG = {
-    MAX_FREE_SLIDES: 10,  // Change this number to modify the slide limit
+    MAX_FREE_SLIDES: 2,  // Change this number to modify the slide limit
     CONTACT_EMAIL: 'jerome.iavarone@gmail.com'
 };
 
@@ -14,6 +14,16 @@ export class NavigationControls {
         console.log('🧭 [NAVIGATION-CONTROLS] NavigationControls initialized');
         this.sessionLimits = null; // Cache for session limits
         this.currentToken = this.extractTokenFromURL();
+        this.mobileHandler = null; // Will be set by main app
+    }
+    
+    /**
+     * Set the mobile interface handler for synchronization
+     * @param {MobileInterfaceHandler} mobileHandler - Mobile interface handler instance
+     */
+    setMobileHandler(mobileHandler) {
+        this.mobileHandler = mobileHandler;
+        console.log('🧭 [NAVIGATION-CONTROLS] Mobile handler configured');
     }
     
     /**
@@ -136,6 +146,11 @@ export class NavigationControls {
             
             // Update progress bar
             this.updateProgressBar(progressPercentage);
+        }
+        
+        // Sync mobile button states if mobile handler is available
+        if (this.mobileHandler) {
+            this.mobileHandler.updateMobileButtonStates();
         }
     }
     

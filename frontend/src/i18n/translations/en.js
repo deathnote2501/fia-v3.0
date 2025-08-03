@@ -10,7 +10,7 @@ export const en = {
     'page.title.register': 'Trainer Registration - FIA v3.0',
     'page.title.admin': 'Admin Dashboard - FIA v3.0',
     'page.title.training': 'FIA v3.0 - Personal Training Plan',
-    'page.title.landing': 'Dice3.ai',
+    'page.title.landing': 'Get trained by an AI trainer',
     
     // Navigation and main title
     'app.title': 'FIA v3.0 Trainer',

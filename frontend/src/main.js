@@ -13,6 +13,7 @@ import { SlideContentManager } from './components/slide-content-manager.js';
 import { ProgressManager } from './utils/progress-manager.js';
 import { AutoExpandingTextarea } from './utils/auto-expanding-textarea.js';
 import { GeminiLiveAPI } from './components/gemini-live-api.js';
+import { MobileInterfaceHandler } from './components/mobile-interface-handler.js';
 
 /**
  * Main Application Class - Orchestrates all components
@@ -34,6 +35,7 @@ export class FIATrainingApp {
         this.slideContentManager = new SlideContentManager();
         this.progressManager = new ProgressManager();
         this.geminiLiveAPI = null; // Will use the one from ChatInterface
+        this.mobileInterfaceHandler = null; // Will be initialized with dependencies
         
         console.log('🚀 [FIA-APP] FIATrainingApp orchestrator initialized');
     }
@@ -74,6 +76,16 @@ export class FIATrainingApp {
             
             // Initialize chat interface
             this.chatInterface.initialize();
+            
+            // Initialize Mobile Interface Handler (after all core components are ready)
+            this.mobileInterfaceHandler = new MobileInterfaceHandler({
+                slideControls: this.slideControls,
+                chatInterface: this.chatInterface,
+                navigationControls: this.navigationControls
+            });
+            
+            // Set mobile handler in navigation controls for button state synchronization
+            this.navigationControls.setMobileHandler(this.mobileInterfaceHandler);
             
             // Setup navigation buttons
             this.slideControls.setupNavigationButtons();

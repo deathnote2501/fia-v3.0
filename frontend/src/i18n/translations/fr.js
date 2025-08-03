@@ -10,7 +10,7 @@ export const fr = {
     'page.title.register': 'Inscription Formateur - FIA v3.0',
     'page.title.admin': 'Tableau de bord Admin - FIA v3.0',
     'page.title.training': 'FIA v3.0 - Plan de Formation Personnalisé',
-    'page.title.landing': 'Dice3.ai',
+    'page.title.landing': 'Faites-vous former par un formateur IA',
     
     // Navigation et titre principal
     'app.title': 'FIA v3.0 Trainer',
