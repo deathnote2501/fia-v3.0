@@ -221,6 +221,13 @@ export const fr = {
     'b2c.modal.contactButton': 'Contactez-moi pour toute question (jerome.iavarone@gmail.com)',
     'b2c.modal.browseContinue': 'Continuer la navigation',
     'b2c.modal.limitInfo': 'Formation en cours limitée à {{count}} diapositives',
+    // Access Code Section
+    'b2c.modal.accessCodeTitle': '💎 Vous avez un code d\'accès ?',
+    'b2c.modal.accessCodePlaceholder': 'Entrez votre code',
+    'b2c.modal.unlockButton': 'Débloquer',
+    'b2c.modal.codeLength': 'Veuillez entrer un code à 4 chiffres',
+    'b2c.modal.codeSuccess': 'Accès débloqué ! Vous pouvez maintenant accéder à toutes les slides.',
+    'b2c.modal.codeError': 'Code invalide. Veuillez vérifier votre code d\'accès.',
     
     // Actions contextuelles
     'action.comment': 'Commenter',

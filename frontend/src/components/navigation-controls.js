@@ -15,6 +15,9 @@ export class NavigationControls {
         this.sessionLimits = null; // Cache for session limits
         this.currentToken = this.extractTokenFromURL();
         this.mobileHandler = null; // Will be set by main app
+        
+        // Check for existing unlimited access on initialization
+        this.checkExistingUnlimitedAccess();
     }
     
     /**
@@ -326,6 +329,12 @@ export class NavigationControls {
      * @returns {Object} Session limits object
      */
     async getSessionLimits() {
+        // Check for unlimited access first (access code unlock)
+        if (this.hasUnlimitedAccess()) {
+            console.log('🔓 [NAVIGATION-CONTROLS] Unlimited access detected - bypassing limitations');
+            return this.getUnlimitedAccessLimits();
+        }
+        
         // Use cached limits if available
         if (this.sessionLimits) {
             return this.sessionLimits;
@@ -372,6 +381,62 @@ export class NavigationControls {
             contact_email: null,
             fallback: true
         };
+    }
+    
+    /**
+     * Check if unlimited access has been granted via access code
+     * @returns {boolean} True if unlimited access is active
+     */
+    hasUnlimitedAccess() {
+        const unlimitedAccess = sessionStorage.getItem('fia_unlimited_access');
+        const grantedAt = sessionStorage.getItem('fia_access_granted_at');
+        const accessToken = sessionStorage.getItem('fia_access_token');
+        
+        // Check if access exists and is for current token
+        if (unlimitedAccess === 'true' && grantedAt && accessToken === this.currentToken) {
+            // Optional: Check if access hasn't expired (24h limit)
+            const grantedTime = parseInt(grantedAt);
+            const now = Date.now();
+            const hoursSinceGrant = (now - grantedTime) / (1000 * 60 * 60);
+            
+            if (hoursSinceGrant < 24) { // 24 hour expiration
+                console.log(`🔓 [NAVIGATION-CONTROLS] Unlimited access valid (granted ${hoursSinceGrant.toFixed(1)}h ago)`);
+                return true;
+            } else {
+                console.log('⏰ [NAVIGATION-CONTROLS] Unlimited access expired, clearing storage');
+                this.clearUnlimitedAccess();
+                return false;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get unlimited access limits (bypass all restrictions)
+     * @returns {Object} Unlimited session limits
+     */
+    getUnlimitedAccessLimits() {
+        return {
+            session_type: 'B2C_UNLIMITED',
+            max_slides: null,
+            has_slide_limit: false,
+            upgrade_required: false,
+            access_unlocked: true,
+            contact_email: null,
+            message: 'Access unlocked with code'
+        };
+    }
+    
+    /**
+     * Clear unlimited access from storage
+     */
+    clearUnlimitedAccess() {
+        sessionStorage.removeItem('fia_unlimited_access');
+        sessionStorage.removeItem('fia_access_granted_at');
+        sessionStorage.removeItem('fia_access_token');
+        this.sessionLimits = null; // Clear cache
+        console.log('🧹 [NAVIGATION-CONTROLS] Unlimited access cleared');
     }
     
     /**
@@ -459,6 +524,24 @@ export class NavigationControls {
                                 </div>
                             </div>
                             
+                            <!-- Access Code Section -->
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="mb-3 text-center">
+                                    ${window.safeT ? window.safeT('b2c.modal.accessCodeTitle') : '💎 Vous avez un code d\'accès ?'}
+                                </h6>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="access-code-input" class="form-control" 
+                                           placeholder="${window.safeT ? window.safeT('b2c.modal.accessCodePlaceholder') : 'Entrez votre code (ex: 2541)'}" 
+                                           maxlength="4" style="text-align: center; font-size: 1.1em; font-weight: bold;">
+                                    <button class="btn btn-success" id="validate-access-code-btn" type="button">
+                                        <i class="bi bi-unlock me-1"></i>
+                                        ${window.safeT ? window.safeT('b2c.modal.unlockButton') : 'Débloquer'}
+                                    </button>
+                                </div>
+                                <!-- Success/Error Messages -->
+                                <div id="access-code-feedback" class="d-none"></div>
+                            </div>
+                            
                             <!-- Contact Email Button -->
                             <div class="d-grid gap-2">
                                 <a href="mailto:${sessionLimits.contact_email}?subject=Demande%20Accès%20Complet%20-%20Formation%20IA" 
@@ -493,9 +576,158 @@ export class NavigationControls {
         const bootstrapModal = new bootstrap.Modal(modal);
         bootstrapModal.show();
         
+        // Setup access code validation after modal is shown
+        this.setupAccessCodeValidation();
+        
         // Remove modal from DOM when hidden
         modal.addEventListener('hidden.bs.modal', function () {
             modal.remove();
         });
+    }
+    
+    /**
+     * Setup access code validation event listeners and logic
+     */
+    setupAccessCodeValidation() {
+        console.log('🔒 [NAVIGATION-CONTROLS] Setting up access code validation');
+        
+        const accessCodeInput = document.getElementById('access-code-input');
+        const validateBtn = document.getElementById('validate-access-code-btn');
+        const feedbackDiv = document.getElementById('access-code-feedback');
+        
+        if (!accessCodeInput || !validateBtn || !feedbackDiv) {
+            console.warn('⚠️ [NAVIGATION-CONTROLS] Access code elements not found');
+            return;
+        }
+        
+        // Event listener for button click
+        validateBtn.addEventListener('click', () => {
+            this.validateAccessCode(accessCodeInput.value.trim());
+        });
+        
+        // Event listener for Enter key
+        accessCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.validateAccessCode(accessCodeInput.value.trim());
+            }
+        });
+        
+        // Auto-uppercase and limit to 4 digits
+        accessCodeInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/[^0-9]/g, ''); // Only numbers
+            if (value.length > 4) {
+                value = value.substring(0, 4);
+            }
+            e.target.value = value;
+        });
+        
+        console.log('✅ [NAVIGATION-CONTROLS] Access code validation setup complete');
+    }
+    
+    /**
+     * Validate access code against encrypted codes
+     * @param {string} inputCode - User input code
+     */
+    validateAccessCode(inputCode) {
+        console.log('🔍 [NAVIGATION-CONTROLS] Validating access code:', inputCode);
+        
+        if (!inputCode || inputCode.length !== 4) {
+            this.showAccessCodeFeedback(false, window.safeT ? window.safeT('b2c.modal.codeLength') : 'Please enter a 4-digit code');
+            return;
+        }
+        
+        // Encrypted access codes (base64 with salt for basic security)
+        const ENCRYPTED_ACCESS_CODES = [
+            btoa('2541_fia_salt'), // MjU0MV9maWFfc2FsdA==
+            btoa('8455_fia_salt'), // ODQ1NV9maWFfc2FsdA==
+            btoa('5421_fia_salt')  // NTQyMV9maWFfc2FsdA==
+        ];
+        
+        // Encrypt input code and compare
+        const encryptedInput = btoa(inputCode + '_fia_salt');
+        const isValid = ENCRYPTED_ACCESS_CODES.includes(encryptedInput);
+        
+        if (isValid) {
+            console.log('✅ [NAVIGATION-CONTROLS] Access code valid - granting unlimited access');
+            this.grantUnlimitedAccess();
+            this.showAccessCodeFeedback(true, window.safeT ? window.safeT('b2c.modal.codeSuccess') : 'Accès débloqué ! Vous pouvez maintenant accéder à toutes les slides.');
+            
+            // Close modal after 2 seconds
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('b2c-upgrade-modal'));
+                if (modal) {
+                    modal.hide();
+                }
+                // Refresh navigation buttons to remove limitations
+                this.refreshNavigationAfterUnlock();
+            }, 2000);
+            
+        } else {
+            console.log('❌ [NAVIGATION-CONTROLS] Access code invalid');
+            this.showAccessCodeFeedback(false, window.safeT ? window.safeT('b2c.modal.codeError') : 'Code invalide. Veuillez vérifier votre code d\'accès.');
+        }
+    }
+    
+    /**
+     * Show feedback message for access code validation
+     * @param {boolean} success - Whether validation was successful
+     * @param {string} message - Message to display
+     */
+    showAccessCodeFeedback(success, message) {
+        const feedbackDiv = document.getElementById('access-code-feedback');
+        if (!feedbackDiv) return;
+        
+        const alertClass = success ? 'alert-success' : 'alert-danger';
+        const icon = success ? 'bi-check-circle' : 'bi-exclamation-triangle';
+        
+        feedbackDiv.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="bi ${icon} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        feedbackDiv.classList.remove('d-none');
+        
+        // Auto-hide error messages after 5 seconds
+        if (!success) {
+            setTimeout(() => {
+                feedbackDiv.classList.add('d-none');
+            }, 5000);
+        }
+    }
+    
+    /**
+     * Grant unlimited access and store in session
+     */
+    grantUnlimitedAccess() {
+        console.log('🔓 [NAVIGATION-CONTROLS] Granting unlimited access');
+        
+        sessionStorage.setItem('fia_unlimited_access', 'true');
+        sessionStorage.setItem('fia_access_granted_at', Date.now().toString());
+        sessionStorage.setItem('fia_access_token', this.currentToken || 'unknown');
+        
+        // Clear cached session limits to force refresh
+        this.sessionLimits = null;
+        
+        console.log('✅ [NAVIGATION-CONTROLS] Unlimited access granted and stored');
+    }
+    
+    /**
+     * Refresh navigation buttons after unlock
+     */
+    refreshNavigationAfterUnlock() {
+        console.log('🔄 [NAVIGATION-CONTROLS] Refreshing navigation after unlock');
+        
+        const newNextBtn = document.getElementById('new-next-btn');
+        if (newNextBtn) {
+            // Re-enable next button and restore original appearance
+            newNextBtn.disabled = false;
+            newNextBtn.classList.remove('opacity-50');
+            newNextBtn.innerHTML = `${window.safeT ? window.safeT('learner.next') : 'Next'}<i class="bi bi-chevron-right ms-1"></i>`;
+            
+            console.log('✅ [NAVIGATION-CONTROLS] Next button restored after unlock');
+        }
     }
 }

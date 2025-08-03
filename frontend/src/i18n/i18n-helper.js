@@ -62,7 +62,14 @@ export function safeT(key, customFallback = null) {
         'b2c.modal.annualSubscription': 'Abonnement annuel',
         'b2c.modal.contactButton': 'Contacter pour Accès Complet',
         'b2c.modal.browseContinue': 'Continuer la Navigation',
-        'b2c.modal.limitInfo': 'Aperçu limité à {{count}} slides'
+        'b2c.modal.limitInfo': 'Aperçu limité à {{count}} slides',
+        // Access Code fallbacks
+        'b2c.modal.accessCodeTitle': '💎 Vous avez un code d\'accès ?',
+        'b2c.modal.accessCodePlaceholder': 'Entrez votre code',
+        'b2c.modal.unlockButton': 'Unlock',
+        'b2c.modal.codeLength': 'Please enter a 4-digit code',
+        'b2c.modal.codeSuccess': 'Access unlocked! You can now access all slides.',
+        'b2c.modal.codeError': 'Invalid code. Please check your access code.'
     };
     
     return smartFallbacks[key] || 'Loading...';
