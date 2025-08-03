@@ -4,7 +4,7 @@
  * Now with i18n support for learners
  */
 
-import { initializeFIAApp } from './main.js';
+import { initializeFIAApp } from '../main.js';
 
 // Safe translation function with user-friendly fallbacks
 function t(key) {

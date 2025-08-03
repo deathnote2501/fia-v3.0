@@ -21,6 +21,15 @@ export class NavigationControls {
     }
     
     /**
+     * Check for existing unlimited access on page load
+     */
+    checkExistingUnlimitedAccess() {
+        if (this.hasUnlimitedAccess()) {
+            console.log('🔓 [NAVIGATION-CONTROLS] Existing unlimited access detected on initialization');
+        }
+    }
+    
+    /**
      * Set the mobile interface handler for synchronization
      * @param {MobileInterfaceHandler} mobileHandler - Mobile interface handler instance
      */
@@ -527,15 +536,15 @@ export class NavigationControls {
                             <!-- Access Code Section -->
                             <div class="mt-4 pt-3 border-top">
                                 <h6 class="mb-3 text-center">
-                                    ${window.safeT ? window.safeT('b2c.modal.accessCodeTitle') : '💎 Vous avez un code d\'accès ?'}
+                                    ${window.safeT ? window.safeT('b2c.modal.accessCodeTitle') : '💎 Do you have an access code?'}
                                 </h6>
                                 <div class="input-group mb-3">
                                     <input type="text" id="access-code-input" class="form-control" 
-                                           placeholder="${window.safeT ? window.safeT('b2c.modal.accessCodePlaceholder') : 'Entrez votre code (ex: 2541)'}" 
+                                           placeholder="${window.safeT ? window.safeT('b2c.modal.accessCodePlaceholder') : 'Enter your code (ex: 2541)'}" 
                                            maxlength="4" style="text-align: center; font-size: 1.1em; font-weight: bold;">
                                     <button class="btn btn-success" id="validate-access-code-btn" type="button">
                                         <i class="bi bi-unlock me-1"></i>
-                                        ${window.safeT ? window.safeT('b2c.modal.unlockButton') : 'Débloquer'}
+                                        ${window.safeT ? window.safeT('b2c.modal.unlockButton') : 'Unlock'}
                                     </button>
                                 </div>
                                 <!-- Success/Error Messages -->
@@ -631,8 +640,16 @@ export class NavigationControls {
     validateAccessCode(inputCode) {
         console.log('🔍 [NAVIGATION-CONTROLS] Validating access code:', inputCode);
         
+        // Disable button during validation
+        const validateBtn = document.getElementById('validate-access-code-btn');
+        if (validateBtn) {
+            validateBtn.disabled = true;
+            validateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Validating...';
+        }
+        
         if (!inputCode || inputCode.length !== 4) {
             this.showAccessCodeFeedback(false, window.safeT ? window.safeT('b2c.modal.codeLength') : 'Please enter a 4-digit code');
+            this.resetValidateButton();
             return;
         }
         
@@ -650,9 +667,11 @@ export class NavigationControls {
         if (isValid) {
             console.log('✅ [NAVIGATION-CONTROLS] Access code valid - granting unlimited access');
             this.grantUnlimitedAccess();
-            this.showAccessCodeFeedback(true, window.safeT ? window.safeT('b2c.modal.codeSuccess') : 'Accès débloqué ! Vous pouvez maintenant accéder à toutes les slides.');
             
-            // Close modal after 2 seconds
+            // Show success with animation
+            this.showAccessCodeSuccess();
+            
+            // Close modal after success animation
             setTimeout(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('b2c-upgrade-modal'));
                 if (modal) {
@@ -660,11 +679,12 @@ export class NavigationControls {
                 }
                 // Refresh navigation buttons to remove limitations
                 this.refreshNavigationAfterUnlock();
-            }, 2000);
+            }, 2500);
             
         } else {
             console.log('❌ [NAVIGATION-CONTROLS] Access code invalid');
-            this.showAccessCodeFeedback(false, window.safeT ? window.safeT('b2c.modal.codeError') : 'Code invalide. Veuillez vérifier votre code d\'accès.');
+            this.showAccessCodeFeedback(false, window.safeT ? window.safeT('b2c.modal.codeError') : 'Invalid code. Please check your access code.');
+            this.resetValidateButton();
         }
     }
     
@@ -730,4 +750,150 @@ export class NavigationControls {
             console.log('✅ [NAVIGATION-CONTROLS] Next button restored after unlock');
         }
     }
+    
+    /**
+     * Reset validate button to original state
+     */
+    resetValidateButton() {
+        const validateBtn = document.getElementById('validate-access-code-btn');
+        if (validateBtn) {
+            validateBtn.disabled = false;
+            validateBtn.innerHTML = `<i class="bi bi-unlock me-1"></i>${window.safeT ? window.safeT('b2c.modal.unlockButton') : 'Unlock'}`;
+        }
+    }
+    
+    /**
+     * Show animated success feedback for access code validation
+     */
+    showAccessCodeSuccess() {
+        const feedbackDiv = document.getElementById('access-code-feedback');
+        const accessCodeInput = document.getElementById('access-code-input');
+        const validateBtn = document.getElementById('validate-access-code-btn');
+        
+        if (!feedbackDiv) return;
+        
+        // Success message with animation
+        const successMessage = window.safeT ? window.safeT('b2c.modal.codeSuccess') : 'Access unlocked! You can now access all slides.';
+        
+        feedbackDiv.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-success me-2" role="status" style="display: none;"></div>
+                    <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2em;"></i>
+                    <strong>${successMessage}</strong>
+                </div>
+            </div>
+        `;
+        
+        feedbackDiv.classList.remove('d-none');
+        
+        // Update button to success state
+        if (validateBtn) {
+            validateBtn.disabled = true;
+            validateBtn.classList.remove('btn-success');
+            validateBtn.classList.add('btn-success');
+            validateBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Unlocked!';
+        }
+        
+        // Disable input field (already used)
+        if (accessCodeInput) {
+            accessCodeInput.disabled = true;
+            accessCodeInput.classList.add('bg-light');
+        }
+        
+        // Add success animation to the entire access code section
+        const accessCodeSection = document.querySelector('.border-top');
+        if (accessCodeSection) {
+            accessCodeSection.style.border = '2px solid #198754';
+            accessCodeSection.style.borderRadius = '8px';
+            accessCodeSection.style.backgroundColor = '#f8fff9';
+        }
+    }
+    
+    /**
+     * Test function to validate all access codes (for development)
+     */
+    testAllAccessCodes() {
+        console.log('🧪 [NAVIGATION-CONTROLS] Testing all access codes...');
+        const testCodes = ['2541', '8455', '5421', '0000']; // Including invalid code
+        
+        testCodes.forEach((code, index) => {
+            console.log(`Testing code ${index + 1}: ${code}`);
+            const isValid = this.isValidAccessCode(code);
+            console.log(`Result: ${isValid ? '✅ Valid' : '❌ Invalid'}`);
+        });
+    }
+    
+    /**
+     * Helper method to check if access code is valid (for testing)
+     * @param {string} code - Code to test
+     * @returns {boolean} True if valid
+     */
+    isValidAccessCode(code) {
+        const ENCRYPTED_ACCESS_CODES = [
+            btoa('2541_fia_salt'),
+            btoa('8455_fia_salt'),
+            btoa('5421_fia_salt')
+        ];
+        
+        const encryptedInput = btoa(code + '_fia_salt');
+        return ENCRYPTED_ACCESS_CODES.includes(encryptedInput);
+    }
+    
+    /**
+     * Get debug info about current access state (for testing)
+     */
+    getAccessDebugInfo() {
+        return {
+            hasUnlimitedAccess: this.hasUnlimitedAccess(),
+            currentToken: this.currentToken,
+            sessionStorage: {
+                unlimited_access: sessionStorage.getItem('fia_unlimited_access'),
+                granted_at: sessionStorage.getItem('fia_access_granted_at'),
+                access_token: sessionStorage.getItem('fia_access_token')
+            },
+            sessionLimits: this.sessionLimits,
+            validCodes: ['2541', '8455', '5421']
+        };
+    }
+}
+
+// Global testing functions for development/debugging
+if (typeof window !== 'undefined') {
+    window.fiaTesting = {
+        testAccessCodes: function() {
+            if (window.navigationControls) {
+                window.navigationControls.testAllAccessCodes();
+            } else {
+                console.warn('NavigationControls not initialized');
+            }
+        },
+        getDebugInfo: function() {
+            if (window.navigationControls) {
+                return window.navigationControls.getAccessDebugInfo();
+            } else {
+                console.warn('NavigationControls not initialized');
+                return null;
+            }
+        },
+        clearAccess: function() {
+            sessionStorage.removeItem('fia_unlimited_access');
+            sessionStorage.removeItem('fia_access_granted_at');
+            sessionStorage.removeItem('fia_access_token');
+            console.log('🧹 Access cleared from sessionStorage');
+        },
+        simulateCode: function(code) {
+            if (window.navigationControls) {
+                window.navigationControls.validateAccessCode(code);
+            } else {
+                console.warn('NavigationControls not initialized');
+            }
+        }
+    };
+    
+    console.log('🧪 FIA Testing functions available:');
+    console.log('   window.fiaTesting.testAccessCodes() - Test all codes');
+    console.log('   window.fiaTesting.getDebugInfo() - Get current state');
+    console.log('   window.fiaTesting.clearAccess() - Clear unlimited access');
+    console.log('   window.fiaTesting.simulateCode("2541") - Test specific code');
 }

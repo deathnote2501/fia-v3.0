@@ -4,44 +4,32 @@
  * This module orchestrates all the functionality for the training page (training.html).
  * It replaces the inline JavaScript and provides a clean, maintainable structure.
  * 
- * CRITICAL: This includes the mobile emergency fix that was previously inline
- * to ensure mobile buttons work correctly in production.
+ * The mobile interface is handled by the main mobile-interface-handler.js component
+ * loaded through training-init.js → main.js orchestration.
  */
 
-import '/frontend/src/utils/mobile-emergency-fix.js';
-import '/frontend/src/utils/mobile-debug-helper.js';
-import '/frontend/src/utils/mobile-fallback-init.js';
-import '/frontend/src/training-init.js';
-import '/frontend/src/debug/popover-debug-commands.js';
+import './training-init.js';
+import '../debug/popover-debug-commands.js';
 
 /**
  * Main initialization function for the training page
- * This function coordinates all the page components including critical mobile fixes
+ * This function coordinates all the page components
  */
 function initializeTrainingPage() {
     console.log('🎓 [TRAINING-PAGE] Starting training page initialization...');
     
     try {
-        // Critical: Mobile emergency fix is auto-initialized by its module
-        // This ensures mobile buttons work in production
-        
-        // Other modules auto-initialize:
-        // - mobile-debug-helper.js
-        // - mobile-fallback-init.js  
-        // - training-init.js
-        // - popover-debug-commands.js
+        // Modules auto-initialize:
+        // - training-init.js (main training logic)
+        // - popover-debug-commands.js (debug functionality)
+        // 
+        // Mobile interface is handled by mobile-interface-handler.js
+        // which is loaded through the main.js orchestration
         
         console.log('✅ [TRAINING-PAGE] Training page initialized successfully');
         
         // Set global flag for debugging
         window.trainingPageReady = true;
-        
-        // Log mobile fix status for production debugging
-        setTimeout(() => {
-            if (window.mobileEmergencyFixStatus) {
-                console.log('📱 [TRAINING-PAGE] Mobile emergency fix status:', window.mobileEmergencyFixStatus);
-            }
-        }, 2000);
         
     } catch (error) {
         console.error('❌ [TRAINING-PAGE] Error initializing training page:', error);
