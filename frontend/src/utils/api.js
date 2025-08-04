@@ -18,11 +18,7 @@ function buildSecureApiUrl(endpoint) {
         const baseUrl = `https://${window.location.hostname}`;
         const fullUrl = endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
         
-        // CRITICAL: Double-check URL is HTTPS (some servers/proxies force HTTP redirects)
-        const finalUrl = fullUrl.replace(/^http:/, 'https:');
-        console.log('🔒 [FORCE_HTTPS] Original:', fullUrl, '→ Final:', finalUrl);
-        
-        return finalUrl;
+        return fullUrl;
     } else {
         // Local development or HTTP - use relative URLs
         return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -71,13 +67,7 @@ class APIClient {
         }
 
         try {
-            // CRITICAL: Force HTTPS even if URL got corrupted somewhere
-            const secureUrl = url.replace(/^http:/, 'https:');
-            if (secureUrl !== url) {
-                console.log('🚨 [FORCE_HTTPS] URL corrected:', url, '→', secureUrl);
-            }
-            
-            const response = await fetch(secureUrl, config);
+            const response = await fetch(url, config);
             const duration = performance.now() - startTime;
             
             // 📥 Log API Response

@@ -153,26 +153,9 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
-        console.log('🔧 [DEBUG] window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
-        console.log('🔧 [DEBUG] typeof window.buildSecureApiUrl:', typeof window.buildSecureApiUrl);
+        const apiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings/') : '/api/trainings/';
         
-        // FORCE buildSecureApiUrl - throw error if not available
-        if (!window.buildSecureApiUrl) {
-            throw new Error('❌ buildSecureApiUrl not available! This is the root cause of Mixed Content error.');
-        }
-        
-        const apiUrl = window.buildSecureApiUrl('/api/trainings');
-        console.log('🔧 [DEBUG] API URL generated:', apiUrl);
-        console.log('🔧 [DEBUG] Current protocol:', window.location.protocol);
-        console.log('🔧 [DEBUG] Current hostname:', window.location.hostname);
-        
-        // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
-        const secureApiUrl = apiUrl.replace(/^http:/, 'https:');
-        if (secureApiUrl !== apiUrl) {
-            console.log('🚨 [FORCE_HTTPS] session-manager-simple.js corrected:', apiUrl, '→', secureApiUrl);
-        }
-        
-        const response = await fetch(secureApiUrl, {
+        const response = await fetch(apiUrl, {
             headers: getAuthHeaders()
         });
         
@@ -223,15 +206,8 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         if (params.toString()) endpoint += '?' + params.toString();
         
         const secureUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(endpoint) : endpoint;
-        console.log('🔧 [DEBUG] Download API URL:', secureUrl);
         
-        // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
-        const finalSecureUrl = secureUrl.replace(/^http:/, 'https:');
-        if (finalSecureUrl !== secureUrl) {
-            console.log('🚨 [FORCE_HTTPS] session-manager-simple.js loadSessions corrected:', secureUrl, '→', finalSecureUrl);
-        }
-        
-        const response = await fetch(finalSecureUrl, {
+        const response = await fetch(secureUrl, {
             headers: getAuthHeaders()
         });
         
