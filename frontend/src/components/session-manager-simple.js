@@ -125,7 +125,10 @@ async function createSession() {
         }
         
         // Direct fetch call with HTTPS-safe URL
-        const response = await fetch(buildApiUrl('/api/training-sessions'), {
+        const sessionApiUrl = buildApiUrl('/api/training-sessions');
+        console.log('🔧 [DEBUG] Session API URL generated:', sessionApiUrl);
+        
+        const response = await fetch(sessionApiUrl, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(sessionData)
@@ -164,7 +167,12 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
-        const response = await fetch(buildApiUrl('/api/trainings'), {
+        const apiUrl = buildApiUrl('/api/trainings');
+        console.log('🔧 [DEBUG] API URL generated:', apiUrl);
+        console.log('🔧 [DEBUG] Current protocol:', window.location.protocol);
+        console.log('🔧 [DEBUG] Current hostname:', window.location.hostname);
+        
+        const response = await fetch(apiUrl, {
             headers: getAuthHeaders()
         });
         

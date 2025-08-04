@@ -215,7 +215,9 @@ export class TTSManager {
             const cleanText = text;
             
             // Call TTS API
-            const response = await fetch('/api/tts/generate', {
+            const ttsApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/tts/generate') : '/api/tts/generate';
+            console.log('🔧 [DEBUG] TTS API URL:', ttsApiUrl);
+            const response = await fetch(ttsApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

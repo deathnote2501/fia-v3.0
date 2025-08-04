@@ -421,7 +421,9 @@ export class SlideControls {
             console.log('📝 [IMAGE_GEN] Content preview:', currentMarkdown.substring(0, 100) + '...');
             
             // Call image generation API
-            const response = await fetch('/api/image-generation/generate', {
+            const imageApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/image-generation/generate') : '/api/image-generation/generate';
+            console.log('🔧 [DEBUG] Image API URL:', imageApiUrl);
+            const response = await fetch(imageApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

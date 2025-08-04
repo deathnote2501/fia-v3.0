@@ -21,6 +21,7 @@ export const en = {
     'nav.logout': 'Logout',
     
     // Dashboard
+    'page.header.dashboard': 'Dashboard',
     'dashboard.title': 'Dashboard',
     'dashboard.trainings': 'Trainings',
     'dashboard.sessions': 'Active Sessions',

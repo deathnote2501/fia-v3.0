@@ -381,7 +381,9 @@ class TrainerDashboard {
 
                 // Setup request
                 const token = authManager.getToken();
-                xhr.open('POST', '/api/trainings/');
+                const trainingApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings/') : '/api/trainings/';
+                console.log('🔧 [DEBUG] Training upload URL:', trainingApiUrl);
+                xhr.open('POST', trainingApiUrl);
                 xhr.setRequestHeader('Authorization', `Bearer ${token}`);
                 
                 // Send data

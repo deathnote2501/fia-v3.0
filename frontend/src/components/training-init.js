@@ -691,7 +691,9 @@ class UnifiedTrainingApp {
             };
             
             console.log('📝 [UNIFIED-APP] Plan generation request:', generatePlanRequest);
-            const planResponse = await fetch('/api/generate-plan-integrated', {
+            const planApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/generate-plan-integrated') : '/api/generate-plan-integrated';
+            console.log('🔧 [DEBUG] Plan API URL:', planApiUrl);
+            const planResponse = await fetch(planApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

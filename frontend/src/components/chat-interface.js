@@ -853,7 +853,9 @@ export class ChatInterface {
             console.log('📤 [CHAT] Request payload:', chatRequest);
             
             // Call chat API
-            const response = await fetch('/api/chat', {
+            const chatApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/chat') : '/api/chat';
+            console.log('🔧 [DEBUG] Chat API URL:', chatApiUrl);
+            const response = await fetch(chatApiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
