@@ -358,7 +358,9 @@ export class NavigationControls {
         try {
             console.log('🔍 [NAVIGATION-CONTROLS] Fetching session limits from API...');
             
-            const response = await fetch(`/api/session/${token}/limits`);
+            const limitsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/session/${token}/limits`) : `/api/session/${token}/limits`;
+            console.log('🔧 [DEBUG] Session limits URL:', limitsUrl);
+            const response = await fetch(limitsUrl);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }

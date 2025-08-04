@@ -248,7 +248,9 @@ export async function detectTrainerLanguage() {
             return null;
         }
         
-        const response = await fetch('/api/trainers/me', {
+        const trainerUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainers/me') : '/api/trainers/me';
+        console.log('🔧 [DEBUG] Trainer info URL:', trainerUrl);
+        const response = await fetch(trainerUrl, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -276,7 +278,9 @@ export async function saveTrainerLanguage(language) {
             return false;
         }
         
-        const response = await fetch('/api/trainers/me/language', {
+        const languageUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainers/me/language') : '/api/trainers/me/language';
+        console.log('🔧 [DEBUG] Language update URL:', languageUrl);
+        const response = await fetch(languageUrl, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,

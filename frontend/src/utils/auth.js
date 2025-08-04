@@ -106,7 +106,9 @@ class AuthManager {
             formData.append('username', email);
             formData.append('password', password);
 
-            const response = await fetch('/auth/jwt/login', {
+            const loginUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/auth/jwt/login') : '/auth/jwt/login';
+            console.log('🔧 [DEBUG] Login URL:', loginUrl);
+            const response = await fetch(loginUrl, {
                 method: 'POST',
                 body: formData
             });

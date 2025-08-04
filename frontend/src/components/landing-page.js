@@ -125,7 +125,9 @@ class LandingPageManager {
     
     async createTrainingWorkflow(topic) {
         // Use new public quick-start endpoint that handles everything
-        const response = await fetch('/api/public/quick-start', {
+        const quickStartUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/public/quick-start') : '/api/public/quick-start';
+        console.log('🔧 [DEBUG] Quick start URL:', quickStartUrl);
+        const response = await fetch(quickStartUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

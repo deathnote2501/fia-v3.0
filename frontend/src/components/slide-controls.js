@@ -95,7 +95,9 @@ export class SlideControls {
             console.log('📝 [SLIDE-CONTROLS] Learner session ID:', learnerSession.id);
             
             // Appeler l'API de navigation
-            const response = await fetch(`/api/slides/next/${learnerSession.id}/${currentSlideId}`, {
+            const nextSlideUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/next/${learnerSession.id}/${currentSlideId}`) : `/api/slides/next/${learnerSession.id}/${currentSlideId}`;
+            console.log('🔧 [DEBUG] Next slide URL:', nextSlideUrl);
+            const response = await fetch(nextSlideUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -178,7 +180,9 @@ export class SlideControls {
             console.log('📝 [SLIDE-CONTROLS] Learner session ID:', learnerSession.id);
             
             // Appeler l'API de navigation précédente
-            const response = await fetch(`/api/slides/previous/${learnerSession.id}/${currentSlideId}`, {
+            const prevSlideUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/previous/${learnerSession.id}/${currentSlideId}`) : `/api/slides/previous/${learnerSession.id}/${currentSlideId}`;
+            console.log('🔧 [DEBUG] Previous slide URL:', prevSlideUrl);
+            const response = await fetch(prevSlideUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -260,7 +264,9 @@ export class SlideControls {
             console.log('📝 [SLIDE-CONTROLS] Current content preview:', currentMarkdown.substring(0, 100) + '...');
             
             // Appeler l'API de simplification
-            const response = await fetch(`/api/slides/simplify/${learnerSession.id}`, {
+            const simplifyUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/simplify/${learnerSession.id}`) : `/api/slides/simplify/${learnerSession.id}`;
+            console.log('🔧 [DEBUG] Simplify slide URL:', simplifyUrl);
+            const response = await fetch(simplifyUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -349,7 +355,9 @@ export class SlideControls {
             console.log('📝 [CHART_GEN] Content preview:', currentMarkdown.substring(0, 100) + '...');
             
             // Call chart generation API
-            const response = await fetch(`/api/slides/${learnerSession.id}/generate-chart`, {
+            const chartUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/${learnerSession.id}/generate-chart`) : `/api/slides/${learnerSession.id}/generate-chart`;
+            console.log('🔧 [DEBUG] Chart generation URL:', chartUrl);
+            const response = await fetch(chartUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -493,7 +501,9 @@ export class SlideControls {
             console.log('📝 [SLIDE-CONTROLS] Current content preview:', currentMarkdown.substring(0, 100) + '...');
             
             // Call the API to add more details
-            const response = await fetch(`/api/slides/more-details/${learnerSession.id}`, {
+            const moreDetailsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/more-details/${learnerSession.id}`) : `/api/slides/more-details/${learnerSession.id}`;
+            console.log('🔧 [DEBUG] More details URL:', moreDetailsUrl);
+            const response = await fetch(moreDetailsUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

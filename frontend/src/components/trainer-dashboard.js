@@ -957,7 +957,9 @@ async function deleteTraining(trainingId, trainingName) {
             return;
         }
 
-        const response = await fetch(`/api/trainings/${trainingId}`, {
+        const deleteUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/trainings/${trainingId}`) : `/api/trainings/${trainingId}`;
+        console.log('🔧 [DEBUG] Delete training URL:', deleteUrl);
+        const response = await fetch(deleteUrl, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

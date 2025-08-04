@@ -194,7 +194,9 @@ class UnifiedTrainingApp {
         
         // Validate token with API
         console.log('🔄 [UNIFIED-APP] Validating token with API...');
-        const response = await fetch(`/api/session/${this.token}`);
+        const sessionUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/session/${this.token}`) : `/api/session/${this.token}`;
+        console.log('🔧 [DEBUG] Session validation URL:', sessionUrl);
+        const response = await fetch(sessionUrl);
         
         if (!response.ok) {
             if (response.status === 404) {
@@ -254,7 +256,9 @@ class UnifiedTrainingApp {
         try {
             if (!this.learnerSession || !this.learnerSession.id) return false;
             
-            const response = await fetch(`/api/slides/session/${this.learnerSession.id}/current`);
+            const currentSlideUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/session/${this.learnerSession.id}/current`) : `/api/slides/session/${this.learnerSession.id}/current`;
+            console.log('🔧 [DEBUG] Current slide check URL:', currentSlideUrl);
+            const response = await fetch(currentSlideUrl);
             const exists = response.ok;
             console.log(`🔍 [UNIFIED-APP] Slide exists check: ${exists}`);
             return exists;
@@ -543,7 +547,9 @@ class UnifiedTrainingApp {
     async submitProfileData(profileData) {
         console.log('🌐 [UNIFIED-APP] Submitting profile to API...');
         
-        const response = await fetch(`/api/session/${this.token}/profile`, {
+        const profileUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/session/${this.token}/profile`) : `/api/session/${this.token}/profile`;
+        console.log('🔧 [DEBUG] Profile submission URL:', profileUrl);
+        const response = await fetch(profileUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -755,7 +761,9 @@ class UnifiedTrainingApp {
             
             console.log('📧 [UNIFIED-APP] Sending resume email with data:', emailRequest);
             
-            const emailResponse = await fetch(`/api/sessions/${this.learnerSession.id}/send-resume-link`, {
+            const emailUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/sessions/${this.learnerSession.id}/send-resume-link`) : `/api/sessions/${this.learnerSession.id}/send-resume-link`;
+            console.log('🔧 [DEBUG] Resume email URL:', emailUrl);
+            const emailResponse = await fetch(emailUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -800,7 +808,9 @@ class UnifiedTrainingApp {
             await initializeFIAApp(this.learnerSession, this.sessionData);
             
             // Try to load current slide
-            const slideResponse = await fetch(`/api/slides/session/${this.learnerSession.id}/current`);
+            const currentSlideUrl2 = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/session/${this.learnerSession.id}/current`) : `/api/slides/session/${this.learnerSession.id}/current`;
+            console.log('🔧 [DEBUG] Current slide load URL:', currentSlideUrl2);
+            const slideResponse = await fetch(currentSlideUrl2);
             
             if (slideResponse.ok) {
                 const slideData = await slideResponse.json();
@@ -812,7 +822,9 @@ class UnifiedTrainingApp {
             } else {
                 // No current slide, generate first one
                 console.log('🎯 [UNIFIED-APP] Generating first slide...');
-                const firstSlideResponse = await fetch(`/api/slides/generate-first/${this.learnerSession.id}`, {
+                const firstSlideUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/generate-first/${this.learnerSession.id}`) : `/api/slides/generate-first/${this.learnerSession.id}`;
+                console.log('🔧 [DEBUG] First slide generation URL:', firstSlideUrl);
+                const firstSlideResponse = await fetch(firstSlideUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

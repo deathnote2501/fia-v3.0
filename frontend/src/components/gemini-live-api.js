@@ -92,7 +92,9 @@ export class GeminiLiveAPI {
         if (this.API_KEY) return this.API_KEY;
         
         try {
-            const response = await fetch('/api/config/gemini-key');
+            const configUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/config/gemini-key') : '/api/config/gemini-key';
+            console.log('🔧 [DEBUG] Config API key URL:', configUrl);
+            const response = await fetch(configUrl);
             if (!response.ok) {
                 throw new Error(`Failed to load API key: ${response.status}`);
             }
@@ -120,7 +122,9 @@ export class GeminiLiveAPI {
         try {
             this.log('CONTEXT', `🎯 Loading context for session: ${sessionId}`);
             
-            const response = await fetch(`/api/config/live-context/${sessionId}`);
+            const contextUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/config/live-context/${sessionId}`) : `/api/config/live-context/${sessionId}`;
+            console.log('🔧 [DEBUG] Live context URL:', contextUrl);
+            const response = await fetch(contextUrl);
             if (!response.ok) {
                 throw new Error(`Failed to load context: ${response.status} ${response.statusText}`);
             }

@@ -236,7 +236,9 @@ export class FIATrainingApp {
             `;
             
             // Generate first slide via API
-            const response = await fetch(`/api/slides/first/${this.sessionData.training_session.id}`, {
+            const firstSlideUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/slides/first/${this.sessionData.training_session.id}`) : `/api/slides/first/${this.sessionData.training_session.id}`;
+            console.log('🔧 [DEBUG] First slide URL:', firstSlideUrl);
+            const response = await fetch(firstSlideUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
