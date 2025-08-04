@@ -1349,7 +1349,9 @@ async function deleteSession(sessionId, sessionName) {
             return;
         }
 
-        const response = await fetch(`/api/admin/sessions/${sessionId}`, {
+        const deleteSessionUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/admin/sessions/${sessionId}`) : `/api/admin/sessions/${sessionId}`;
+        console.log('🔧 [DEBUG] Delete session URL:', deleteSessionUrl);
+        const response = await fetch(deleteSessionUrl, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

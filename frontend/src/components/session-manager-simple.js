@@ -10,22 +10,8 @@
 // Use relative URLs - no need for CORS since frontend and API are on same server
 const API_BASE = '';
 
-/**
- * Build API URL that respects HTTPS in production
- * @param {string} endpoint - API endpoint (e.g., '/api/trainings')
- * @returns {string} - Full URL with correct protocol
- */
-function buildApiUrl(endpoint) {
-    // Force HTTPS in production to avoid Mixed Content errors
-    if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
-        // Production HTTPS - build absolute URL with HTTPS
-        const baseUrl = `https://${window.location.hostname}`;
-        return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
-    } else {
-        // Local development or HTTP - use relative URLs
-        return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    }
-}
+// Note: Now using window.buildSecureApiUrl() from api.js for HTTPS compatibility
+// The local buildApiUrl() function has been removed to avoid conflicts
 
 // ============================================================================
 // UTILITAIRES
@@ -125,7 +111,7 @@ async function createSession() {
         }
         
         // Direct fetch call with HTTPS-safe URL
-        const sessionApiUrl = buildApiUrl('/api/training-sessions');
+        const sessionApiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/training-sessions') : '/api/training-sessions';
         console.log('🔧 [DEBUG] Session API URL generated:', sessionApiUrl);
         
         const response = await fetch(sessionApiUrl, {
@@ -167,7 +153,7 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
-        const apiUrl = buildApiUrl('/api/trainings');
+        const apiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings') : '/api/trainings';
         console.log('🔧 [DEBUG] API URL generated:', apiUrl);
         console.log('🔧 [DEBUG] Current protocol:', window.location.protocol);
         console.log('🔧 [DEBUG] Current hostname:', window.location.hostname);
@@ -222,7 +208,9 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         if (dateTo) params.append('date_to', dateTo);
         if (params.toString()) endpoint += '?' + params.toString();
         
-        const response = await fetch(buildApiUrl(endpoint), {
+        const secureUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(endpoint) : endpoint;
+        console.log('🔧 [DEBUG] Download API URL:', secureUrl);
+        const response = await fetch(secureUrl, {
             headers: getAuthHeaders()
         });
         
@@ -291,7 +279,9 @@ async function deleteSession(sessionId) {
     }
     
     try {
-        const response = await fetch(buildApiUrl(`/api/training-sessions/${sessionId}`), {
+        const deleteUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/training-sessions/${sessionId}`) : `/api/training-sessions/${sessionId}`;
+        console.log('🔧 [DEBUG] Delete session URL:', deleteUrl);
+        const response = await fetch(deleteUrl, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -472,7 +462,7 @@ async function showChatHistory(sessionId, sessionName) {
         }
         
         const endpoint = `/api/dashboard/chat-history/${sessionId}`;
-        const url = buildApiUrl(endpoint);
+        const url = window.buildSecureApiUrl ? window.buildSecureApiUrl(endpoint) : endpoint;
         console.log(`🌐 [DEBUG] Making API call to: ${url}`);
         console.log(`🔐 [DEBUG] Auth token exists: ${!!getAuthToken()}`);
         
