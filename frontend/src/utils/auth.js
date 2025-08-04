@@ -296,31 +296,35 @@ class AuthManager {
 // Create global auth manager instance
 const authManager = new AuthManager();
 
-// Override API client to include auth headers
-const originalRequest = apiClient.request;
-apiClient.request = async function(endpoint, options = {}) {
-    // Add auth headers if user is authenticated
-    if (authManager.isAuthenticated()) {
-        // Preserve existing headers and add auth header
-        options.headers = {
-            ...authManager.getAuthHeader(),
-            ...options.headers  // User headers override auth headers if needed
-        };
-    }
-
-    try {
-        return await originalRequest.call(this, endpoint, options);
-    } catch (error) {
-        // Handle 401 Unauthorized
-        if (error.message.includes('401')) {
-            authManager.clearToken();
-            if (!window.location.pathname.includes('login.html')) {
-                window.location.href = '/frontend/public/login.html';
-            }
+// Override API client to include auth headers (only if apiClient exists)
+if (typeof apiClient !== 'undefined' && apiClient) {
+    const originalRequest = apiClient.request;
+    apiClient.request = async function(endpoint, options = {}) {
+        // Add auth headers if user is authenticated
+        if (authManager.isAuthenticated()) {
+            // Preserve existing headers and add auth header
+            options.headers = {
+                ...authManager.getAuthHeader(),
+                ...options.headers  // User headers override auth headers if needed
+            };
         }
-        throw error;
-    }
-};
+
+        try {
+            return await originalRequest.call(this, endpoint, options);
+        } catch (error) {
+            // Handle 401 Unauthorized
+            if (error.message.includes('401')) {
+                authManager.clearToken();
+                if (!window.location.pathname.includes('login.html')) {
+                    window.location.href = '/frontend/public/login.html';
+                }
+            }
+            throw error;
+        }
+    };
+} else {
+    console.warn('⚠️ [AUTH] apiClient not available, skipping auth integration');
+}
 
 // Export for use in other modules
 window.authManager = authManager;

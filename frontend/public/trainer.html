@@ -519,14 +519,16 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Trainer Dashboard Initialization -->
-    <script type="module" src="../src/components/trainer-init.js"></script>
-    
-    <!-- Custom scripts -->
+    <!-- Load API utilities first -->
     <script src="../src/utils/api.js"></script>
     <script src="../src/utils/auth.js"></script>
     <script src="../src/utils/validation.js"></script>
+    
+    <!-- Load components after utilities -->
     <script src="../src/components/trainer-dashboard.js"></script>
     <script src="../src/components/session-manager-simple.js"></script>
+    
+    <!-- Initialize after all dependencies are loaded -->
+    <script type="module" src="../src/components/trainer-init.js"></script>
 </body>
 </html>

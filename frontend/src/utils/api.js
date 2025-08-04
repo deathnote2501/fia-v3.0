@@ -11,7 +11,7 @@ const API_BASE_URL = '';
  * @param {string} endpoint - API endpoint (e.g., '/api/trainings')
  * @returns {string} - Full URL with correct protocol
  */
-export function buildSecureApiUrl(endpoint) {
+function buildSecureApiUrl(endpoint) {
     // Force HTTPS in production to avoid Mixed Content errors
     if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
         // Production HTTPS - build absolute URL with HTTPS

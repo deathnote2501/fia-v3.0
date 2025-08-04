@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Fixes Test</title>
+</head>
+<body>
+    <h1>Production Fixes Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        console.log('🧪 Testing production fixes...');
+        
+        // Test 1: buildSecureApiUrl function
+        console.log('🧪 Test 1: buildSecureApiUrl availability');
+        
+        // Load api.js first
+        const apiScript = document.createElement('script');
+        apiScript.src = '/frontend/src/utils/api.js';
+        apiScript.onload = function() {
+            console.log('✅ api.js loaded');
+            
+            // Test buildSecureApiUrl
+            if (typeof window.buildSecureApiUrl === 'function') {
+                console.log('✅ buildSecureApiUrl is available');
+                
+                const testUrl = window.buildSecureApiUrl('/api/test');
+                console.log('🔗 Test URL:', testUrl);
+                
+                if (window.location.protocol === 'https:') {
+                    if (testUrl.startsWith('https://')) {
+                        console.log('✅ HTTPS URL generated correctly');
+                    } else {
+                        console.error('❌ HTTPS URL not generated correctly:', testUrl);
+                    }
+                }
+            } else {
+                console.error('❌ buildSecureApiUrl not available');
+            }
+            
+            // Test 2: Load auth.js
+            const authScript = document.createElement('script');
+            authScript.src = '/frontend/src/utils/auth.js';
+            authScript.onload = function() {
+                console.log('✅ auth.js loaded without errors');
+                
+                if (typeof window.authManager === 'object') {
+                    console.log('✅ authManager is available');
+                } else {
+                    console.error('❌ authManager not available');
+                }
+            };
+            authScript.onerror = function() {
+                console.error('❌ auth.js failed to load');
+            };
+            document.head.appendChild(authScript);
+        };
+        apiScript.onerror = function() {
+            console.error('❌ api.js failed to load');
+        };
+        document.head.appendChild(apiScript);
+        
+        // Test 3: API call simulation
+        setTimeout(() => {
+            console.log('🧪 Test 3: Simulating API call');
+            
+            if (window.buildSecureApiUrl) {
+                const testApiUrl = window.buildSecureApiUrl('/api/health');
+                console.log('🔗 API URL would be:', testApiUrl);
+                
+                // Test fetch call (without actually calling - just to check URL construction)
+                const headers = {};
+                if (window.authManager && window.authManager.getAuthHeader) {
+                    Object.assign(headers, window.authManager.getAuthHeader());
+                }
+                
+                console.log('📤 Headers would be:', headers);
+                console.log('✅ All tests completed - check console for results');
+                
+                document.getElementById('results').innerHTML = `
+                    <h2>Test Results:</h2>
+                    <p>✅ API utilities loaded successfully</p>
+                    <p>✅ buildSecureApiUrl: ${window.buildSecureApiUrl ? 'Available' : 'Not Available'}</p>
+                    <p>✅ authManager: ${window.authManager ? 'Available' : 'Not Available'}</p>
+                    <p>🔗 Test API URL: ${testApiUrl}</p>
+                    <p>📤 Check browser console for detailed results</p>
+                `;
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

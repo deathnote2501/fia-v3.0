@@ -499,7 +499,13 @@ class TrainerDashboard {
 
     async loadTrainingsForSession() {
         try {
-            const trainings = await apiClient.get('/api/trainings');
+            // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            const url = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings') : '/api/trainings';
+            const response = await fetch(url, {
+                headers: window.authManager ? window.authManager.getAuthHeader() : {}
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const trainings = await response.json();
             const select = document.getElementById('session-training');
             
             if (select) {
@@ -533,7 +539,21 @@ class TrainerDashboard {
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${window.safeT ? window.safeT('status.creating') : 'Generating...'}`;
 
-            const response = await apiClient.post('/api/sessions', sessionData);
+            // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            const url = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/sessions') : '/api/sessions';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(window.authManager ? window.authManager.getAuthHeader() : {})
+                },
+                body: JSON.stringify(sessionData)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            const result = await response.json();
 
             // Show session link
             const linkContainer = document.getElementById('session-link-container');
@@ -613,7 +633,13 @@ class TrainerDashboard {
     async loadDashboardData() {
         try {
             // Load dashboard statistics
-            const stats = await apiClient.get('/api/dashboard/stats');
+            // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            const statsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/dashboard/stats') : '/api/dashboard/stats';
+            const statsResponse = await fetch(statsUrl, {
+                headers: window.authManager ? window.authManager.getAuthHeader() : {}
+            });
+            if (!statsResponse.ok) throw new Error(`HTTP ${statsResponse.status}`);
+            const stats = await statsResponse.json();
             
             // Update stat cards with new metrics
             const statElements = {
@@ -642,7 +668,13 @@ class TrainerDashboard {
 
     async loadRecentActivity() {
         try {
-            const activities = await apiClient.get('/api/dashboard/recent-activity');
+            // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            const activitiesUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/dashboard/recent-activity') : '/api/dashboard/recent-activity';
+            const activitiesResponse = await fetch(activitiesUrl, {
+                headers: window.authManager ? window.authManager.getAuthHeader() : {}
+            });
+            if (!activitiesResponse.ok) throw new Error(`HTTP ${activitiesResponse.status}`);
+            const activities = await activitiesResponse.json();
             const container = document.getElementById('recent-activity');
             
             if (container) {
@@ -782,7 +814,13 @@ class TrainerDashboard {
                 </div>
             `;
 
-            const trainings = await apiClient.get('/api/trainings/');
+            // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            const trainingsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings/') : '/api/trainings/';
+            const trainingsResponse = await fetch(trainingsUrl, {
+                headers: window.authManager ? window.authManager.getAuthHeader() : {}
+            });
+            if (!trainingsResponse.ok) throw new Error(`HTTP ${trainingsResponse.status}`);
+            const trainings = await trainingsResponse.json();
 
             if (trainings.length === 0) {
                 container.innerHTML = `
