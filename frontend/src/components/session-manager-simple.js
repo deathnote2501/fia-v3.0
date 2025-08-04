@@ -166,7 +166,13 @@ async function loadTrainings() {
         console.log('🔧 [DEBUG] Current protocol:', window.location.protocol);
         console.log('🔧 [DEBUG] Current hostname:', window.location.hostname);
         
-        const response = await fetch(apiUrl, {
+        // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
+        const secureApiUrl = apiUrl.replace(/^http:/, 'https:');
+        if (secureApiUrl !== apiUrl) {
+            console.log('🚨 [FORCE_HTTPS] session-manager-simple.js corrected:', apiUrl, '→', secureApiUrl);
+        }
+        
+        const response = await fetch(secureApiUrl, {
             headers: getAuthHeaders()
         });
         
@@ -218,7 +224,14 @@ async function loadSessions(dateFrom = '', dateTo = '') {
         
         const secureUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(endpoint) : endpoint;
         console.log('🔧 [DEBUG] Download API URL:', secureUrl);
-        const response = await fetch(secureUrl, {
+        
+        // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
+        const finalSecureUrl = secureUrl.replace(/^http:/, 'https:');
+        if (finalSecureUrl !== secureUrl) {
+            console.log('🚨 [FORCE_HTTPS] session-manager-simple.js loadSessions corrected:', secureUrl, '→', finalSecureUrl);
+        }
+        
+        const response = await fetch(finalSecureUrl, {
             headers: getAuthHeaders()
         });
         

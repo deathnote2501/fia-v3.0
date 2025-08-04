@@ -505,7 +505,14 @@ class TrainerDashboard {
             console.log('🔧 [DEBUG] loadTrainingsForSession - window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
             const url = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings') : '/api/trainings';
             console.log('🔧 [DEBUG] loadTrainingsForSession - URL generated:', url);
-            const response = await fetch(url, {
+            
+            // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
+            const secureUrl = url.replace(/^http:/, 'https:');
+            if (secureUrl !== url) {
+                console.log('🚨 [FORCE_HTTPS] trainer-dashboard.js loadTrainingsForSession corrected:', url, '→', secureUrl);
+            }
+            
+            const response = await fetch(secureUrl, {
                 headers: window.authManager ? window.authManager.getAuthHeader() : {}
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -822,7 +829,14 @@ class TrainerDashboard {
             console.log('🔧 [DEBUG] loadTrainings - window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
             const trainingsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings/') : '/api/trainings/';
             console.log('🔧 [DEBUG] loadTrainings - URL generated:', trainingsUrl);
-            const trainingsResponse = await fetch(trainingsUrl, {
+            
+            // CRITICAL: Force HTTPS even if URL got corrupted by browser/server
+            const secureTrainingsUrl = trainingsUrl.replace(/^http:/, 'https:');
+            if (secureTrainingsUrl !== trainingsUrl) {
+                console.log('🚨 [FORCE_HTTPS] trainer-dashboard.js loadTrainings corrected:', trainingsUrl, '→', secureTrainingsUrl);
+            }
+            
+            const trainingsResponse = await fetch(secureTrainingsUrl, {
                 headers: window.authManager ? window.authManager.getAuthHeader() : {}
             });
             if (!trainingsResponse.ok) throw new Error(`HTTP ${trainingsResponse.status}`);

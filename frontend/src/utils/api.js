@@ -16,7 +16,13 @@ function buildSecureApiUrl(endpoint) {
     if (window.location.protocol === 'https:' && window.location.hostname !== 'localhost') {
         // Production HTTPS - build absolute URL with HTTPS
         const baseUrl = `https://${window.location.hostname}`;
-        return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+        const fullUrl = endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+        
+        // CRITICAL: Double-check URL is HTTPS (some servers/proxies force HTTP redirects)
+        const finalUrl = fullUrl.replace(/^http:/, 'https:');
+        console.log('🔒 [FORCE_HTTPS] Original:', fullUrl, '→ Final:', finalUrl);
+        
+        return finalUrl;
     } else {
         // Local development or HTTP - use relative URLs
         return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -65,7 +71,13 @@ class APIClient {
         }
 
         try {
-            const response = await fetch(url, config);
+            // CRITICAL: Force HTTPS even if URL got corrupted somewhere
+            const secureUrl = url.replace(/^http:/, 'https:');
+            if (secureUrl !== url) {
+                console.log('🚨 [FORCE_HTTPS] URL corrected:', url, '→', secureUrl);
+            }
+            
+            const response = await fetch(secureUrl, config);
             const duration = performance.now() - startTime;
             
             // 📥 Log API Response
