@@ -1300,7 +1300,7 @@ async function downloadSessionReport(sessionId) {
         }
 
         // Create download link
-        const downloadUrl = `/api/admin/sessions/${sessionId}/report`;
+        const downloadUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/admin/sessions/${sessionId}/report`) : `/api/admin/sessions/${sessionId}/report`;
         
         const response = await fetch(downloadUrl, {
             method: 'GET',

@@ -86,6 +86,11 @@ export const en = {
     'profile.cancel': 'Cancel',
     'profile.saveChanges': 'Save Changes',
     
+    // Activity messages
+    'activity.createdTraining': 'Training created: {name}',
+    'activity.createdSession': 'Session created: {name}',
+    'activity.newLearner': 'New learner: {email}',
+    
     // Form labels
     'form.label.email': 'Email Address',
     'form.label.firstName': 'First Name',

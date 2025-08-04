@@ -85,7 +85,7 @@ export class ChatContextualActions {
             console.log(`📤 [CONTEXTUAL] ${actionType} request payload:`, requestPayload);
             
             // Call the appropriate API endpoint
-            const apiEndpoint = `/api/chat/${actionType}`;
+            const apiEndpoint = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/chat/${actionType}`) : `/api/chat/${actionType}`;
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {

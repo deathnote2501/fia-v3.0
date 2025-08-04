@@ -524,11 +524,11 @@
     <script src="../src/utils/auth.js"></script>
     <script src="../src/utils/validation.js"></script>
     
-    <!-- Load components after utilities -->
+    <!-- Initialize i18n BEFORE loading components -->
+    <script type="module" src="../src/components/trainer-init.js"></script>
+    
+    <!-- Load components after i18n is ready -->
     <script src="../src/components/trainer-dashboard.js"></script>
     <script src="../src/components/session-manager-simple.js"></script>
-    
-    <!-- Initialize after all dependencies are loaded -->
-    <script type="module" src="../src/components/trainer-init.js"></script>
 </body>
 </html>

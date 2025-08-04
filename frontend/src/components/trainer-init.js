@@ -79,4 +79,9 @@ async function initializeTrainer() {
 }
 
 // Initialize when DOM is loaded
-window.addEventListener('DOMContentLoaded', initializeTrainer);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTrainer);
+} else {
+    // Document already loaded, initialize immediately
+    initializeTrainer();
+}

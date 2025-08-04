@@ -897,7 +897,7 @@ async function downloadTraining(trainingId, fileName) {
         }
 
         // Create download link
-        const downloadUrl = `/api/trainings/${trainingId}/download`;
+        const downloadUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl(`/api/trainings/${trainingId}/download`) : `/api/trainings/${trainingId}/download`;
         
         const response = await fetch(downloadUrl, {
             method: 'GET',
