@@ -502,7 +502,9 @@ class TrainerDashboard {
     async loadTrainingsForSession() {
         try {
             // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            console.log('🔧 [DEBUG] loadTrainingsForSession - window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
             const url = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings') : '/api/trainings';
+            console.log('🔧 [DEBUG] loadTrainingsForSession - URL generated:', url);
             const response = await fetch(url, {
                 headers: window.authManager ? window.authManager.getAuthHeader() : {}
             });
@@ -817,7 +819,9 @@ class TrainerDashboard {
             `;
 
             // Use buildSecureApiUrl directly to avoid Mixed Content issues
+            console.log('🔧 [DEBUG] loadTrainings - window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
             const trainingsUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings/') : '/api/trainings/';
+            console.log('🔧 [DEBUG] loadTrainings - URL generated:', trainingsUrl);
             const trainingsResponse = await fetch(trainingsUrl, {
                 headers: window.authManager ? window.authManager.getAuthHeader() : {}
             });

@@ -153,7 +153,15 @@ async function loadTrainings() {
         select.disabled = true;
         select.innerHTML = `<option value="">${window.safeT ? window.safeT('status.loadingTrainings') : 'Loading trainings...'}</option>`;
         
-        const apiUrl = window.buildSecureApiUrl ? window.buildSecureApiUrl('/api/trainings') : '/api/trainings';
+        console.log('🔧 [DEBUG] window.buildSecureApiUrl available:', !!window.buildSecureApiUrl);
+        console.log('🔧 [DEBUG] typeof window.buildSecureApiUrl:', typeof window.buildSecureApiUrl);
+        
+        // FORCE buildSecureApiUrl - throw error if not available
+        if (!window.buildSecureApiUrl) {
+            throw new Error('❌ buildSecureApiUrl not available! This is the root cause of Mixed Content error.');
+        }
+        
+        const apiUrl = window.buildSecureApiUrl('/api/trainings');
         console.log('🔧 [DEBUG] API URL generated:', apiUrl);
         console.log('🔧 [DEBUG] Current protocol:', window.location.protocol);
         console.log('🔧 [DEBUG] Current hostname:', window.location.hostname);
