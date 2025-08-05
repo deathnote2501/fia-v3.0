@@ -134,6 +134,22 @@
         
         <!-- MOBILE INPUT: Zone de saisie mobile (visible uniquement en mobile) -->
         <div class="mobile-input">
+            <!-- Mobile Quick Actions: Above input for better UX -->
+            <div class="mobile-quick-actions">
+                <button type="button" id="mobile-quick-comment-btn" data-i18n-title="tooltip.comment" title="Ask for comments">
+                    <i class="bi bi-chat-text"></i>
+                    <span data-i18n="chat.comment">Comment</span>
+                </button>
+                <button type="button" id="mobile-quick-quiz-btn" data-i18n-title="tooltip.quiz" title="Generate quiz">
+                    <i class="bi bi-question-circle"></i>
+                    <span data-i18n="chat.quiz">Quiz</span>
+                </button>
+                <button type="button" id="mobile-quick-examples-btn" data-i18n-title="tooltip.examples" title="Get examples">
+                    <i class="bi bi-lightbulb"></i>
+                    <span data-i18n="chat.examples">Examples</span>
+                </button>
+            </div>
+            
             <div class="chat-input-wrapper">
                 <textarea class="form-control" id="mobile-chat-input" 
                           data-i18n-placeholder="learner.askTrainer" placeholder="Ask your AI trainer..." maxlength="500"
