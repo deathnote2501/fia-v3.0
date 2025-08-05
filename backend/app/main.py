@@ -44,6 +44,7 @@ from app.adapters.inbound.config_controller import router as config_router
 from app.adapters.inbound.admin_controller import router as admin_router
 from app.adapters.inbound.public_quick_start_controller import router as public_quick_start_router
 from app.adapters.inbound.token_usage_controller import router as token_usage_router
+from app.adapters.inbound.storage_controller import router as storage_router
 
 # Import working controllers only (skip broken ones for now)
 logger = logging.getLogger(__name__)
@@ -190,6 +191,9 @@ app.include_router(public_quick_start_router)
 
 # Include token usage router
 app.include_router(token_usage_router)
+
+# Include storage router
+app.include_router(storage_router)
 
 # Include unified plan generation router if available
 if PLAN_GENERATION_AVAILABLE:

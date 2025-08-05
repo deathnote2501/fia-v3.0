@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     
     # File Storage
     storage_path: str = Field(default="./uploads", description="File storage base path")
+    storage_type: str = Field(default="local", description="Storage type: 'local' or 'r2'")
+    
+    # Cloudflare R2 Storage
+    r2_bucket_name: str = Field(default="", description="Cloudflare R2 bucket name")
+    r2_endpoint_url: str = Field(default="", description="Cloudflare R2 endpoint URL")
+    r2_access_key: str = Field(default="", description="Cloudflare R2 access key")
+    r2_secret_key: str = Field(default="", description="Cloudflare R2 secret key")
     
     
     # Logging

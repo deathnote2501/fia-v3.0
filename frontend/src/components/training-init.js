@@ -83,7 +83,7 @@ class UnifiedTrainingApp {
      */
     async initializeI18n() {
         try {
-            const { initializeI18n, setupGlobalTranslation } = await import('../i18n/i18n-helper.js');
+            const { initializeI18n, setupGlobalTranslation } = await import(`../i18n/i18n-helper.js?v=${Date.now()}`);
             await initializeI18n();
             setupGlobalTranslation();
             

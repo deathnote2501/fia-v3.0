@@ -45,3 +45,24 @@ class SettingsAdapter(SettingsPort):
     def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """Get any setting by key with optional default"""
         return getattr(settings, key, default)
+    
+    # Cloudflare R2 Storage methods
+    def get_storage_type(self) -> str:
+        """Get the storage type (local or r2)"""
+        return settings.storage_type
+    
+    def get_r2_bucket_name(self) -> str:
+        """Get the Cloudflare R2 bucket name"""
+        return settings.r2_bucket_name
+    
+    def get_r2_endpoint_url(self) -> str:
+        """Get the Cloudflare R2 endpoint URL"""
+        return settings.r2_endpoint_url
+    
+    def get_r2_access_key(self) -> str:
+        """Get the Cloudflare R2 access key"""
+        return settings.r2_access_key
+    
+    def get_r2_secret_key(self) -> str:
+        """Get the Cloudflare R2 secret key"""
+        return settings.r2_secret_key
